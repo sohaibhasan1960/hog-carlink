@@ -129,7 +129,7 @@ enum class VideoMode(
     }
 
     companion object {
-        val DEFAULT = R720
+        val DEFAULT = R800      // HOG CarLink: ГУ ID.6 просит 800x480 (лог 2026-10-30); апстрим - R720
 
         /** По имени из prefs; неизвестное/пустое = по умолчанию. */
         fun parse(key: String?): VideoMode = values().firstOrNull { it.name == key } ?: DEFAULT

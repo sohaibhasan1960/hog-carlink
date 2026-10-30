@@ -40,7 +40,7 @@ class VideoModeTest {
                 assertEquals(m.name, m.aaH - m.marginH, m.outH)
             }
         }
-        assertEquals(VideoMode.R720, VideoMode.DEFAULT)
+        assertEquals(VideoMode.R800, VideoMode.DEFAULT)      // HOG CarLink: ID.6 800x480
     }
 
     @Test
@@ -80,8 +80,8 @@ class VideoModeTest {
         assertEquals(VideoMode.R1080, VideoMode.R1080.effective(transcode = false))
         assertEquals(VideoMode.R800, VideoMode.R800.effective(transcode = false))
         assertEquals(VideoMode.WIDE, VideoMode.parse("WIDE"))
-        assertEquals(VideoMode.R720, VideoMode.parse(null))
-        assertEquals(VideoMode.R720, VideoMode.parse("мусор"))
+        assertEquals(VideoMode.R800, VideoMode.parse(null))
+        assertEquals(VideoMode.R800, VideoMode.parse("мусор"))
     }
 
     @Test
