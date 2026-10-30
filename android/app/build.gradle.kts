@@ -19,7 +19,7 @@ android {
         minSdk = 29
         targetSdk = 37
         versionCode = 63
-        versionName = "2.6.0"
+        versionName = "2.6.0-hog.1"
         // «По воздуху» (беспровод): с 2.0.0 включён во всех сборках; выключить для проверки: gradlew assembleRelease -Pwlbeta=false
         buildConfigField("boolean", "WIRELESS_BETA", (project.findProperty("wlbeta") != "false").toString())
     }
