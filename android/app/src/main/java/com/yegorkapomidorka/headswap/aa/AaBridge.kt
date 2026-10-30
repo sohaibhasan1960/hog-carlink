@@ -585,6 +585,12 @@ class AaBridgeCore(
         if (manufacturer == DESAY_MANUFACTURER && model == DESAY_G6S_MODEL) huDesayG6S = true
         vwIdName = manufacturer == VW_20082138_MANUFACTURER
         if (manufacturer == VW_BT_1420_MANUFACTURER) huVwBt1420 = true
+        // HOG CarLink: VW ID.6 (VW BT 5075, channel 20082128) - тот же VW CarLife по воздуху, что и VW BT 1420:
+        // heartbeat на PAUSE (звонок, меню ГУ) и START сразу с IDR энкодера
+        if (manufacturer == VW_BT_5075_MANUFACTURER && !huVwBt1420) {
+            huVwBt1420 = true
+            log("BRIDGE ГУ VW BT 5075 (ID.6): профиль VW BT 1420 - heartbeat на PAUSE и быстрый START по воздуху", true)
+        }
         updateVwId()
         if (product == HYUNDAI_CN7_PRODUCT) huHyundaiCn7 = true
         if (manufacturer == PIONEER_MANUFACTURER && model == PIONEER_RM56_MODEL) {
@@ -1825,7 +1831,8 @@ class AaBridgeCore(
         const val VW_CNS3_20082134_CHANNEL = "20082134"   // VW CNS3 Tiguan L Pro: рвёт CarLife по Wi-Fi через ~5,1-5,7 с PAUSE (h224)
         const val VW_CNS2_20082114_CHANNEL = "20082114"   // VW CNS2 Delphi (Tharu 2020): рвёт USB через 6-8 с PAUSE (h425)
         const val VW_20082138_CHANNEL = "20082138"        // VW ID (h196): HU_INFO manufacturer=model="VW BT 1538"
-        const val VW_BT_1420_MANUFACTURER = "VW BT 1420"  // VW (Павел): HU_INFO manufacturer=model, канал 20082138
+        const val VW_BT_1420_MANUFACTURER = "VW BT 1420"
+        const val VW_BT_5075_MANUFACTURER = "VW BT 5075"  // HOG CarLink: VW ID.6 CROZZ, HU_INFO manufacturer=model, канал 20082128  // VW (Павел): HU_INFO manufacturer=model, канал 20082138
         const val VW_20082138_MANUFACTURER = "VW BT 1538"
         const val HYUNDAI_CN7_PRODUCT = "wp_cn7cpe_cn"    // HU_INFO.product Hyundai Elantra CN7 (h218): manufacturer QTI, model "sm6150_au for arm64"
         const val PIONEER_MANUFACTURER = "Pioneer"        // HU_INFO Pioneer RM56E8B (Dongfeng DF6, h277): manufacturer="Pioneer" model="RM56E8B"
