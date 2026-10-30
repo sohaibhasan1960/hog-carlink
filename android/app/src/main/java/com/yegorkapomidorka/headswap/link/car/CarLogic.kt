@@ -144,3 +144,16 @@ object BtReconnectHint {
     ): Boolean = waiting && !sessionActive && waitedMs >= BT_HINT_MS && acceptsThisWait == 0 && !targetInfoThisWait &&
         carBtConnected && mode != CarConnMode.HOTSPOT && !alreadyShown
 }
+
+/** HOG CarLink: что делать с событием присутствия CDM ([CarPresenceService]). */
+enum class CarPresence { NEAR, GONE, IGNORE }
+
+/** Чистая логика событий DevicePresenceEvent (API 36), без android.*: проверяется JVM-тестами. */
+object CarPresencePolicy {
+    // значения DevicePresenceEvent.EVENT_*: BLE_APPEARED 0, BLE_DISAPPEARED 1, BT_CONNECTED 2, BT_DISCONNECTED 3
+    fun of(event: Int): CarPresence = when (event) {
+        0, 2 -> CarPresence.NEAR
+        1, 3 -> CarPresence.GONE
+        else -> CarPresence.IGNORE
+    }
+}

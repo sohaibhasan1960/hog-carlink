@@ -67,6 +67,7 @@ class MainActivity : Activity() {
         if (AppTheme.medium) setTheme(R.style.Theme_Headswap_Medium)
         super.onCreate(savedInstanceState)
         AppLog.init(this)
+        com.yegorkapomidorka.headswap.link.car.CarPairing.ensureObserving(this)
         root = FrameLayout(this)
         if (Build.VERSION.SDK_INT >= 30) window.setDecorFitsSystemWindows(false)
         root.setOnApplyWindowInsetsListener { v, ins ->

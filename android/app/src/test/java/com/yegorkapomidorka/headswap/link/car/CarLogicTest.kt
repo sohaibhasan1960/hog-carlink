@@ -227,4 +227,14 @@ class CarLogicTest {
     fun btHintShownOncePerWait() {
         assertFalse(btHint(shown = true))
     }
+
+    @Test
+    fun presenceEventsMapToNearAndGone() {
+        assertEquals(CarPresence.NEAR, CarPresencePolicy.of(2))      // EVENT_BT_CONNECTED
+        assertEquals(CarPresence.NEAR, CarPresencePolicy.of(0))      // EVENT_BLE_APPEARED
+        assertEquals(CarPresence.GONE, CarPresencePolicy.of(3))      // EVENT_BT_DISCONNECTED
+        assertEquals(CarPresence.GONE, CarPresencePolicy.of(1))      // EVENT_BLE_DISAPPEARED
+        assertEquals(CarPresence.IGNORE, CarPresencePolicy.of(6))    // EVENT_ASSOCIATION_REMOVED
+        assertEquals(CarPresence.IGNORE, CarPresencePolicy.of(4))    // self-managed: не наш случай
+    }
 }

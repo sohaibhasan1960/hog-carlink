@@ -8,6 +8,7 @@ import android.companion.AssociationInfo
 import android.companion.AssociationRequest
 import android.companion.BluetoothDeviceFilter
 import android.companion.CompanionDeviceManager
+import android.companion.ObservingDevicePresenceRequest
 import android.content.Context
 import android.content.Intent
 import android.content.IntentSender
@@ -116,9 +117,7 @@ object CarPairing {
         if (cdm != null) {
             @Suppress("DEPRECATION")
             try {
-                if (Build.VERSION.SDK_INT >= 31 && mac != null) {
-                    try { cdm.stopObservingDevicePresence(mac.uppercase()) } catch (_: Exception) {}
-                }
+                stopObserving(cdm, mac, id)
                 if (Build.VERSION.SDK_INT >= 33 && id >= 0) cdm.disassociate(id)
                 else if (mac != null) cdm.disassociate(mac.uppercase())
             } catch (e: Exception) {
@@ -163,17 +162,41 @@ object CarPairing {
         observe(ctx, mac)
     }
 
-    /** Присутствие устройства (31+): запасной путь, основной триггер - ACL. Нужного разрешения может не быть: только лог. */
+    /**
+     * HOG CarLink: присутствие машины (31+) будит [CarPresenceService] силами системы, параллельно ACL ([CarAclReceiver]).
+     * REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE объявлено в манифесте. API 36+: запрос по id привязки, ниже - по MAC.
+     * Повторный вызов безопасен (система хранит наблюдение и после перезагрузки).
+     */
     @Suppress("DEPRECATION")
-    @SuppressLint("MissingPermission")      // REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE не объявлено намеренно: без него SecurityException, только лог
     private fun observe(ctx: Context, mac: String) {
         if (Build.VERSION.SDK_INT < 31) return
         val cdm = ctx.getSystemService(CompanionDeviceManager::class.java) ?: return
+        val id = CarProfile(ctx).cdmAssociationId
         try {
-            cdm.startObservingDevicePresence(mac.uppercase())
-            WLog.ev(WLog.TRIGGER, "presence", "ok" to true)
+            if (Build.VERSION.SDK_INT >= 36 && id >= 0) {
+                cdm.startObservingDevicePresence(ObservingDevicePresenceRequest.Builder().setAssociationId(id).build())
+            } else {
+                cdm.startObservingDevicePresence(mac.uppercase())
+            }
+            WLog.ev(WLog.TRIGGER, "presence", "ok" to true, "byId" to (Build.VERSION.SDK_INT >= 36 && id >= 0))
         } catch (e: Exception) {
             WLog.ev(WLog.TRIGGER, "presence", "ok" to false, "err" to e.javaClass.simpleName)
+        }
+    }
+
+    /** HOG CarLink: при каждом открытии приложения - наблюдение присутствия для уже выбранной машины. */
+    fun ensureObserving(ctx: Context) {
+        val mac = CarProfile(ctx).btMac ?: return
+        observe(ctx, mac)
+    }
+
+    @Suppress("DEPRECATION")
+    private fun stopObserving(cdm: CompanionDeviceManager, mac: String?, id: Int) {
+        if (Build.VERSION.SDK_INT >= 36 && id >= 0) {
+            try { cdm.stopObservingDevicePresence(ObservingDevicePresenceRequest.Builder().setAssociationId(id).build()) } catch (_: Exception) {}
+        }
+        if (Build.VERSION.SDK_INT >= 31 && mac != null) {
+            try { cdm.stopObservingDevicePresence(mac.uppercase()) } catch (_: Exception) {}
         }
     }
 

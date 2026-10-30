@@ -30,22 +30,10 @@ class CarAclReceiver : BroadcastReceiver() {
         }
         if (action == BluetoothDevice.ACTION_ACL_CONNECTED) {
             WLog.ev(WLog.TRIGGER, "acl-connected", "dev" to WLog.maskMac(addr))
-            try {
-                context.startForegroundService(Intent(context, BridgeService::class.java).setAction(BridgeService.ACTION_WIFI_B_AUTO))
-            } catch (e: Exception) {      // ForegroundServiceStartNotAllowedException и пр.: из фона без исключений запуск запрещён
-                AppLog.e("ACL: старт сервиса", e)
-                WLog.ev(WLog.TRIGGER, "fgs-fail", "err" to e.javaClass.simpleName)
-            }
+            CarTrigger.near(context, "acl")
         } else {
             WLog.ev(WLog.TRIGGER, "acl-disconnected", "dev" to WLog.maskMac(addr))
-            // сервиса нет - гасить нечего; startService на пустой сервис из фона не нужен
-            if (!BridgeService.alive) return
-            try {
-                context.startService(Intent(context, BridgeService::class.java).setAction(BridgeService.ACTION_WIFI_B_AUTO_OFF))
-            } catch (e: Exception) {
-                AppLog.e("ACL: отбой сервису", e)
-                WLog.ev(WLog.TRIGGER, "fgs-fail", "err" to e.javaClass.simpleName, "action" to "off")
-            }
+            CarTrigger.gone(context, "acl")
         }
     }
 
