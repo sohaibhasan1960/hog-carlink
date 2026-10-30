@@ -5,6 +5,8 @@ package com.yegorkapomidorka.headswap.update
  * Релиз: тег vX.Y.Z, файл headswap-X.Y.Z.apk; «последний» определяет сам GitHub (не черновик и не пре-релиз).
  */
 object UpdateLogic {
+    /** HOG CarLink: upstream releases are Headswap (other package/key), so self-update is off. */
+    const val ENABLED = false
     const val REPO = "YegorkaPomidorka/headswap"
     const val API_LATEST = "https://api.github.com/repos/$REPO/releases/latest"
     /** Запасной путь, если API ответил не 200 (лимит 60 запросов в час на IP): редирект на страницу тега. */

@@ -104,7 +104,7 @@ object Updater {
 
     /** Сохранённый релиз, если он новее установленной версии. */
     fun available(ctx: Context): UpdateLogic.Release? =
-        UpdatePrefs(ctx).release()?.takeIf { UpdateLogic.isNewer(it.version, installedVersion(ctx)) }
+        if (!UpdateLogic.ENABLED) null else UpdatePrefs(ctx).release()?.takeIf { UpdateLogic.isNewer(it.version, installedVersion(ctx)) }
 
     /** Плашка на главном экране: проверка включена, есть новее и её не закрыли. */
     fun banner(ctx: Context): UpdateLogic.Release? {
@@ -132,6 +132,7 @@ object Updater {
 
     /** Запросить последний релиз в фоне. manual: ошибку показать тостом. */
     fun check(ctx: Context, manual: Boolean) {
+        if (!UpdateLogic.ENABLED) return
         synchronized(this) {
             if (step != Step.IDLE) return
             step = Step.CHECKING

@@ -4,9 +4,9 @@ plugins {
     id("com.android.application")
 }
 
-// Release key lives outside the project: %USERPROFILE%\.android-keys\headswap-release.properties
+// HOG CarLink: own release key outside the project: %USERPROFILE%\.android-keys\carlink-release.properties
 val releaseProps = Properties().apply {
-    val f = file("${System.getProperty("user.home")}/.android-keys/headswap-release.properties")
+    val f = file("${System.getProperty("user.home")}/.android-keys/carlink-release.properties")
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
@@ -15,7 +15,7 @@ android {
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.yegorkapomidorka.headswap"
+        applicationId = "com.hog.carlink"
         minSdk = 29
         targetSdk = 37
         versionCode = 63
@@ -42,6 +42,8 @@ android {
     buildTypes {
         debug {
             buildConfigField("boolean", "WIRELESS_BETA", "true")
+            // same key as release: debug -> release upgrade keeps settings (no uninstall)
+            signingConfig = signingConfigs.findByName("release")
         }
         release {
             isMinifyEnabled = false

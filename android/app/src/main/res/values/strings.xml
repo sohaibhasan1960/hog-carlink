@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Default language is English; Russian lives in values-ru. Area-specific strings: strings_<area>.xml. -->
 <resources>
-    <string name="app_name" translatable="false">Headswap</string>
+    <string name="app_name" translatable="false">HOG CarLink</string>
     <string name="notif_channel_bridge" translatable="false">Headswap</string>
     <string name="action_stop">Stop</string>
     <string name="action_open_aa">Open Android Auto</string>
