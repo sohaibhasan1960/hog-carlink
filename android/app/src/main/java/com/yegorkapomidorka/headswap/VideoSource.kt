@@ -210,15 +210,15 @@ class VideoSource(
         val w = width.toFloat()
         val h = height.toFloat()
         // плоские цвета: на CBR 4 Мбит/с градиенты слабого энкодера идут полосами
-        c.drawColor(BG)
-        drawLogo(c, w / 2, h * 0.34f, minOf(h * 0.36f, w * 0.3f), n / fps.toFloat(), fill)
+        c.drawColor(HOG_GREEN)
+        drawHog(c, w / 2, h * 0.36f, minOf(h * 0.3f, w * 0.2f), fill)
 
-        // словесный знак HOG CarLink: HOG белым, CarLink янтарным
+        // словесный знак под логотипом HOG: CarLink белым
         text.textAlign = Paint.Align.LEFT
         text.typeface = WORDMARK
-        text.textSize = h * 0.085f
-        val head = "HOG "
-        val swap = "CarLink"
+        text.textSize = h * 0.075f
+        val head = "CarLink"
+        val swap = ""
         val wHead = text.measureText(head)
         var x = w / 2 - (wHead + text.measureText(swap)) / 2
         val yWord = h * 0.66f
@@ -276,6 +276,36 @@ class VideoSource(
             limit += maxW * 0.02f
         }
         return best
+    }
+
+    /**
+     * HOG CarLink: логотип HOG как в ic_launcher_foreground.xml (единицы холста 108: буквы x 25..83, y 41..61, черта до 67.5),
+     * [size] - высота всего знака с чертой, центр в ([cx], [cy]). Плоские цвета: слабый энкодер не любит градиенты.
+     */
+    private fun drawHog(c: Canvas, cx: Float, cy: Float, size: Float, p: Paint) {
+        val k = size / 26.5f
+        c.save()
+        c.translate(cx - 54f * k, cy - 54.25f * k)
+        c.scale(k, k)
+        p.isAntiAlias = true
+        p.style = Paint.Style.FILL
+        p.color = Color.WHITE
+        // H
+        c.drawRect(25f, 41f, 29.5f, 61f, p)
+        c.drawRect(35.5f, 41f, 40f, 61f, p)
+        c.drawRect(29.5f, 48.75f, 35.5f, 53.25f, p)
+        // O: кольцо толщиной 4.5
+        p.style = Paint.Style.STROKE
+        p.strokeWidth = 4.5f
+        c.drawOval(RectF(45.25f, 43.25f, 59.75f, 58.75f), p)
+        // G: дуга от -45° против часовой до +10° и перекладина
+        c.drawArc(RectF(67.25f, 43.25f, 80.75f, 58.75f), -45f, -305f, false, p)
+        p.style = Paint.Style.FILL
+        c.drawRect(74.5f, 49.5f, 83f, 54f, p)
+        // золотая черта
+        p.color = HOG_GOLD
+        c.drawRoundRect(RectF(40f, 65f, 68f, 67.5f), 1.25f, 1.25f, p)
+        c.restore()
     }
 
     /**
@@ -342,6 +372,8 @@ class VideoSource(
         const val MIME = "video/avc"
 
         private val BG = Color.rgb(0x0E, 0x14, 0x1A) // фон иконки
+        private val HOG_GREEN = Color.rgb(0x00, 0x3B, 0x1F)
+        private val HOG_GOLD = Color.rgb(0xBB, 0x90, 0x32)
         private val AMBER = Color.rgb(0xF2, 0xB3, 0x3D)
         private val STATUS = Color.rgb(0xB8, 0xC4, 0xCC)
         private val WORDMARK: Typeface = Typeface.create("sans-serif-black", Typeface.NORMAL)
