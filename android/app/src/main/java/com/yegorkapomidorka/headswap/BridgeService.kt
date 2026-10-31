@@ -43,6 +43,7 @@ import com.yegorkapomidorka.headswap.link.car.AutoOffDebounce
 import com.yegorkapomidorka.headswap.link.car.BT_HINT_MS
 import com.yegorkapomidorka.headswap.link.car.BtReconnectHint
 import com.yegorkapomidorka.headswap.link.car.CAR_NET_DELAY_MS
+import com.yegorkapomidorka.headswap.link.car.CAR_NET_KICK_MS
 import com.yegorkapomidorka.headswap.link.car.CAR_NET_TIMEOUT_MS
 import com.yegorkapomidorka.headswap.link.car.CarConnMode
 import com.yegorkapomidorka.headswap.link.car.CarMac
@@ -114,6 +115,7 @@ class BridgeService : Service() {
     private var carBtNear = false
     /** HOG CarLink: повторы запроса сети машины в этом ожидании ([CarNetPolicy.retryDelayMs]). */
     private var carNetRetries = 0
+    private var carNetKickAt = 0L
     /** 6/6 получены, сессия вот-вот стартует: запрос сети машины уже не нужен. Только главная нить. */
     private var sixReady = false
     /** Ожидание сознательно прерывается ради нового маяка в сети машины: ветка отказа в startTcp6 это не сдача. Только главная нить. */
@@ -242,6 +244,7 @@ class BridgeService : Service() {
                 // повторное нажатие, ожидание уже идёт: счётчики accept/TARGET_INFO не сбрасываем (иначе ложный bt-hint, h126)
                 autoStarted = false
                 WLog.ev(WLog.TRIGGER, "manual-mark", "why" to "waiting")
+                kickCarNet("manual")      // сеть машины могли задать уже во время ожидания
                 return START_NOT_STICKY
             }
             wifiBMode = true
@@ -395,6 +398,25 @@ class BridgeService : Service() {
         carNet.request(ssid, w.pass, CAR_NET_TIMEOUT_MS, ::onCarNetAvailable, ::onCarNetUnavailable, ::onCarNetLost)
     }
 
+    /**
+     * HOG CarLink: ожидание уже идёт, а машина появилась по Bluetooth (или снова нажали «Ждать»): повторы заново и запрос
+     * сети машины сейчас. Запрос, начатый до включения ГУ, снимаем и просим заново: его сканы почти кончились (лог 2026-10-31:
+     * машина пришла в 07:47:54, старый запрос висел до 07:48:09, сеть - только в 07:48:38). ACL и CDM приходят пачкой:
+     * не чаще раза в [CAR_NET_KICK_MS]. Исчерпанные повторы ([CAR_NET_RETRY_MAX]) больше не оставляют машину без сети.
+     */
+    private fun kickCarNet(why: String) {
+        carNetRetries = 0
+        if (!CarWifi(this).isSet || wifiDirectCar || sixReady || session != null) return
+        val now = SystemClock.elapsedRealtime()
+        if (now - carNetKickAt < CAR_NET_KICK_MS) return
+        carNetKickAt = now
+        val st = carNetImpl?.state
+        if (st == CarNetState.AVAILABLE) return
+        if (st == CarNetState.REQUESTING) carNetImpl?.release(why)
+        WLog.ev(WLog.LINK, "car-net-kick", "why" to why, "was" to st?.label)
+        scheduleCarNet()
+    }
+
     /** Остановка ожидания (или смерть сервиса): снять отложенный запрос и, по [CarNetPolicy], сам запрос сети. */
     private fun stopCarNet(event: CarNetEvent, why: String) {
         main.removeCallbacks(carNetTick)
@@ -491,6 +513,7 @@ class BridgeService : Service() {
         }
         if (wifiBMode && linkWaiting) {
             WLog.ev(WLog.TRIGGER, "auto-mark", "why" to "waiting")      // всплеск ACL: ожидание уже идёт
+            kickCarNet("car-near")
             return
         }
         hintShown = false

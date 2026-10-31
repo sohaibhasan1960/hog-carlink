@@ -77,6 +77,9 @@ const val CAR_NET_TIMEOUT_MS = 90_000L
 const val CAR_NET_RETRY_MAX = 10
 const val CAR_NET_RETRY_MS = 5_000L
 
+/** HOG CarLink: ACL и CDM о появлении машины приходят пачкой; перезапуск запроса сети - не чаще. */
+const val CAR_NET_KICK_MS = 3_000L
+
 /** Через сколько ожидания без accept на RFCOMM `carlife` подсказываем переподключить Bluetooth (ГУ открывает его только при подключении BT). */
 const val BT_HINT_MS = 15_000L
 
