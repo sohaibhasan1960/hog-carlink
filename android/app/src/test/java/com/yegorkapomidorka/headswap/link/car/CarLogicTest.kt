@@ -1,6 +1,7 @@
 package com.yegorkapomidorka.headswap.link.car
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -120,6 +121,14 @@ class CarLogicTest {
         assertFalse(CarSecPolicy.retryWpa3("wpa2", "wpa2", hasPass = true))     // WPA2 уже удавался: машины просто нет в эфире
         assertFalse(CarSecPolicy.retryWpa3(null, "wpa3", hasPass = true))
         assertEquals(CAR_NET_DELAY_MS, CarNetPolicy.delayMs(CAR_RECENT_MS, carNetProven = false))
+    }
+
+    @Test
+    fun carNetRetriedWhileHeadUnitWifiIsNotUpYet() {
+        assertEquals(CAR_NET_RETRY_MS, CarNetPolicy.retryDelayMs(0, "no-network"))
+        assertEquals(CAR_NET_RETRY_MS, CarNetPolicy.retryDelayMs(CAR_NET_RETRY_MAX - 1, "no-network"))
+        assertNull(CarNetPolicy.retryDelayMs(CAR_NET_RETRY_MAX, "no-network"))       // хватит: подсказка
+        assertNull(CarNetPolicy.retryDelayMs(0, "error:IllegalArgumentException"))     // кривой пароль повтором не лечится
     }
 
     @Test

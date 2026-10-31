@@ -112,6 +112,8 @@ class BridgeService : Service() {
     private var carSeenAt = 0L
     /** В этом ожидании выбранная машина оказалась подключена по Bluetooth. Только главная нить. */
     private var carBtNear = false
+    /** HOG CarLink: повторы запроса сети машины в этом ожидании ([CarNetPolicy.retryDelayMs]). */
+    private var carNetRetries = 0
     /** 6/6 получены, сессия вот-вот стартует: запрос сети машины уже не нужен. Только главная нить. */
     private var sixReady = false
     /** Ожидание сознательно прерывается ради нового маяка в сети машины: ветка отказа в startTcp6 это не сдача. Только главная нить. */
@@ -331,6 +333,7 @@ class BridgeService : Service() {
     private fun beginWait() {
         waitSince = SystemClock.elapsedRealtime()
         carBtNear = false
+        carNetRetries = 0
         p2pThisWait = false
         carSkipLogged = false
         btAcceptsThisWait = 0
@@ -432,6 +435,7 @@ class BridgeService : Service() {
 
     private fun onCarNetAvailable(@Suppress("UNUSED_PARAMETER") network: Network) {
         markCarSeen()
+        carNetRetries = 0
         restartForCarNet()
     }
 
@@ -450,6 +454,14 @@ class BridgeService : Service() {
 
     private fun onCarNetUnavailable(reason: String) {
         if (wifiDirectCar) return
+        val retry = CarNetPolicy.retryDelayMs(carNetRetries, reason)
+        if (retry != null && wifiBMode && linkWaiting && !stopRequested && session == null && !sixReady) {
+            carNetRetries++
+            WLog.ev(WLog.LINK, "car-retry", "n" to carNetRetries, "why" to reason)
+            main.removeCallbacks(carNetTick)
+            main.postDelayed(carNetTick, retry)      // ГУ могла ещё не поднять Wi-Fi
+            return
+        }
         if (autoMode && !hintShown) showWifiHint()      // сети машины не будет: пусть человек подключит Wi-Fi сам
     }
 

@@ -69,6 +69,14 @@ const val CAR_RECENT_MS = 60_000L
 /** Сколько система ищет сеть машины и ждёт одобрения; не нашла - подсказка про Wi-Fi вручную. */
 const val CAR_NET_TIMEOUT_MS = 90_000L
 
+/**
+ * HOG CarLink: повторы запроса сети машины после onUnavailable. Одобренный запрос Android 16 (WifiNetworkFactory,
+ * USER_APPROVED_SCAN_RETRY_MAX) сканирует только 3 раза (~30 с) и снимается, если точки ГУ ещё нет в эфире: при запуске
+ * по Bluetooth ГУ часто поднимает Wi-Fi позже. Без повтора автостарт на этом останавливался.
+ */
+const val CAR_NET_RETRY_MAX = 10
+const val CAR_NET_RETRY_MS = 5_000L
+
 /** Через сколько ожидания без accept на RFCOMM `carlife` подсказываем переподключить Bluetooth (ГУ открывает его только при подключении BT). */
 const val BT_HINT_MS = 15_000L
 
@@ -118,6 +126,13 @@ object CarNetPolicy {
      * Отпускать ли сеть. Остановка ожидания, кабель и смерть сервиса - да. Начало и конец беспроводной сессии - нет: сеть
      * машины держит её TCP, а после конца сессии ожидание обычно возобновляется на той же сети.
      */
+    /**
+     * HOG CarLink: через сколько повторить запрос после неудачи номер [attempt] (с 0), или null - не повторять. Ошибка
+     * построения запроса ("error:...") не лечится повтором; после [CAR_NET_RETRY_MAX] - подсказка, как раньше.
+     */
+    fun retryDelayMs(attempt: Int, reason: String): Long? =
+        if (reason.startsWith("error:") || attempt >= CAR_NET_RETRY_MAX) null else CAR_NET_RETRY_MS
+
     fun shouldRelease(event: CarNetEvent): Boolean = when (event) {
         CarNetEvent.AUTO_OFF, CarNetEvent.STOP, CarNetEvent.USB_WINS, CarNetEvent.DESTROY -> true
         CarNetEvent.SESSION_START, CarNetEvent.SESSION_END -> false
