@@ -102,6 +102,7 @@ private val LANGS = listOf(
     AppLocale.SYSTEM to R.string.lang_system,
     "en" to R.string.lang_en,
     "ru" to R.string.lang_ru,
+    "ar" to R.string.lang_ar,
 )
 
 private val THEMES = listOf(

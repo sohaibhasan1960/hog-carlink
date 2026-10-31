@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_stop">إيقاف</string>
+
+    <string name="lang_title">اللغة</string>
+    <string name="lang_system">لغة النظام</string>
+</resources>

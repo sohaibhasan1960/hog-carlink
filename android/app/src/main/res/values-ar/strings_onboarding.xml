@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: خطوات التفعيل بالعربية -->
+    <string name="step_aa_dev_title">تفعيل وضع المطوّر في Android Auto</string>
+    <string-array name="step_aa_dev_list">
+        <item>اضغط «فتح Android Auto»</item>
+        <item>انزل إلى آخر الصفحة</item>
+        <item>اضغط «الإصدار» 10 مرات ثم وافق</item>
+    </string-array>
+    <string name="step_aa_dev_primary">فتح Android Auto</string>
+    <string name="step_aa_dev_short">وضع المطوّر في Android Auto</string>
+
+    <string name="step_aa_unknown_title">السماح بالمصادر غير المعروفة</string>
+    <string-array name="step_aa_unknown_list">
+        <item>اضغط «فتح Android Auto»</item>
+        <item>اضغط ⋮ ثم «إعدادات مطوّر البرامج»</item>
+        <item>انزل إلى «مصادر غير معروفة»</item>
+        <item>ضع علامة في المربع</item>
+    </string-array>
+    <string name="step_aa_unknown_hint">من دونه لا يعرض Android Auto التطبيقات المثبّتة من خارج Google Play.</string>
+    <string name="step_aa_unknown_primary">فتح Android Auto</string>
+    <string name="step_aa_unknown_short">المصادر غير المعروفة</string>
+
+    <string name="step_autostart_title">تشغيل خادم الوحدة الرئيسية</string>
+    <string-array name="step_autostart_list">
+        <item>اضغط «فتح Android Auto»</item>
+        <item>اضغط ⋮ في أعلى الشاشة</item>
+        <item>اختر «بدء خادم الوحدة الرئيسية»</item>
+    </string-array>
+    <string name="step_autostart_hint">يكفي تشغيله مرة واحدة. إن أوقفه أندرويد (بعد إعادة تشغيل الهاتف أو تحديث Android Auto) يظهر لك إشعار من HOG CarLink فيه زر يفتح Android Auto مباشرة.</string>
+    <string name="step_autostart_primary">فتح Android Auto</string>
+    <string name="step_autostart_short">خادم الوحدة الرئيسية</string>
+
+    <string name="step_notif_title">تفعيل الإشعارات</string>
+    <string-array name="step_notif_list">
+        <item>اضغط «سماح» أسفل الشاشة</item>
+        <item>اضغط «سماح» في نافذة أندرويد</item>
+    </string-array>
+    <string name="step_notif_hint">يظهر في الإشعارات حال الاتصال، ولا يوقف أندرويد التطبيق والشاشة مطفأة.</string>
+    <string name="step_notif_short">الإشعارات</string>
+
+    <string name="step_background_title">إلغاء قيود البطارية</string>
+    <string-array name="step_background_list">
+        <item>اضغط «إلغاء قيود البطارية»</item>
+        <item>اختر «بدون قيود»</item>
+        <item>ارجع واضغط «التشغيل التلقائي»</item>
+        <item>ابحث عن HOG CarLink وفعّل المفتاح</item>
+    </string-array>
+    <string name="step_background_primary">إلغاء قيود البطارية</string>
+    <string name="step_background_extra">التشغيل التلقائي</string>
+    <string name="step_background_short">العمل في الخلفية</string>
+
+    <string name="step_mic_title">السماح باستخدام الميكروفون</string>
+    <string-array name="step_mic_list">
+        <item>اضغط «سماح» أسفل الشاشة</item>
+        <item>اختر «أثناء استخدام التطبيق»</item>
+    </string-array>
+    <string name="step_mic_hint">للمكالمات والمساعد الصوتي في السيارة.</string>
+    <string name="step_mic_short">الميكروفون</string>
+
+    <string name="step_bluetooth_title">تشغيل البلوتوث</string>
+    <string-array name="step_bluetooth_list">
+        <item>اضغط «فتح البلوتوث»</item>
+        <item>شغّل البلوتوث</item>
+        <item>اتصل بالسيارة</item>
+    </string-array>
+    <string name="step_bluetooth_hint">المكالمات في Android Auto تمر عبر البلوتوث فقط.</string>
+    <string name="step_bluetooth_primary">فتح البلوتوث</string>
+    <string name="step_bluetooth_short">البلوتوث للمكالمات</string>
+
+    <string name="step_location_title">تشغيل الموقع</string>
+    <string-array name="step_location_list">
+        <item>اضغط «فتح إعدادات الموقع»</item>
+        <item>فعّل «استخدام الموقع الجغرافي»</item>
+    </string-array>
+    <string name="step_location_hint">من دونه تطلب خرائط Google وتطبيقات الملاحة إذن الموقع ولا تعمل.</string>
+    <string name="step_location_primary">فتح إعدادات الموقع</string>
+    <string name="step_location_short">الموقع للخرائط</string>
+
+    <string name="step_first_title">عند أول اتصال بالكيبل</string>
+    <string-array name="step_first_list">
+        <item>افتح قفل الهاتف وصِل الكيبل بالسيارة</item>
+        <item>ضع علامة على «الاستخدام تلقائيًا لملحق USB هذا»</item>
+        <item>اضغط «حسنًا»</item>
+    </string-array>
+    <string name="step_first_hint">إن ظهر على شاشة السيارة زر «启动CarLife» فاضغطه.</string>
+    <string name="step_first_primary">فهمت</string>
+    <string name="step_first_short">أول اتصال</string>
+
+    <string name="onb_already_done">تم بالفعل</string>
+    <string name="onb_skip">تخطٍّ</string>
+    <string name="onb_allow">سماح</string>
+    <string name="onb_later">لاحقًا</string>
+    <string name="onb_back">رجوع</string>
+    <string name="onb_next">التالي</string>
+    <string name="onb_got_it">فهمت</string>
+    <string name="onb_step_progress">الخطوة %1$d من %2$d</string>
+    <string name="onb_done_chip">تم إنجازها</string>
+
+    <string name="onb_checklist_title">فحص الجاهزية</string>
+    <string name="onb_all_ready">كل شيء جاهز للانطلاق</string>
+    <string name="onb_ready_count">جاهز %1$d من %2$d</string>
+    <string name="onb_checklist_hint">اضغط أي بند لفتح خطوته.</string>
+    <string name="onb_done">تم</string>
+    <string name="onb_status_marked">مؤكَّد يدويًا</string>
+    <string name="onb_status_ready">جاهز</string>
+    <string name="onb_status_unmarked">غير مؤكَّد</string>
+    <string name="onb_status_off">غير مفعّل</string>
+    <string name="step_car_title">ما سيارتك؟</string>
+    <string name="step_car_short">السيارة</string>
+    <string name="step_car_body">نضبط الإعدادات التي جرّبها المستخدمون على هذه السيارة. يمكن للخبراء تخطّي هذه الخطوة.</string>
+
+    <string-array name="step_background_honor_list">
+        <item>اضغط «تشغيل التطبيقات»</item>
+        <item>ابحث عن HOG CarLink واجعله «إدارة يدوية»</item>
+        <item>فعّل التشغيل التلقائي والتشغيل الثانوي والتشغيل في الخلفية</item>
+    </string-array>
+    <string name="step_background_extra_honor">تشغيل التطبيقات</string>
+
+    <string name="step_car_wifi_title">شبكة واي فاي السيارة</string>
+    <string name="step_car_wifi_body">أدخل اسم الشبكة وكلمة المرور الظاهرين على شاشة السيارة. ينضم الهاتف إليها وحده في كل مرة تشغّل فيها السيارة، ويبقى الإنترنت على بيانات الجوال.</string>
+    <string name="step_car_wifi_hint">إن سألك أندرويد عن السماح بالاتصال فاضغط «اتصال». يسأل مرة واحدة فقط.</string>
+    <string name="step_car_wifi_primary">حفظ وفحص</string>
+    <string name="step_car_wifi_short">واي فاي السيارة</string>
+    <string name="step_car_wifi_fail">تم الحفظ. شبكة السيارة ليست في المدى الآن، وهذا طبيعي إن كانت السيارة مطفأة: سينضم الهاتف إليها داخل السيارة.</string>
+
+    <string name="step_car_pick_title">اختر سيارتك</string>
+    <string-array name="step_car_pick_list">
+        <item>اضغط «اختيار السيارة»</item>
+        <item>اسمح بـ«الأجهزة المجاورة»</item>
+        <item>اختر سيارتك من القائمة ووافق</item>
+    </string-array>
+    <string name="step_car_pick_hint">حين يتصل الهاتف بالسيارة عبر البلوتوث يبدأ HOG CarLink وحده، دون أي ضغطة.</string>
+    <string name="step_car_pick_primary">اختيار السيارة</string>
+    <string name="step_car_pick_short">سيارتك</string>
+</resources>
