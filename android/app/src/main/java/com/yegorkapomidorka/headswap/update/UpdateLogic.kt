@@ -5,9 +5,10 @@ package com.yegorkapomidorka.headswap.update
  * Релиз: тег vX.Y.Z, файл headswap-X.Y.Z.apk; «последний» определяет сам GitHub (не черновик и не пре-релиз).
  */
 object UpdateLogic {
-    /** HOG CarLink: upstream releases are Headswap (other package/key), so self-update is off. */
-    const val ENABLED = false
-    const val REPO = "YegorkaPomidorka/headswap"
+    /** HOG CarLink: свои релизы (тег v2.6.0-hog.N, файл hog-carlink-<версия>.apk), подписанные своим ключом. */
+    const val ENABLED = true
+    const val REPO = "sohaibhasan1960/hog-carlink"
+    const val APK_PREFIX = "hog-carlink-"
     const val API_LATEST = "https://api.github.com/repos/$REPO/releases/latest"
     /** Запасной путь, если API ответил не 200 (лимит 60 запросов в час на IP): редирект на страницу тега. */
     const val PAGE_LATEST = "https://github.com/$REPO/releases/latest"
@@ -37,7 +38,10 @@ object UpdateLogic {
         return m.groupValues[1].split('.').map { it.toIntOrNull() ?: return null }
     }
 
-    /** remote новее local; недостающие части = 0 (1.2 == 1.2.0), суффикс тестовой сборки не учитывается. */
+    /**
+     * remote новее local; недостающие части = 0 (1.2 == 1.2.0), суффикс тестовой сборки не учитывается.
+     * HOG CarLink: при равной базе сравнивается номер сборки "-hog.N" (нет суффикса = 0): 2.6.0-hog.5 новее 2.6.0-hog.4.
+     */
     fun isNewer(remote: String, local: String): Boolean {
         val r = parseVersion(remote) ?: return false
         val l = parseVersion(local) ?: return false
@@ -46,14 +50,17 @@ object UpdateLogic {
             val b = l.getOrElse(i) { 0 }
             if (a != b) return a > b
         }
-        return false
+        return hogBuild(remote) > hogBuild(local)
     }
+
+    /** "2.6.0-hog.4" -> 4; без суффикса -hog.N - 0. */
+    fun hogBuild(s: String): Int = Regex("""-hog\.(\d+)""").find(s)?.groupValues?.get(1)?.toIntOrNull() ?: 0
 
     fun versionFromTag(tag: String): String = tag.trim().removePrefix("v").removePrefix("V")
 
-    /** APK релиза: headswap-<версия>.apk, иначе единственный .apk среди файлов. */
+    /** APK релиза: hog-carlink-<версия>.apk, иначе единственный .apk среди файлов. */
     fun pickApk(assets: List<Asset>, version: String): Asset? =
-        assets.firstOrNull { it.name.equals("headswap-$version.apk", ignoreCase = true) }
+        assets.firstOrNull { it.name.equals("$APK_PREFIX$version.apk", ignoreCase = true) }
             ?: assets.filter { it.name.endsWith(".apk", ignoreCase = true) }.singleOrNull()
 
     /** digest файла релиза GitHub "sha256:<hex>" -> hex в нижнем регистре; другие алгоритмы - null. */
@@ -67,7 +74,7 @@ object UpdateLogic {
     fun tagFromLocation(location: String?): String? =
         location?.substringAfter("/releases/tag/", "")?.substringBefore('?')?.substringBefore('#')?.takeIf { it.isNotBlank() }
 
-    fun assetUrl(tag: String, version: String) = "https://github.com/$REPO/releases/download/$tag/headswap-$version.apk"
+    fun assetUrl(tag: String, version: String) = "https://github.com/$REPO/releases/download/$tag/$APK_PREFIX$version.apk"
 
     fun tagPage(tag: String) = "https://github.com/$REPO/releases/tag/$tag"
 

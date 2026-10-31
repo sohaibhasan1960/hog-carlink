@@ -34,6 +34,12 @@ class UpdateLogicTest {
         // тестовая сборка 1.1.10-cx5test1 не считает релиз 1.1.10 обновлением, а 1.1.11 - считает
         assertFalse(UpdateLogic.isNewer("1.1.10", "1.1.10-cx5test1"))
         assertTrue(UpdateLogic.isNewer("1.1.11", "1.1.10-cx5test1"))
+        // HOG CarLink: номер сборки -hog.N
+        assertTrue(UpdateLogic.isNewer("2.6.0-hog.5", "2.6.0-hog.4"))
+        assertFalse(UpdateLogic.isNewer("2.6.0-hog.4", "2.6.0-hog.4"))
+        assertFalse(UpdateLogic.isNewer("2.6.0-hog.3", "2.6.0-hog.4"))
+        assertTrue(UpdateLogic.isNewer("2.6.1-hog.1", "2.6.0-hog.9"))
+        assertTrue(UpdateLogic.isNewer("v2.6.0-hog.10", "2.6.0-hog.9"))
     }
 
     @Test
@@ -50,8 +56,8 @@ class UpdateLogicTest {
 
     @Test
     fun picksApkByNameThenSingleApk() {
-        val apk = Asset("headswap-1.1.11.apk", "https://x/a.apk", 3_000_000, "sha256:00")
-        val other = Asset("headswap-1.1.11.apk.sha256", "https://x/a.sha", 64, null)
+        val apk = Asset("hog-carlink-1.1.11.apk", "https://x/a.apk", 3_000_000, "sha256:00")
+        val other = Asset("hog-carlink-1.1.11.apk.sha256", "https://x/a.sha", 64, null)
         assertEquals(apk, UpdateLogic.pickApk(listOf(other, apk), "1.1.11"))
         val renamed = Asset("Headswap.apk", "https://x/h.apk", 3_000_000, null)
         assertEquals(renamed, UpdateLogic.pickApk(listOf(renamed, other), "1.1.11"))
@@ -71,11 +77,11 @@ class UpdateLogicTest {
 
     @Test
     fun tagFromRedirectLocation() {
-        assertEquals("v1.1.11", UpdateLogic.tagFromLocation("https://github.com/YegorkaPomidorka/headswap/releases/tag/v1.1.11"))
-        assertNull(UpdateLogic.tagFromLocation("https://github.com/YegorkaPomidorka/headswap/releases"))
+        assertEquals("v1.1.11", UpdateLogic.tagFromLocation("https://github.com/sohaibhasan1960/hog-carlink/releases/tag/v1.1.11"))
+        assertNull(UpdateLogic.tagFromLocation("https://github.com/sohaibhasan1960/hog-carlink/releases"))
         assertNull(UpdateLogic.tagFromLocation(null))
         assertEquals(
-            "https://github.com/YegorkaPomidorka/headswap/releases/download/v1.1.11/headswap-1.1.11.apk",
+            "https://github.com/sohaibhasan1960/hog-carlink/releases/download/v1.1.11/hog-carlink-1.1.11.apk",
             UpdateLogic.assetUrl("v1.1.11", "1.1.11"),
         )
     }

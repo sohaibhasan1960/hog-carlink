@@ -39,3 +39,6 @@ Thumbs.db
 desktop.ini
 .claude/
 /research/
+
+# HOG CarLink: personal handover notes stay local
+/تسليم_HOG_CarLink.md

@@ -123,7 +123,7 @@ object Updater {
             cleaned = true
             val cur = installedVersion(ctx)
             File(ctx.cacheDir, "update").listFiles()
-                ?.filter { !UpdateLogic.isNewer(it.name.removePrefix("headswap-").removeSuffix(".apk"), cur) }
+                ?.filter { !UpdateLogic.isNewer(it.name.removePrefix(UpdateLogic.APK_PREFIX).removeSuffix(".apk"), cur) }
                 ?.forEach { it.delete() }
         }
         val p = UpdatePrefs(ctx)
@@ -359,7 +359,7 @@ object Updater {
     /** APK в cacheDir/update; уже скачанный и совпавший по размеру и SHA-256 не качаем заново (установку могли отменить). */
     private fun fetchApk(app: Context, rel: UpdateLogic.Release): File {
         val dir = File(app.cacheDir, "update").apply { mkdirs() }
-        val f = File(dir, "headswap-${rel.version}.apk")
+        val f = File(dir, "${UpdateLogic.APK_PREFIX}${rel.version}.apk")
         if (f.isFile && rel.size > 0 && f.length() == rel.size && (rel.sha256 == null || sha256(f) == rel.sha256)) {
             AppLog.i("обновление: ${f.name} уже скачан")
             return f
