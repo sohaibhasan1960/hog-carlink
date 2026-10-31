@@ -213,12 +213,12 @@ class VideoSource(
         c.drawColor(BG)
         drawLogo(c, w / 2, h * 0.34f, minOf(h * 0.36f, w * 0.3f), n / fps.toFloat(), fill)
 
-        // словесный знак: Head белым, swap янтарным
+        // словесный знак HOG CarLink: HOG белым, CarLink янтарным
         text.textAlign = Paint.Align.LEFT
         text.typeface = WORDMARK
         text.textSize = h * 0.085f
-        val head = "Head"
-        val swap = "swap"
+        val head = "HOG "
+        val swap = "CarLink"
         val wHead = text.measureText(head)
         var x = w / 2 - (wHead + text.measureText(swap)) / 2
         val yWord = h * 0.66f
