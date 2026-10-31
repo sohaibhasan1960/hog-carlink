@@ -15,6 +15,7 @@ Changes against upstream tag `v2.6.0` (see `git log v2.6.0..`):
 - 2.6.0-hog.3: restart the car network request when the car appears over Bluetooth or Wait is pressed again; "HOG CarLink" on the start screen
 - 2.6.0-hog.4: HOG logo (icon, notification, head unit start screen), HOG CarLink name in all UI and log/report files, Arabic translation, wireless onboarding (car Wi-Fi and car pick steps)
 - 2.6.0-hog.5: self-update from github.com/sohaibhasan1960/hog-carlink releases (asset hog-carlink-<version>.apk)
+- 2.6.0-hog.6: HOG colors; home screen waits for the car instead of a cable when the car and its Wi-Fi are set
 
 Build: `cd android && ./gradlew assembleRelease`. Needs JDK 17+, Android SDK platform 37,
 `~/.android-keys/carlink-release.properties`, and the AA head unit certs in
