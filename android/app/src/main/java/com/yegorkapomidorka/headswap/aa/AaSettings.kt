@@ -11,6 +11,15 @@ import java.util.concurrent.atomic.AtomicLong
 class AaPrefs(ctx: Context) {
     private val sp: SharedPreferences = ctx.getSharedPreferences("aa", Context.MODE_PRIVATE)
 
+    init {
+        // HOG CarLink: разовая подстройка под ID.6 при обновлении - сохранённые 15 кадров (прежнее «по умолчанию") -> 30
+        if (!sp.getBoolean(HOG_TUNE_1, false)) {
+            val e = sp.edit().putBoolean(HOG_TUNE_1, true)
+            if (sp.getString("fpsSetting", null) == FpsSetting.FPS15.name) e.putString("fpsSetting", FpsSetting.FPS30.name)
+            e.apply()
+        }
+    }
+
     /** jvc (по умолчанию, принят AA 17.7 живьём) или hur. */
     var certSet: String
         get() = sp.getString("certSet", "jvc") ?: "jvc"
@@ -196,6 +205,7 @@ class AaPrefs(ctx: Context) {
     companion object {
         const val DEFAULT_CUSTOM_W = 1920
         const val DEFAULT_CUSTOM_H = 720
+        private const val HOG_TUNE_1 = "hogTune1"
     }
 }
 

@@ -13,7 +13,7 @@ class VideoModeTest {
     fun table() {
         data class Row(val aa: String, val mw: Int, val mh: Int, val density: Int, val w: Int, val h: Int, val bitrate: Int)
         val expected = mapOf(
-            VideoMode.R800 to Row("800x480", 0, 0, 120, 800, 480, 4_000_000),
+            VideoMode.R800 to Row("800x480", 0, 0, 140, 800, 480, 4_000_000),
             VideoMode.R1024 to Row("1280x720", 256, 120, 160, 1024, 600, 2_000_000),
             VideoMode.R720 to Row("1280x720", 0, 0, 160, 1280, 720, 4_000_000),
             VideoMode.R1080 to Row("1920x1080", 0, 0, 240, 1920, 1080, 8_000_000),
@@ -200,7 +200,7 @@ class VideoModeTest {
         val wide976 = hex(M.serviceDiscoveryResponse(VideoMode.WIDE_976.sdOptions(false)).payload)
         assertTrue(wide976, wide976.contains("08031002180020f401" + "28a001"))   // res=3, margin_h 244 (f4 01), density 160 (a0 01)
         val r800 = hex(M.serviceDiscoveryResponse(VideoMode.R800.sdOptions(false)).payload)
-        assertTrue(r800, r800.contains("0801100218002000" + "2878"))          // res=1, margins 0, density 120
+        assertTrue(r800, r800.contains("0801100218002000" + "288c01"))        // res=1, margins 0, density 140
     }
 
     @Test

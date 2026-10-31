@@ -12,7 +12,7 @@ enum class FpsSetting(val titleRes: Int, val subRes: Int, val fixed: Int?) {
     FPS30(R.string.fps_30_title, R.string.fps_30_sub, 30);
 
     companion object {
-        val DEFAULT = FPS15
+        val DEFAULT = FPS30     // HOG CarLink: ID.6 просит 60, на 15 карта дёргается (лог 2026-10-31); апстрим - FPS15
 
         /** По имени из prefs; неизвестное/пустое = по умолчанию. */
         fun parse(key: String?): FpsSetting = values().firstOrNull { it.name == key } ?: DEFAULT

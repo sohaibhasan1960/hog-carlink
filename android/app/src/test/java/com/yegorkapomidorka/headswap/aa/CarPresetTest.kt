@@ -31,7 +31,7 @@ class CarPresetTest {
     fun allPresetsTranscodeAt15Fps() {
         for (p in CarPreset.values()) {
             assertEquals(p.name, true, p.settings.transcode)
-            assertEquals(p.name, FpsSetting.FPS15, p.settings.fps)
+            assertEquals(p.name, FpsSetting.FPS30, p.settings.fps)
         }
     }
 
