@@ -14,7 +14,10 @@ import java.util.Locale
  * и кольцо последних строк для экрана. Подробности (hexdump) идут только в logcat и файл.
  */
 object AppLog {
-    const val TAG = "Headswap"
+    const val TAG = "HOGCarLink"
+
+    /** HOG CarLink: имя файлов лога и архивов (раньше headswap-; старые файлы LogShare тоже подбирает). */
+    const val LOG_PREFIX = "hogcarlink-"
     private const val RING = 200
 
     private val ring = ArrayDeque<String>()
@@ -29,7 +32,7 @@ object AppLog {
         val dir = ctx.getExternalFilesDir(null) ?: ctx.filesDir
         dir.mkdirs()
         val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
-        val f = File(dir, "headswap-$stamp.log")
+        val f = File(dir, "$LOG_PREFIX$stamp.log")
         try {
             out = FileOutputStream(f, true)
             file = f

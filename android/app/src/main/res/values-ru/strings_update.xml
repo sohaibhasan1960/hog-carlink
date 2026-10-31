@@ -16,12 +16,12 @@
     <string name="upd_banner_sub">Нажмите, чтобы обновить, настройки сохранятся</string>
     <string name="upd_later">Позже</string>
 
-    <string name="upd_dialog_title">Headswap %1$s</string>
+    <string name="upd_dialog_title">HOG CarLink %1$s</string>
     <string name="upd_dialog_size">Загрузка: %1$s. Обновление встанет поверх текущей версии, настройки сохранятся.</string>
     <string name="upd_dialog_no_size">Обновление встанет поверх текущей версии, настройки сохранятся.</string>
     <string name="upd_dialog_bridge">Сейчас подключена машина: обновление оборвёт связь.</string>
     <string name="upd_unknown_title">Разрешите установку обновлений</string>
-    <string name="upd_unknown_message">Откроются настройки Android: включите для Headswap «Разрешить установку из этого источника», вернитесь и нажмите «Обновить» ещё раз.</string>
+    <string name="upd_unknown_message">Откроются настройки Android: включите для HOG CarLink «Разрешить установку из этого источника», вернитесь и нажмите «Обновить» ещё раз.</string>
 
     <string name="upd_err_check">Не удалось проверить: %1$s</string>
     <string name="upd_err_download">Не удалось скачать обновление: %1$s</string>
@@ -30,7 +30,7 @@
     <string name="upd_err_no_apk">в релизе %1$s нет APK</string>
     <string name="upd_err_incomplete">файл скачался не полностью</string>
     <string name="upd_err_checksum">контрольная сумма не совпала</string>
-    <string name="upd_err_not_apk">файл не является APK Headswap</string>
+    <string name="upd_err_not_apk">файл не является APK HOG CarLink</string>
     <string name="upd_err_not_newer">версия на GitHub (%1$s) не новее установленной (%2$s)</string>
     <string name="upd_err_conflict">конфликт с установленным приложением (подписано другим ключом?)</string>
 </resources>

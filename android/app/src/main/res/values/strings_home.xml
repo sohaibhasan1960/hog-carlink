@@ -78,12 +78,12 @@
     <string name="mock_menu_help">Help &amp; feedback</string>
     <string name="mock_menu_start">Start head unit server</string>
     <string name="mock_menu_exit">Exit developer mode</string>
-    <string name="mock_notif_now">Headswap · now</string>
+    <string name="mock_notif_now">HOG CarLink · now</string>
     <string name="mock_bg_activity">Battery saver</string>
     <string name="mock_bg_no_limits">No restrictions</string>
     <string name="mock_bg_no_limits_sub">Battery saver will not limit the app\'s background work</string>
     <string name="mock_bg_autostart">Autostart</string>
-    <string name="mock_mic_question">Allow Headswap to record audio?</string>
+    <string name="mock_mic_question">Allow HOG CarLink to record audio?</string>
     <string name="mock_mic_while_using">While using the app</string>
     <string name="mock_mic_once">Only this time</string>
     <string name="mock_mic_deny">Don\'t allow</string>
@@ -92,7 +92,7 @@
     <string name="mock_bt_connected">Connected</string>
     <string name="mock_loc_use">Use location</string>
     <string name="mock_loc_use_sub">Apps with this permission can access your location.</string>
-    <string name="mock_usb_question">Open Headswap to handle the USB accessory?</string>
+    <string name="mock_usb_question">Open HOG CarLink to handle the USB accessory?</string>
     <string name="mock_usb_default">Use by default for this USB accessory</string>
     <string name="mock_cancel">Cancel</string>
     <string name="mock_ok">OK</string>

@@ -449,9 +449,9 @@ object LogDiag {
                 if (myVer != null && fv != null && cmpVer(myVer, fv) >= 0) continue
                 // без шагов в правиле сам совет становится вторым шагом, иначе экран показал бы только «обновитесь»
                 if (steps.isEmpty()) steps = listOf(Step(advice, null))
-                steps = listOf(Step(if (en) "Update Headswap to $fixed or newer" else "Обновите Headswap до $fixed или новее", "update")) + steps
-                advice = (if (en) "Update Headswap to $fixed or newer (latest ${rules.latest}): this is fixed there. "
-                else "Обновите Headswap до $fixed или новее (последняя ${rules.latest}): там это исправлено. ") + advice
+                steps = listOf(Step(if (en) "Update HOG CarLink to $fixed or newer" else "Обновите HOG CarLink до $fixed или новее", "update")) + steps
+                advice = (if (en) "Update HOG CarLink to $fixed or newer (latest ${rules.latest}): this is fixed there. "
+                else "Обновите HOG CarLink до $fixed или новее (последняя ${rules.latest}): там это исправлено. ") + advice
             }
             val evidence = r.evidence.mapNotNull { k ->
                 found[k]?.takeIf { it.n > 0 }?.let { e -> "${e.first}" + if (e.n > 1) "  (×${e.n})" else "" }

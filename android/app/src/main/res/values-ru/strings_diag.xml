@@ -36,7 +36,7 @@
     <string name="diag_none_title">Причина не найдена</string>
     <string name="diag_none_text">По логу причину определить не удалось. Отправьте лог разработчикам — разберёмся и добавим подсказку.</string>
 
-    <string name="diag_old_version">Стоит обновить Headswap: многое уже исправлено.</string>
+    <string name="diag_old_version">Стоит обновить HOG CarLink: многое уже исправлено.</string>
     <string name="diag_old_update">Обновить</string>
 
     <string name="diag_act_open_aa">Открыть Android Auto</string>

@@ -85,7 +85,7 @@ object LogShare {
 
     /** Файлы headswap-*.log, новые первыми. */
     fun logFiles(ctx: Context): List<File> =
-        logDir(ctx).listFiles { f -> f.name.startsWith("headswap-") && f.name.endsWith(".log") }
+        logDir(ctx).listFiles { f -> (f.name.startsWith(AppLog.LOG_PREFIX) || f.name.startsWith("headswap-")) && f.name.endsWith(".log") }
             ?.sortedByDescending { it.name } ?: emptyList()
 
     fun uriFor(f: File): Uri = Uri.parse("content://$AUTHORITY/${Uri.encode(f.name)}")
@@ -159,7 +159,7 @@ object LogShare {
         val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
         val dir = reportDir(ctx)
         dir.listFiles()?.forEach { it.delete() }
-        val out = File(dir, "headswap-$stamp.zip")
+        val out = File(dir, "${AppLog.LOG_PREFIX}$stamp.zip")
         ZipOutputStream(out.outputStream().buffered()).use { z ->
             z.putNextEntry(ZipEntry("device.txt"))
             z.write(deviceInfo(ctx).toByteArray(Charsets.UTF_8))
@@ -222,7 +222,7 @@ object LogShare {
             "?"
         }
         return buildString {
-            appendLine("Headswap $ver")
+            appendLine("HOG CarLink $ver")
             appendLine("Время: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(Date())}")
             appendLine("Устройство: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT}), ${Build.DISPLAY}")
             appendLine("Аптайм: ${SystemClock.elapsedRealtime() / 1000} с")

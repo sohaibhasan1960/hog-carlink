@@ -34,7 +34,7 @@
     <string name="diag_none_title">Cause not found</string>
     <string name="diag_none_text">The log did not show the cause. Send the log to the developers — we will look into it and add a hint.</string>
 
-    <string name="diag_old_version">Worth updating Headswap: a lot has been fixed already.</string>
+    <string name="diag_old_version">Worth updating HOG CarLink: a lot has been fixed already.</string>
     <string name="diag_old_update">Update</string>
 
     <string name="diag_act_open_aa">Open Android Auto</string>

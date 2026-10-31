@@ -76,12 +76,12 @@
     <string name="mock_menu_help">Справка/отзыв</string>
     <string name="mock_menu_start">Вкл. сервер головного устр-ва</string>
     <string name="mock_menu_exit">Выйти из режима разработчика</string>
-    <string name="mock_notif_now">Headswap · сейчас</string>
+    <string name="mock_notif_now">HOG CarLink · сейчас</string>
     <string name="mock_bg_activity">Контроль активности</string>
     <string name="mock_bg_no_limits">Нет ограничений</string>
     <string name="mock_bg_no_limits_sub">Контроль активности не будет ограничивать работу приложений</string>
     <string name="mock_bg_autostart">Автозапуск</string>
-    <string name="mock_mic_question">Разрешить приложению Headswap записывать аудио?</string>
+    <string name="mock_mic_question">Разрешить приложению HOG CarLink записывать аудио?</string>
     <string name="mock_mic_while_using">При использовании приложения</string>
     <string name="mock_mic_once">Только в этот раз</string>
     <string name="mock_mic_deny">Запретить</string>
@@ -89,7 +89,7 @@
     <string name="mock_bt_connected">Подключено</string>
     <string name="mock_loc_use">Включить геолокацию</string>
     <string name="mock_loc_use_sub">Приложения с этим разрешением могут получать доступ к данным о вашем местоположении.</string>
-    <string name="mock_usb_question">Открыть «Headswap» для работы с USB-аксессуаром?</string>
+    <string name="mock_usb_question">Открыть «HOG CarLink» для работы с USB-аксессуаром?</string>
     <string name="mock_usb_default">Использовать по умолчанию</string>
     <string name="mock_cancel">Отмена</string>
     <string name="mock_ok">ОК</string>

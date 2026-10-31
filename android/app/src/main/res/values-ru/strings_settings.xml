@@ -11,7 +11,7 @@
     <string name="theme_dark">Тёмная</string>
 
     <string name="set_sound">Звук</string>
-    <string name="set_usb_audio_title">Звук через Headswap</string>
+    <string name="set_usb_audio_title">Звук через HOG CarLink</string>
     <string name="set_usb_audio_sub">В динамики машины по кабелю или Wi-Fi. Выключено — по Bluetooth</string>
 
     <string name="eq_title">Эквалайзер</string>
@@ -29,8 +29,8 @@
     <string name="eq_hz">%1$s Гц</string>
     <string name="eq_khz">%1$s кГц</string>
     <string name="eq_note">Только музыка: навигационные подсказки и голос не обрабатываются. Работает по кабелю и по Wi-Fi, применяется сразу.</string>
-    <string name="eq_usb_only">Работает только при звуке через Headswap, сейчас звук идёт по Bluetooth</string>
-    <string name="eq_sum_usb_only">Работает только при звуке через Headswap</string>
+    <string name="eq_usb_only">Работает только при звуке через HOG CarLink, сейчас звук идёт по Bluetooth</string>
+    <string name="eq_sum_usb_only">Работает только при звуке через HOG CarLink</string>
     <string name="eq_sum">эквалайзер: %1$s</string>
 
     <string name="set_video">Видео</string>
@@ -90,7 +90,7 @@
     <string name="set_sum_apps">Найдено: %1$d</string>
     <string name="apps_warn_banner">Видео — только на стоянке. На ходу смотрите на дорогу: используете на свой страх и риск.</string>
     <string name="apps_warn_title">Видео и движение</string>
-    <string name="apps_warn_text">Headswap не блокирует видео в движении. Водитель отвечает за безопасность сам: не смотрите видео за рулём, включайте его только на стоянке.</string>
+    <string name="apps_warn_text">HOG CarLink не блокирует видео в движении. Водитель отвечает за безопасность сам: не смотрите видео за рулём, включайте его только на стоянке.</string>
     <string name="apps_warn_ok">Понятно</string>
     <string name="apps_installed_title">Установлено на телефоне</string>
     <string name="apps_installed_note">Не из Google Play — видно в Android Auto только с «Неизвестными источниками»</string>
@@ -110,7 +110,7 @@
     <string name="set_sum_appearance">Язык: %1$s · тема: %2$s</string>
     <string name="set_sum_mic">микрофон: %1$s</string>
     <string name="set_sum_headunit">Сертификат %1$s</string>
-    <string name="set_footer">Headswap %1$s</string>
+    <string name="set_footer">HOG CarLink %1$s · на основе Headswap (GPL-3.0)</string>
 
     <!-- Video modes (VideoMode) -->
     <string name="video_r800_title">800×480</string>
@@ -187,12 +187,12 @@
     <string name="wl_report">Отправить отчёт о связи по воздуху</string>
     <string name="wl_car_line">Машина: %1$s</string>
     <string name="wl_car_none">не выбрана</string>
-    <string name="wl_car_note">Когда телефон подключится к этой машине по Bluetooth, Headswap сам начнёт ждать её по Wi-Fi</string>
+    <string name="wl_car_note">Когда телефон подключится к этой машине по Bluetooth, HOG CarLink сам начнёт ждать её по Wi-Fi</string>
     <string name="wl_car_pick">Выбрать машину</string>
     <string name="wl_car_forget">Забыть машину</string>
     <string name="wl_car_no_permission">Без разрешения “Устройства поблизости” события Bluetooth от машины не доходят</string>
     <string name="wl_car_unavailable">Этот телефон не умеет привязывать машину (нет companion device setup)</string>
-    <string name="wl_cw_note">Если телефон держится за другую сеть Wi-Fi (например, домашнюю), Headswap сам войдёт в точку доступа машины: интернет остаётся на основной сети. Введите имя и пароль, которые показывает ГУ.</string>
+    <string name="wl_cw_note">Если телефон держится за другую сеть Wi-Fi (например, домашнюю), HOG CarLink сам войдёт в точку доступа машины: интернет остаётся на основной сети. Введите имя и пароль, которые показывает ГУ.</string>
     <string name="wl_cw_line">Wi-Fi машины: %1$s</string>
     <string name="wl_cw_none">не задан</string>
     <string name="wl_cw_set">задан: %1$s</string>

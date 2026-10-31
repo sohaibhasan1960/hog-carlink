@@ -3,7 +3,7 @@
 
 Запуск:  python -X utf8 tools/logdigest.py <zip|папка|файл.log> [--json]
 
-Вход: zip из приложения (device.txt + logs/headswap-*.log или probe-*.log, иногда
+Вход: zip из приложения (device.txt + logs/headswap-*.log (HOG CarLink: hogcarlink-*.log) или probe-*.log, иногда
 logcat-*.txt), папка с логами, снятыми через adb, или отдельный лог. Только stdlib.
 Каждый раздел переживает отсутствие данных и пишет «нет данных».
 """
@@ -465,8 +465,8 @@ def parse_device(text):
                 d["settings"][k.strip()] = v.strip()
             continue
         section = "settings" if line.startswith("Настройки моста") else None
-        if line.startswith("Headswap "):
-            d["version"] = line[len("Headswap "):].strip()
+        if line.startswith("Headswap ") or line.startswith("HOG CarLink "):      # HOG CarLink: свой заголовок
+            d["version"] = line.split(" ", 2)[-1].strip() if line.startswith("HOG") else line[len("Headswap "):].strip()
         elif ":" in line:
             k, v = line.split(":", 1)
             k, v = k.strip(), v.strip()

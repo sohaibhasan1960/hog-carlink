@@ -11,7 +11,7 @@
     <string name="theme_dark">Dark</string>
 
     <string name="set_sound">Sound</string>
-    <string name="set_usb_audio_title">Sound through Headswap</string>
+    <string name="set_usb_audio_title">Sound through HOG CarLink</string>
     <string name="set_usb_audio_sub">To the car speakers over cable or Wi-Fi. Off: over Bluetooth</string>
 
     <string name="eq_title">Equalizer</string>
@@ -29,8 +29,8 @@
     <string name="eq_hz">%1$s Hz</string>
     <string name="eq_khz">%1$s kHz</string>
     <string name="eq_note">Music only: navigation prompts and voice are not processed. Works over cable and Wi-Fi, applies instantly.</string>
-    <string name="eq_usb_only">Works only with sound through Headswap; sound now goes over Bluetooth</string>
-    <string name="eq_sum_usb_only">Works only with sound through Headswap</string>
+    <string name="eq_usb_only">Works only with sound through HOG CarLink; sound now goes over Bluetooth</string>
+    <string name="eq_sum_usb_only">Works only with sound through HOG CarLink</string>
     <string name="eq_sum">equalizer: %1$s</string>
 
     <string name="set_video">Video</string>
@@ -90,7 +90,7 @@
     <string name="set_sum_apps">Found: %1$d</string>
     <string name="apps_warn_banner">Video is for parked use only. While driving, watch the road: use at your own risk.</string>
     <string name="apps_warn_title">Video and driving</string>
-    <string name="apps_warn_text">Headswap does not block video while the car is moving. The driver is responsible for safety: do not watch video while driving, use it only when parked.</string>
+    <string name="apps_warn_text">HOG CarLink does not block video while the car is moving. The driver is responsible for safety: do not watch video while driving, use it only when parked.</string>
     <string name="apps_warn_ok">Got it</string>
     <string name="apps_installed_title">Installed on this phone</string>
     <string name="apps_installed_note">Not from Google Play — shown in Android Auto only with “Unknown sources” enabled</string>
@@ -110,7 +110,7 @@
     <string name="set_sum_appearance">Language: %1$s · theme: %2$s</string>
     <string name="set_sum_mic">microphone: %1$s</string>
     <string name="set_sum_headunit">Certificate %1$s</string>
-    <string name="set_footer">Headswap %1$s</string>
+    <string name="set_footer">HOG CarLink %1$s · based on Headswap (GPL-3.0)</string>
 
     <!-- Video modes (VideoMode) -->
     <string name="video_r800_title">800×480</string>
@@ -187,12 +187,12 @@
     <string name="wl_report">Send wireless report</string>
     <string name="wl_car_line">Car: %1$s</string>
     <string name="wl_car_none">not selected</string>
-    <string name="wl_car_note">When the phone connects to this car over Bluetooth, Headswap starts waiting for it over Wi-Fi by itself</string>
+    <string name="wl_car_note">When the phone connects to this car over Bluetooth, HOG CarLink starts waiting for it over Wi-Fi by itself</string>
     <string name="wl_car_pick">Select car</string>
     <string name="wl_car_forget">Forget car</string>
     <string name="wl_car_no_permission">Without the “Nearby devices” permission Bluetooth events from the car are not delivered</string>
     <string name="wl_car_unavailable">This phone cannot pair a car (no companion device setup)</string>
-    <string name="wl_cw_note">If the phone stays on another Wi-Fi (for example at home), Headswap can join the car hotspot by itself: the internet stays on your main network. Enter the name and password the head unit shows.</string>
+    <string name="wl_cw_note">If the phone stays on another Wi-Fi (for example at home), HOG CarLink can join the car hotspot by itself: the internet stays on your main network. Enter the name and password the head unit shows.</string>
     <string name="wl_cw_line">Car Wi-Fi: %1$s</string>
     <string name="wl_cw_none">not set</string>
     <string name="wl_cw_set">set: %1$s</string>

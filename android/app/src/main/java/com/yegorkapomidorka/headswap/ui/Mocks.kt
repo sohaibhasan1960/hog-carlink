@@ -46,7 +46,7 @@ object Mocks {
         StepId.NOTIF -> ctx.vbox(10).apply { addView(ctx.shade(), lp(MATCH, WRAP)) }
         StepId.BACKGROUND -> ctx.vbox(10).apply {
             addView(ctx.activityControl(), lp(MATCH, WRAP))
-            if (Readiness.isXiaomi()) addView(ctx.autostartList(), lp(MATCH, WRAP))
+            if (Readiness.isXiaomi() || Readiness.isHonor()) addView(ctx.autostartList(), lp(MATCH, WRAP))
         }
         StepId.MIC -> ctx.vbox(10).apply { addView(ctx.micDialog(), lp(MATCH, WRAP)) }
         StepId.BLUETOOTH -> ctx.vbox(8).apply { ctx.bluetoothRows().forEach { addView(it, lp(MATCH, WRAP)) } }
@@ -54,6 +54,9 @@ object Mocks {
         /** Шаг выбора машины рисует свой список (OnboardingScreen.renderCar), схемы нет. */
         StepId.CAR -> ctx.vbox()
         StepId.FIRST -> ctx.vbox(10).apply { addView(ctx.usbDialog(), lp(MATCH, WRAP)) }
+        /** Шаг Wi-Fi машины рисует свою форму (OnboardingScreen.renderCarWifi). */
+        StepId.CAR_WIFI -> ctx.vbox()
+        StepId.CAR_PICK -> ctx.vbox(8).apply { ctx.bluetoothRows().forEach { addView(it, lp(MATCH, WRAP)) } }
     }
 
     // --- окна Android Auto ---
@@ -286,7 +289,7 @@ object Mocks {
                         },
                         lp(dp(32), dp(32)),
                     )
-                    addView(text("Headswap", 15f, 700, clr(R.color.onpric)), lp(0, WRAP, 1f))
+                    addView(text("HOG CarLink", 15f, 700, clr(R.color.onpric)), lp(0, WRAP, 1f))
                     addView(styledSwitch().apply { isChecked = true })
                 },
                 lpDp(MATCH, 56),

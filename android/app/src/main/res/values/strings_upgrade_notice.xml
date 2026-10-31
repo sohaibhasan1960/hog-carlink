@@ -2,7 +2,7 @@
 <!-- One-time window after updating to 2.6.0: accessibility service removed, head unit server is started by hand -->
 <resources>
     <string name="upg_title">No more accessibility service!!!</string>
-    <string name="upg_lead">Headswap no longer asks for accessibility and no longer restarts the head unit server automatically.</string>
+    <string name="upg_lead">HOG CarLink no longer asks for accessibility and no longer restarts the head unit server automatically.</string>
     <string name="upg_pros">Pros</string>
     <string name="upg_pro_1">No need to unlock the phone to connect</string>
     <string name="upg_pro_2">No need to allow risky accessibility settings</string>
