@@ -8,6 +8,8 @@ import com.yegorkapomidorka.headswap.R
 import com.yegorkapomidorka.headswap.aa.AaCreds
 import com.yegorkapomidorka.headswap.aa.AaPrefs
 import com.yegorkapomidorka.headswap.aa.AaState
+import com.yegorkapomidorka.headswap.link.car.CarProfile
+import com.yegorkapomidorka.headswap.link.car.CarWifi
 
 /** Сводка состояния для главного экрана и уведомления. Чистая логика без Android: считается из Inputs. */
 enum class Phase { OFF, WAITING, CONNECTED, RECONNECTING, PARKED, ERROR }
@@ -63,6 +65,8 @@ class Inputs(
     val versionHangs: Int = 0,
     /** Хоть раз установилась настоящая AA-сессия: сервер ГУ работал. Без этого «не отвечает» не показываем (новичку - «Запустите сервер ГУ»). */
     val serverWorked: Boolean = false,
+    /** HOG CarLink: машина выбрана и её Wi-Fi задан: ждём не кабель, а включения машины (автостарт по Bluetooth). */
+    val carAuto: Boolean = false,
 )
 
 object HomeLogic {
@@ -159,11 +163,11 @@ object HomeLogic {
             )
             i.ended -> parkedState()
             i.serverUp -> state(
-                Phase.WAITING, Tone.PRI, HeroIcon.PLUG, UiText.res(R.string.home_title_ready),
-                UiText.res(R.string.home_sub_ready),
+                Phase.WAITING, Tone.PRI, if (i.carAuto) HeroIcon.CAR_WIFI else HeroIcon.PLUG, UiText.res(R.string.home_title_ready),
+                UiText.res(if (i.carAuto) R.string.home_sub_ready_auto else R.string.home_sub_ready),
                 listOf(
                     StageState.DONE to UiText.res(R.string.home_stage_started),
-                    StageState.ACTIVE to UiText.res(R.string.home_stage_wait_cable),
+                    StageState.ACTIVE to UiText.res(if (i.carAuto) R.string.home_stage_wait_car else R.string.home_stage_wait_cable),
                     StageState.PEND to NONE, StageState.PEND to NONE, StageState.PEND to NONE,
                 ),
                 outline = OutlineAction.OPEN_AA,
@@ -298,6 +302,7 @@ object HeadswapStatus {
             refusedForMs = AaState.serverFailures.refusedForMs,
             versionHangs = AaState.serverFailures.versionHangs,
             serverWorked = serverWorked,
+            carAuto = CarProfile(ctx).isSet && CarWifi(ctx).isSet,
         )
     }
 

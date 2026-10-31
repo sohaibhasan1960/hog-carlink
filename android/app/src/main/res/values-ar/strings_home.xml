@@ -91,4 +91,6 @@
     <string name="mock_ok">حسنًا</string>
 
     <string name="home_wireless">الاتصال اللاسلكي: %1$s</string>
+    <string name="home_sub_ready_auto">شغّل السيارة: ينضم الهاتف إلى شبكتها ويفتح Android Auto وحده.</string>
+    <string name="home_stage_wait_car">في انتظار السيارة</string>
 </resources>
