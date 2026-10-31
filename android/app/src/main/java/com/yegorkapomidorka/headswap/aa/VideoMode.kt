@@ -96,6 +96,17 @@ enum class VideoMode(
     R720(R.string.video_r720_title, R.string.video_r720_sub, "1280x720", 0, 0, 160, 1280, 720, 4_000_000),
     R1080(R.string.video_r1080_title, R.string.video_r1080_sub, "1920x1080", 0, 0, 240, 1920, 1080, 8_000_000),
     R1440(R.string.video_r1440_title, R.string.video_r1440_sub, "2560x1440", 0, 0, 320, 2560, 1440, 12_000_000),
+    /**
+     * HOG CarLink: окно CarLife на VW ID.6 ≈ 26,5×14 см (1,86:1), а ГУ просит 800x480 (1,67:1) и растягивает кадр по ширине.
+     * AA рисует 1280x720 с полями 32 (область 1280x688 = 1,86:1), транскодер сжимает её в 800x480: после растяжения ГУ пропорции верные.
+     * density 224: ширина интерфейса 914 dp, как у R800 со 140.
+     */
+    ID6(R.string.video_id6_title, R.string.video_id6_sub, "1280x720", 0, 32, 224, 800, 480, 4_000_000),
+    /**
+     * HOG CarLink: то же окно, но ГУ отдаётся кадр 1280x688 вместо запрошенных 800x480 - проба резкости. Если ГУ не шлёт START
+     * или закрывает соединение, сессия сама переходит на [ID6] и запоминает это (CarLifeSession, проба HD).
+     */
+    ID6_HD(R.string.video_id6_hd_title, R.string.video_id6_hd_sub, "1280x720", 0, 32, 224, 1280, 688, 5_000_000),
     WIDE(R.string.video_wide_title, R.string.video_wide_sub, "1280x720", 0, 240, 160, 1280, 480, 4_000_000),
     /** 1728×648 - нативный экран Desay SV G6S (Мазда): из кадра AA 1920×1080 вырезается центр, поля по обеим осям. */
     WIDE_MID(R.string.video_wide_mid_title, R.string.video_wide_mid_sub, "1920x1080", 192, 432, 160, 1728, 648, 5_000_000),
@@ -130,7 +141,10 @@ enum class VideoMode(
     }
 
     companion object {
-        val DEFAULT = R800      // HOG CarLink: ГУ ID.6 просит 800x480 (лог 2026-10-30); апстрим - R720
+        val DEFAULT = ID6_HD    // HOG CarLink: ГУ ID.6 просит 800x480 (лог 2026-10-30), пробуем 1280x688 с откатом на ID6; апстрим - R720
+
+        /** Режим, на который сессия откатывается, если ГУ не приняла пробу HD; null = режим не проба. */
+        fun hdFallback(mode: VideoGeometry): VideoMode? = if (mode == ID6_HD) ID6 else null
 
         /** По имени из prefs; неизвестное/пустое = по умолчанию. */
         fun parse(key: String?): VideoMode = values().firstOrNull { it.name == key } ?: DEFAULT

@@ -17,6 +17,7 @@ Changes against upstream tag `v2.6.0` (see `git log v2.6.0..`):
 - 2.6.0-hog.5: self-update from github.com/sohaibhasan1960/hog-carlink releases (asset hog-carlink-<version>.apk)
 - 2.6.0-hog.6: HOG colors; home screen waits for the car instead of a cable when the car and its Wi-Fi are set
 - 2.6.0-hog.7: map video on the ID.6 - 30 fps by default (one-time switch from saved 15), Android Auto UI density 140 at 800x480
+- 2.6.0-hog.8: VideoMode ID6 (AA 1280x720 with 32 px vertical margins -> 1280x688 area, squeezed to 800x480 so the ID.6 window shows it at 1.86:1) and ID6_HD (same area sent as 1280x688; CarLifeSession probes it and falls back to ID6 if the head unit sends no START in 8 s, repeats INIT or closes the socket, remembering the fallback in prefs); AA per-frame log lines sampled (20 first, then every 300th) so reports cover whole trips; head-unit banner texts localized (strings_banner.xml); one-time prefs migration R800 -> ID6_HD; note: CarSettings() and therefore every CarPreset without an explicit mode now default to ID6_HD
 
 Build: `cd android && ./gradlew assembleRelease`. Needs JDK 17+, Android SDK platform 37,
 `~/.android-keys/carlink-release.properties`, and the AA head unit certs in

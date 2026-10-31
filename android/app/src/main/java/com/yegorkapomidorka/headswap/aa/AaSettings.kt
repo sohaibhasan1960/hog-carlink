@@ -18,6 +18,12 @@ class AaPrefs(ctx: Context) {
             if (sp.getString("fpsSetting", null) == FpsSetting.FPS15.name) e.putString("fpsSetting", FpsSetting.FPS30.name)
             e.apply()
         }
+        // HOG CarLink hog.8: сохранённый R800 (прежнее «по умолчанию») -> проба ID6_HD; откат на ID6 пишет сама сессия
+        if (!sp.getBoolean(HOG_TUNE_2, false)) {
+            val e = sp.edit().putBoolean(HOG_TUNE_2, true)
+            if (sp.getString("videoMode", null) == VideoMode.R800.name) e.putString("videoMode", VideoMode.ID6_HD.name)
+            e.apply()
+        }
     }
 
     /** jvc (по умолчанию, принят AA 17.7 живьём) или hur. */
@@ -206,6 +212,7 @@ class AaPrefs(ctx: Context) {
         const val DEFAULT_CUSTOM_W = 1920
         const val DEFAULT_CUSTOM_H = 720
         private const val HOG_TUNE_1 = "hogTune1"
+        private const val HOG_TUNE_2 = "hogTune2"
     }
 }
 

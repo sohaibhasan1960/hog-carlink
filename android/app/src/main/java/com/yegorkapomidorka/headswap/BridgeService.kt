@@ -162,6 +162,10 @@ class BridgeService : Service() {
         super.onCreate()
         alive = true
         AppLog.init(this)
+        AaBridgeCore.localizeTexts(
+            getString(R.string.banner_connecting), getString(R.string.banner_start_server),
+            getString(R.string.banner_wait_frame), getString(R.string.banner_aa_lost),
+        )
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(CHANNEL, getString(R.string.notif_channel_bridge), NotificationManager.IMPORTANCE_LOW))
         registerReceiver(detachReceiver, IntentFilter(UsbManager.ACTION_USB_ACCESSORY_DETACHED), Context.RECEIVER_EXPORTED)
@@ -855,7 +859,11 @@ class BridgeService : Service() {
         stopRequested = false
 
         val sref = arrayOfNulls<CarLifeSession>(1)
-        val s = CarLifeSession(transport, cfg, h.core, PhoneThermal(this), onHuSize = { w, hh -> aaPrefs.saveHuSize(w, hh) }) { reason -> main.post { onSessionClosed(sref[0]!!, reason) } }
+        val s = CarLifeSession(
+            transport, cfg, h.core, PhoneThermal(this), onHuSize = { w, hh -> aaPrefs.saveHuSize(w, hh) },
+            // HOG CarLink: ГУ не приняла пробу 1280x688 - запоминаем режим-откат, чтобы проба не повторялась каждую поездку
+            onVideoFallback = { m -> aaPrefs.videoMode = m },
+        ) { reason -> main.post { onSessionClosed(sref[0]!!, reason) } }
         sref[0] = s
         session = s
         s.start()

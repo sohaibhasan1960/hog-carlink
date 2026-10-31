@@ -432,7 +432,7 @@ class AapSession(
     // одну нить: wrap и write строго атомарно, иначе запись TLS с номером N может уйти после N+1
     // (или не уйти вовсе), и телефон рвёт TLS. До handshake пишет сама нить сессии напрямую.
     private sealed interface Job
-    private class MsgJob(val out: AapOut, val media: Boolean, val note: String) : Job
+    private class MsgJob(val out: AapOut, val media: Boolean, val note: String, val quiet: Boolean = false) : Job
     private object TlsFlushJob : Job
     private class MarkerJob(val latch: CountDownLatch) : Job
     private object PoisonJob : Job
@@ -460,7 +460,7 @@ class AapSession(
                         }
                     }
                     is MsgJob -> {
-                        logMsg("TX", job.out.chan, job.out.type, job.out.payload, job.media, job.note)
+                        if (!job.quiet) logMsg("TX", job.out.chan, job.out.type, job.out.payload, job.media, job.note)
                         val plaintext = F.typed(job.out.type, job.out.payload)
                         for (fr in F.splitMessage(plaintext, job.out.chan, job.out.type)) {
                             val record = tls.encrypt(fr.chunk)
@@ -483,12 +483,25 @@ class AapSession(
     }
 
     /** Ставит сообщение в исходящую очередь (никогда не пишет в сокет из вызывающей нити). */
-    private fun send(out: AapOut, media: Boolean = false, note: String = "") {
+    private fun send(out: AapOut, media: Boolean = false, note: String = "", quiet: Boolean = false) {
         if (!writerActive) {
             if (fatal) return                       // writer умер: сессия уже закрывается
             throw IllegalStateException("writer не запущен")
         }
-        outQueue.offer(MsgJob(out, media, note))
+        outQueue.offer(MsgJob(out, media, note, quiet))
+    }
+
+    /**
+     * HOG CarLink: кадры видео/звука и их ACK в лог - первые [MEDIA_LOG_FIRST] на канал, дальше каждый [MEDIA_LOG_EVERY]-й
+     * (~10 с видео). Иначе 60 строк/с съедают 4 МиБ отчёта за 10 минут, и обрывы в начале поездки в отчёт не попадают.
+     * Только нить чтения.
+     */
+    private val mediaLogged = HashMap<Int, Int>()
+
+    private fun logMediaSample(chan: Int): Boolean {
+        val n = (mediaLogged[chan] ?: 0) + 1
+        mediaLogged[chan] = n
+        return n <= MEDIA_LOG_FIRST || n % MEDIA_LOG_EVERY == 0
     }
 
     private fun flushTls() {
@@ -757,9 +770,10 @@ class AapSession(
             audioSink?.onAudioData(chan, body, ptsUs)
         }
 
-        logMsg("RX", chan, type, body, media = true, note = note, text = "")
+        val sampled = !isData || logMediaSample(chan)
+        if (sampled) logMsg("RX", chan, type, body, media = true, note = note, text = "")
         // Видео подтверждает и DATA, и CODEC_CONFIG (AapTransport.kt dispatchVideo), аудио только DATA.
-        if (chan == M.CH_VIDEO || isData) send(M.mediaAck(chan, sessionIds[chan] ?: 0), media = true)
+        if (chan == M.CH_VIDEO || isData) send(M.mediaAck(chan, sessionIds[chan] ?: 0), media = true, quiet = !sampled)
     }
 
     // --- завершение ---
@@ -841,6 +855,9 @@ class AapSession(
     private fun u16(b: ByteArray, i: Int) = ((b[i].toInt() and 0xFF) shl 8) or (b[i + 1].toInt() and 0xFF)
 
     companion object {
+        const val MEDIA_LOG_FIRST = 20
+        const val MEDIA_LOG_EVERY = 300
+
         /** Начало причины конца сессии, когда TCP к серверу ГУ не установился (дальше имя исключения; ConnectException = отказ). */
         const val UNAVAILABLE_REASON = "сервер недоступен: "
 

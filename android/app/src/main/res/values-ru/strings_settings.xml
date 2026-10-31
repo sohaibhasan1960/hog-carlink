@@ -244,4 +244,9 @@
     <string name="car_auto">Авто</string>
     <string name="car_value_keep">Без изменений</string>
     <string name="car_apply">Применить</string>
+    <!-- HOG CarLink: VW ID.6 -->
+    <string name="video_id6_title">VW ID.6 800×480</string>
+    <string name="video_id6_sub">Верные пропорции для окна CarLife на ID.6 (ГУ растягивает 800×480)</string>
+    <string name="video_id6_hd_title">VW ID.6 1280×688 (резче)</string>
+    <string name="video_id6_hd_sub">Кадр крупнее, чем просит ГУ; если машина его не примет, сам перейдёт на 800×480</string>
 </resources>

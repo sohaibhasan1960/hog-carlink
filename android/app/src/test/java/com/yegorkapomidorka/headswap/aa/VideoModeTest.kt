@@ -2,6 +2,7 @@ package com.yegorkapomidorka.headswap.aa
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import com.yegorkapomidorka.headswap.aa.AapMessages as M
@@ -18,6 +19,8 @@ class VideoModeTest {
             VideoMode.R720 to Row("1280x720", 0, 0, 160, 1280, 720, 4_000_000),
             VideoMode.R1080 to Row("1920x1080", 0, 0, 240, 1920, 1080, 8_000_000),
             VideoMode.R1440 to Row("2560x1440", 0, 0, 320, 2560, 1440, 12_000_000),
+            VideoMode.ID6 to Row("1280x720", 0, 32, 224, 800, 480, 4_000_000),
+            VideoMode.ID6_HD to Row("1280x720", 0, 32, 224, 1280, 688, 5_000_000),
             VideoMode.WIDE to Row("1280x720", 0, 240, 160, 1280, 480, 4_000_000),
             VideoMode.WIDE_MID to Row("1920x1080", 192, 432, 160, 1728, 648, 5_000_000),
             VideoMode.WIDE_HD to Row("1920x1080", 0, 360, 160, 1920, 720, 6_000_000),
@@ -34,13 +37,17 @@ class VideoModeTest {
             assertEquals(m.name, r.w, m.outW)
             assertEquals(m.name, r.h, m.outH)
             assertEquals(m.name, r.bitrate, m.bitrate)
-            // выход CarLife = кадр AA без margin-ов (WIDE_976 - исключение: область 1920x836 масштабируется в 2240x976)
-            if (m != VideoMode.WIDE_976) {
+            // выход CarLife = кадр AA без margin-ов (исключения: WIDE_976 - область 1920x836 масштабируется в 2240x976;
+            // ID6 - область 1280x688 сжимается в 800x480, которые ГУ ID.6 растягивает обратно до 1,86:1)
+            if (m != VideoMode.WIDE_976 && m != VideoMode.ID6) {
                 assertEquals(m.name, m.aaW - m.marginW, m.outW)
                 assertEquals(m.name, m.aaH - m.marginH, m.outH)
             }
         }
-        assertEquals(VideoMode.R800, VideoMode.DEFAULT)      // HOG CarLink: ID.6 800x480
+        assertEquals(VideoMode.ID6_HD, VideoMode.DEFAULT)    // HOG CarLink: ID.6, проба 1280x688
+        assertEquals(VideoMode.ID6, VideoMode.hdFallback(VideoMode.ID6_HD))
+        assertNull(VideoMode.hdFallback(VideoMode.ID6))
+        assertNull(VideoMode.hdFallback(VideoMode.R800))
     }
 
     @Test
@@ -80,8 +87,8 @@ class VideoModeTest {
         assertEquals(VideoMode.R1080, VideoMode.R1080.effective(transcode = false))
         assertEquals(VideoMode.R800, VideoMode.R800.effective(transcode = false))
         assertEquals(VideoMode.WIDE, VideoMode.parse("WIDE"))
-        assertEquals(VideoMode.R800, VideoMode.parse(null))
-        assertEquals(VideoMode.R800, VideoMode.parse("мусор"))
+        assertEquals(VideoMode.ID6_HD, VideoMode.parse(null))
+        assertEquals(VideoMode.ID6_HD, VideoMode.parse("мусор"))
     }
 
     @Test
@@ -227,6 +234,25 @@ class VideoModeTest {
         core.videoMode = VideoMode.WIDE
         core.onCarlifeTouch(0, 640, 500)
         assertTrue(logs.toString(), logs.any { it.contains("640,500") && it.contains("640,479") })
+    }
+
+    @Test
+    fun id6AreaMatchesCarLifeWindowAspect() {
+        for (m in listOf(VideoMode.ID6, VideoMode.ID6_HD)) {
+            assertEquals(m.name, 1280 to 688, (m.aaW - m.marginW) to (m.aaH - m.marginH))
+            assertEquals(m.name, 1.86, (m.aaW - m.marginW).toDouble() / (m.aaH - m.marginH), 0.01)
+            assertEquals(m.name, VideoCrop(0f, 16f / 720, 1f, 1f - 16f / 720), m.crop)
+            assertTrue(m.name, m.needsTranscode)
+        }
+        assertEquals(VideoMode.ID6_HD, VideoMode.ID6_HD.effective(transcode = true))
+        assertEquals(VideoMode.R720, VideoMode.ID6_HD.effective(transcode = false))
+        // ID6: тач ГУ в кадре 800x480 -> область AA 1280x688
+        assertEquals(0 to 0, VideoMode.ID6.mapTouch(0, 0))
+        assertEquals(640 to 344, VideoMode.ID6.mapTouch(400, 240))
+        assertEquals(1278 to 686, VideoMode.ID6.mapTouch(799, 479))
+        // ID6_HD: 1:1 с clamp в область
+        assertEquals(640 to 344, VideoMode.ID6_HD.mapTouch(640, 344))
+        assertEquals(1279 to 687, VideoMode.ID6_HD.mapTouch(1279, 700))
     }
 
     @Test

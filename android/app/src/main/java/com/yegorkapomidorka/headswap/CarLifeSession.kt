@@ -19,6 +19,7 @@ import com.yegorkapomidorka.headswap.aa.ThermalSource
 import com.yegorkapomidorka.headswap.aa.ThermalThrottle
 import com.yegorkapomidorka.headswap.aa.TranscodeOutput
 import com.yegorkapomidorka.headswap.aa.VideoGeometry
+import com.yegorkapomidorka.headswap.aa.VideoMode
 import com.yegorkapomidorka.headswap.aa.VideoQueueLimit
 import com.yegorkapomidorka.headswap.aa.VideoTranscoder
 import java.util.concurrent.Executors
@@ -58,6 +59,8 @@ class CarLifeSession(
     private val thermal: ThermalSource = ThermalSource.NONE,
     /** Размер кадра из VIDEO_ENCODER_INIT ГУ (для подсказки «Как просит ГУ» в разделе для разработчиков). */
     private val onHuSize: (Int, Int) -> Unit = { _, _ -> },
+    /** HOG CarLink: ГУ не приняла пробу HD (VideoMode.ID6_HD) - сюда приходит режим-откат, чтобы его запомнить в настройках. */
+    private val onVideoFallback: (VideoMode) -> Unit = {},
     private val onClosed: (String) -> Unit,
 ) : VideoSource.Listener, CarlifeLink {
 
@@ -150,6 +153,16 @@ class CarLifeSession(
     @Volatile private var bannerText: String? = null
     @Volatile private var acceptEncoder = true
     @Volatile private var carlifeStarted = false
+
+    /**
+     * HOG CarLink, проба HD: INIT_DONE ушёл с размером не тем, что просила ГУ (ID6_HD: 1280x688 вместо 800x480).
+     * ID.6 шлёт VIDEO_ENCODER_START через 3 мс после INIT_DONE (лог 2026-10-31); нет START за [HD_PROBE_MS], повторный INIT
+     * без START или закрытие соединения ГУ до START = отказ: режим-откат пишется в ядро и настройки, сессия закрывается,
+     * следующая идёт уже на 800x480. [huStartSeen] ставит только настоящий START от ГУ, не самозапуск по START_FALLBACK_MS.
+     */
+    @Volatile private var huStartSeen = false
+    @Volatile private var hdProbeAt = NEVER_MS
+    @Volatile private var hdDecided = false
     private val vrReassembler = DataReassembler()  // h425: Delphi режет VR MIC_DATA на кадры по 256 Б
 
     fun start() {
@@ -175,6 +188,9 @@ class CarLifeSession(
     fun close(reason: String) {
         if (!closed.compareAndSet(false, true)) return
         AppLog.i("сессия: закрытие, причина: $reason")
+        if (hdProbeActive() && !huStartSeen && !reason.startsWith(HD_FALLBACK_REASON)) {
+            hdProbeDecide("ГУ закрыла соединение через ${(SystemClock.elapsedRealtime() - hdProbeAt) / 1000.0} с после INIT_DONE ($reason)")
+        }
         bridge.onCarlifeClosed(this)
         if (air) {
             WLog.ev(WLog.VIDEO, "summary", "frames" to vFrames, "dropped" to vDropped, "overflows" to overflows, "maxQueue" to maxQueueFrames,
@@ -374,7 +390,11 @@ class CarLifeSession(
                 CarLifeState.auth += " -> HU_AUTHEN_RESULT=$ok"
             }
             Msg.VIDEO_ENCODER_INIT -> onVideoInit(m)
-            Msg.VIDEO_ENCODER_START -> onVideoStart()
+            Msg.VIDEO_ENCODER_START -> {
+                huStartSeen = true
+                hdProbeAccepted()
+                onVideoStart()
+            }
             Msg.VIDEO_ENCODER_PAUSE -> {
                 paused = true
                 if (pauseHeartbeatHu) { // первый heartbeat сразу; Desay - как раньше, через 2 с
@@ -461,6 +481,10 @@ class CarLifeSession(
         AppLog.i("== ГУ ПРОСИТ РАЗРЕШЕНИЕ: ${rw}x$rh fps=$rf")
         WLog.ev(WLog.HS, "VIDEO_ENCODER_INIT", "size" to "${rw}x$rh", "fps" to rf)
         if (videoInited && pendingW > 0) {
+            if (hdProbeActive() && !huStartSeen) {
+                hdProbeRejected("повторный INIT ${rw}x$rh без START")
+                return
+            }
             // как VideoMsgHandler (:84-88): повторный INIT -> только INIT_DONE с прежним размером
             AppLog.i("== повторный INIT, отвечаю INIT_DONE ${pendingW}x$pendingH fps=$pendingFps")
             sendCmd(Msg.VIDEO_ENCODER_INIT_DONE, Msgs.videoEncoderInfo(pendingW, pendingH, pendingFps))
@@ -479,6 +503,17 @@ class CarLifeSession(
         CarLifeState.video = "ГУ просит $requested, кодирую ${w}x$h"
         sendCmd(Msg.VIDEO_ENCODER_INIT_DONE, Msgs.videoEncoderInfo(w, h, fps))
         sendCmd(Msg.FOREGROUND, null)
+        if (VideoMode.hdFallback(mode) != null && rw > 0 && (w != rw || h != rh)) {
+            hdProbeAt = SystemClock.elapsedRealtime()
+            AppLog.i("== проба HD: ГУ просит ${rw}x$rh, отдаю ${w}x$h; жду START до $HD_PROBE_MS мс")
+            WLog.ev(WLog.HS, "hd-probe", "asked" to "${rw}x$rh", "sent" to "${w}x$h")
+            try {
+                sched.schedule({
+                    if (!closed.get() && hdProbeActive() && !huStartSeen) hdProbeRejected("нет START за $HD_PROBE_MS мс")
+                }, HD_PROBE_MS, TimeUnit.MILLISECONDS)
+            } catch (_: java.util.concurrent.RejectedExecutionException) {
+            }
+        }
         // VW Tharu XR 2026 (CarLife 2.1) после INIT_DONE START не шлёт, ждёт видео и через ~5.5 с рвёт USB
         try {
             sched.schedule({
@@ -520,6 +555,32 @@ class CarLifeSession(
     }
 
     /** START: гейт AA сбрасывается, заглушка (если активна) стартует с SPS+PPS+IDR. */
+    private fun hdProbeActive() = hdProbeAt != NEVER_MS && !hdDecided
+
+    private fun hdProbeAccepted() {
+        if (!hdProbeActive()) return
+        hdDecided = true
+        AppLog.i("== проба HD принята: START через ${SystemClock.elapsedRealtime() - hdProbeAt} мс")
+        WLog.ev(WLog.HS, "hd-probe", "result" to "accepted", "ms" to (SystemClock.elapsedRealtime() - hdProbeAt))
+    }
+
+    /** Отказ ГУ: откат в ядро и настройки, потом закрытие сессии - ГУ переподключается (или одно нажатие CarLife), уже на 800x480. */
+    private fun hdProbeRejected(why: String) {
+        if (!hdProbeDecide(why)) return
+        close("$HD_FALLBACK_REASON: $why")
+    }
+
+    private fun hdProbeDecide(why: String): Boolean {
+        if (!hdProbeActive()) return false
+        hdDecided = true
+        val fb = VideoMode.hdFallback(mode) ?: return false
+        AppLog.i("== проба HD отклонена: $why; дальше режим ${fb.label}", true)
+        WLog.ev(WLog.HS, "hd-probe", "result" to "rejected", "fallback" to fb.label, "why" to why)
+        bridge.videoMode = fb
+        onVideoFallback(fb)
+        return true
+    }
+
     private fun onVideoStart() {
         paused = false
         if (pendingW <= 0) {
@@ -1222,6 +1283,9 @@ class CarLifeSession(
         private const val VW_20082138_IDR_LIMIT = 450_000
         private const val VW_20082138_CUT_INTERVAL_MS = 1000L
         private const val NEVER_MS = Long.MIN_VALUE
+        /** HOG CarLink, проба HD: столько ждём START после INIT_DONE с чужим размером (ID.6 шлёт за 3 мс). */
+        const val HD_PROBE_MS = 8_000L
+        const val HD_FALLBACK_REASON = "hd-fallback"
 
         /** getThermalHeadroom чаще раза в секунду отдаёт NaN, прогноз на 10 с - хватает раза в 10 с. */
         private const val HEADROOM_POLL_MS = 10_000L

@@ -244,4 +244,9 @@
     <string name="car_auto">تلقائي</string>
     <string name="car_value_keep">بدون تغيير</string>
     <string name="car_apply">تطبيق</string>
+    <!-- HOG CarLink: VW ID.6 -->
+    <string name="video_id6_title">VW ID.6 800×480</string>
+    <string name="video_id6_sub">نسب صحيحة لنافذة CarLife في الـID.6 (الشاشة تمطّ 800×480)</string>
+    <string name="video_id6_hd_title">VW ID.6 1280×688 (أوضح)</string>
+    <string name="video_id6_hd_sub">يرسل صورة أكبر مما تطلبه الشاشة؛ وإن رفضتها السيارة يعود وحده إلى 800×480</string>
 </resources>

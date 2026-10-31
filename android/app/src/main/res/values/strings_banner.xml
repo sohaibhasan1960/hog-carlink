@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: тексты заглушки на экране ГУ (AaBridgeCore.TEXT_*) -->
+    <string name="banner_connecting">Connecting Android Auto…</string>
+    <string name="banner_start_server">Start the head unit server in Android Auto</string>
+    <string name="banner_wait_frame">Android Auto: waiting for a frame…</string>
+    <string name="banner_aa_lost">Android Auto disconnected, reconnecting…</string>
+</resources>

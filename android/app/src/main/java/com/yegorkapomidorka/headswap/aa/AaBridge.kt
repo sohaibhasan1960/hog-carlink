@@ -1806,10 +1806,18 @@ class AaBridgeCore(
             0x07 to -1,     // SELECTOR_PREVIOUS -> против часовой
         )
 
-        const val TEXT_CONNECTING = "Подключаю Android Auto..."
-        const val TEXT_START_SERVER = "Запустите сервер ГУ в Android Auto"
-        const val TEXT_WAIT_FRAME = "Android Auto: жду кадр..."
-        const val TEXT_AA_LOST = "Android Auto отключился, переподключаю..."
+        // HOG CarLink: тексты заглушки на ГУ берутся из ресурсов (localizeTexts из BridgeService.onCreate); по умолчанию русские
+        @Volatile var TEXT_CONNECTING = "Подключаю Android Auto..."
+        @Volatile var TEXT_START_SERVER = "Запустите сервер ГУ в Android Auto"
+        @Volatile var TEXT_WAIT_FRAME = "Android Auto: жду кадр..."
+        @Volatile var TEXT_AA_LOST = "Android Auto отключился, переподключаю..."
+
+        fun localizeTexts(connecting: String, startServer: String, waitFrame: String, aaLost: String) {
+            TEXT_CONNECTING = connecting
+            TEXT_START_SERVER = startServer
+            TEXT_WAIT_FRAME = waitFrame
+            TEXT_AA_LOST = aaLost
+        }
         const val DESAY_MANUFACTURER = "Desay SV Automotive"
         const val DESAY_G6S_MODEL = "G6S"
         const val DESAY_G6S_CHANNEL = "20622116"          // STATISTIC_INFO.channel у Mazda CX-5; Vezel - 20832125, другая Mazda - 21520001
