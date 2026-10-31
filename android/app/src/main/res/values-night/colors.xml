@@ -7,11 +7,11 @@
     <color name="on">#E0E8EB</color>
     <color name="on2">#A6B6BC</color>
     <color name="line">#3A484E</color>
-    <color name="pri">#F2B33D</color>
-    <color name="onpri">#261A00</color>
-    <color name="acc">#F2B33D</color>
-    <color name="pric">#4D3800</color>
-    <color name="onpric">#FFDEA6</color>
+    <color name="pri">#D4AF5A</color>
+    <color name="onpri">#2A1E00</color>
+    <color name="acc">#D4AF5A</color>
+    <color name="pric">#1E3A2A</color>
+    <color name="onpric">#D7EEDD</color>
     <color name="ok">#82D6A6</color>
     <color name="okc">#133D29</color>
     <color name="onok">#00391F</color>

@@ -38,7 +38,7 @@ object HeadswapNotification {
         val loc = AppLocale.wrap(ctx)       // applicationContext не знает выбранного языка на Android 10-12
         val b = Notification.Builder(ctx, channel)
             .setSmallIcon(R.drawable.ic_stat_headswap)
-            .setColor(0xFFF2B33D.toInt())
+            .setColor(0xFF0B5D3B.toInt())      // HOG CarLink: зелёный HOG
             .setContentTitle(st.notifTitle.get(loc))
             .setContentText(st.notifText.get(loc))
             .setOngoing(true)
