@@ -14,6 +14,7 @@ Changes against upstream tag `v2.6.0` (see `git log v2.6.0..`):
 - 2.6.0-hog.2: re-request the car Wi-Fi network (up to 10 times, 5 s apart) after onUnavailable; an approved request on Android 16 gives up after 3 scans
 - 2.6.0-hog.3: restart the car network request when the car appears over Bluetooth or Wait is pressed again; "HOG CarLink" on the start screen
 - 2.6.0-hog.4: HOG logo (icon, notification, head unit start screen), HOG CarLink name in all UI and log/report files, Arabic translation, wireless onboarding (car Wi-Fi and car pick steps)
+- 2.6.0-hog.5: self-update from github.com/sohaibhasan1960/hog-carlink releases (asset hog-carlink-<version>.apk)
 
 Build: `cd android && ./gradlew assembleRelease`. Needs JDK 17+, Android SDK platform 37,
 `~/.android-keys/carlink-release.properties`, and the AA head unit certs in
