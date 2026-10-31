@@ -4,9 +4,14 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
+import android.text.InputType
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -15,6 +20,9 @@ import com.yegorkapomidorka.headswap.AppLog
 import com.yegorkapomidorka.headswap.R
 import com.yegorkapomidorka.headswap.aa.AaPrefs
 import com.yegorkapomidorka.headswap.aa.CarPreset
+import com.yegorkapomidorka.headswap.link.car.CarNetwork
+import com.yegorkapomidorka.headswap.link.car.CarPairing
+import com.yegorkapomidorka.headswap.link.car.CarWifi
 
 /**
  * Онбординг (Onboarding.dc.html) и чеклист готовности. Шаги из Readiness.STEPS; при первом запуске уже выполненные
@@ -36,6 +44,13 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
     /** Машина, отмеченная на шаге выбора, но ещё не применённая. */
     private var carChoice: CarPreset? = null
 
+    /** HOG CarLink: ждём «Устройства поблизости», чтобы потом открыть выбор машины. */
+    private var awaitingCarBt = false
+
+    /** HOG CarLink: проверка Wi-Fi машины с шага онбординга (как «Сохранить и проверить» в настройках). */
+    private var cwCheck: CarNetwork? = null
+    private val cwHandler = Handler(Looper.getMainLooper())
+
     init {
         queue = if (showAll) Readiness.STEPS else Readiness.STEPS.filter { !Readiness.isDone(ctx, it.id) }
         checklist = startAtChecklist || queue.isEmpty()
@@ -49,8 +64,19 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
     }
 
     override fun onPermissionResult() {
+        if (awaitingCarBt) {
+            awaitingCarBt = false
+            CarPairing.start(host)      // отказ выбор не блокирует: шаг останется невыполненным
+        }
         val s = current() ?: return
         if (!checklist && Readiness.isDone(ctx, s.id) && (s.id == StepId.NOTIF || s.id == StepId.MIC)) next() else render()
+    }
+
+    override fun onActivityResultDone() = render()
+
+    override fun onHide() {
+        cwCheck?.release("onboarding")
+        cwCheck = null
     }
 
     override fun onBack(): Boolean {
@@ -84,6 +110,7 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             checklist -> renderChecklist()
             s == null -> return
             s.id == StepId.CAR -> renderCar(s)
+            s.id == StepId.CAR_WIFI -> renderCarWifi(s)
             else -> renderStep(s)
         }
     }
@@ -147,9 +174,10 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
         val buttons = c.vbox(4)
         val primaryLabel = if (done && s.id != StepId.FIRST) c.getString(R.string.onb_next) else c.getString(s.primary)
         buttons.addView(c.primaryButton(primaryLabel).apply { setOnClickListener { onPrimary(s, done) } })
-        val showExtra = s.extra != null && !done && (s.id != StepId.BACKGROUND || Readiness.isXiaomi())
+        val showExtra = s.extra != null && !done && (s.id != StepId.BACKGROUND || Readiness.isXiaomi() || Readiness.isHonor())
         if (showExtra) {
-            buttons.addView(c.containerButton(c.getString(s.extra!!)).apply { setOnClickListener { onExtra(s) } })
+            val extraLabel = if (s.id == StepId.BACKGROUND && Readiness.isHonor()) R.string.step_background_extra_honor else s.extra!!
+            buttons.addView(c.containerButton(c.getString(extraLabel)).apply { setOnClickListener { onExtra(s) } })
         }
         val skipLabel = if (done && s.id != StepId.FIRST) c.getString(R.string.onb_back) else c.getString(s.skip)
         buttons.addView(c.linkButton(skipLabel, 48).apply { setOnClickListener { onSkip(s, done) } })
@@ -201,6 +229,117 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             }
         })
         root.addView(buttons, lp(MATCH, WRAP))
+    }
+
+    /**
+     * HOG CarLink: Wi-Fi машины прямо в онбординге. «Сохранить и проверить» входит в сеть с переднего плана: здесь человек
+     * один раз одобряет системный диалог, дальше сервис входит сам. Проверку держим 5 с и снимаем.
+     */
+    private fun renderCarWifi(s: StepInfo) {
+        val c = ctx
+        val cw = CarWifi(c)
+        shownDone = cw.isSet
+        renderProgress(s)
+        renderTitle(s)
+
+        val body = c.vbox(12).apply { pad(c, 0, 4, 0, 24) }
+        body.addView(c.text(c.getString(s.body!!), 16f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(23) })
+        val ssid = wifiField(c.getString(R.string.wl_cw_ssid_hint), password = false).apply { setText(cw.ssid.orEmpty()) }
+        val pass = wifiField(c.getString(R.string.wl_cw_pass_hint), password = true).apply { setText(cw.pass) }
+        body.addView(ssid, lp(MATCH, c.dp(56)).margins(c, 0, 8, 0, 0))
+        body.addView(pass, lp(MATCH, c.dp(56)))
+        val result = c.text("", 14f, 500, c.clr(R.color.on2)).apply { visibility = View.GONE }
+        body.addView(result, lp(MATCH, WRAP))
+        s.hint?.let {
+            body.addView(
+                c.text(c.getString(it), 14f, 400, c.clr(R.color.onpric)).apply {
+                    lineHeight = c.dp(20)
+                    background = c.shape(c.clr(R.color.pric), 16)
+                    pad(c, 14, 12, 14, 12)
+                },
+                lp(MATCH, WRAP).margins(c, 0, 8, 0, 0),
+            )
+        }
+        root.addView(fadingScroll(body), lp(MATCH, 0, 1f))
+
+        fun show(text: String, color: Int) {
+            result.text = text
+            result.setTextColor(c.clr(color))
+            result.visibility = View.VISIBLE
+        }
+        val nextBtn = c.primaryButton(c.getString(R.string.onb_next)).apply { setOnClickListener { next() } }
+        fun enableNext(on: Boolean) {
+            nextBtn.isEnabled = on
+            nextBtn.alpha = if (on) 1f else 0.45f
+        }
+        val saveBtn = c.containerButton(c.getString(s.primary)).apply {
+            setOnClickListener {
+                val name = ssid.text.toString().trim()
+                if (name.isEmpty()) {
+                    show(c.getString(R.string.wl_cw_need_ssid), R.color.warn)
+                    return@setOnClickListener
+                }
+                val pw = pass.text.toString()
+                CarWifi(c).save(name, pw)
+                AppLog.i("онбординг: Wi-Fi машины сохранён")
+                enableNext(true)
+                cwCheck?.release("recheck")
+                val net = CarNetwork(c)
+                cwCheck = net
+                show(c.getString(R.string.wl_cw_checking), R.color.on2)
+                val fail = {
+                    if (cwCheck === net) {
+                        show(c.getString(R.string.step_car_wifi_fail), R.color.warn)
+                        cwCheck = null
+                    }
+                }
+                net.request(
+                    name, pw, CW_CHECK_TIMEOUT_MS,
+                    onAvailable = {
+                        if (cwCheck === net) {
+                            show(c.getString(R.string.wl_cw_ok), R.color.ok)
+                            cwHandler.postDelayed({
+                                if (cwCheck === net) {
+                                    net.release("check")
+                                    cwCheck = null
+                                }
+                            }, CW_CHECK_HOLD_MS)
+                        }
+                    },
+                    onUnavailable = { fail() },
+                    onLost = { fail() },
+                )
+            }
+        }
+        enableNext(cw.isSet)
+        val buttons = c.vbox(4)
+        buttons.addView(nextBtn)
+        buttons.addView(saveBtn)
+        buttons.addView(c.linkButton(c.getString(s.skip), 48).apply { setOnClickListener { next() } })
+        root.addView(buttons, lp(MATCH, WRAP))
+    }
+
+    private fun wifiField(hint: String, password: Boolean): EditText = EditText(ctx).apply {
+        this.hint = hint
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 16f)
+        setTextColor(ctx.clr(R.color.on))
+        setHintTextColor(ctx.clr(R.color.on2))
+        background = ctx.shape(ctx.clr(R.color.surf2), 14)
+        pad(ctx, 16, 0, 16, 0)
+        isSingleLine = true
+        inputType = InputType.TYPE_CLASS_TEXT or
+            if (password) InputType.TYPE_TEXT_VARIATION_PASSWORD else InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+        typeface = ctx.sans(400)      // setInputType для пароля сам ставит моноширинный
+    }
+
+    /** HOG CarLink: выбор машины. На Android 12+ сначала «Устройства поблизости» (без него ACL машины не доставляются). */
+    private fun pickCar() {
+        if (!Readiness.carBtGranted(ctx)) {
+            awaitingCarBt = true
+            host.requestPermissions(arrayOf(Manifest.permission.BLUETOOTH_CONNECT), REQ_CAR_BT)
+            return
+        }
+        CarPairing.start(host)
     }
 
     /** Прокрутка с затемнением края: видно, что текст продолжается. */
@@ -262,19 +401,25 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             StepId.AA_DEV, StepId.AA_UNKNOWN -> Actions.openAaSettings(c)
             StepId.AUTOSTART -> Actions.startServerFromUi(c)
             StepId.NOTIF -> requestNotifications()
-            StepId.BACKGROUND -> if (!Readiness.batteryOk(c)) Readiness.requestIgnoreBattery(c) else Readiness.openXiaomiAutostart(c)
+            StepId.BACKGROUND -> when {
+                !Readiness.batteryOk(c) -> Readiness.requestIgnoreBattery(c)
+                Readiness.isHonor() -> Readiness.openHonorLaunch(c)
+                else -> Readiness.openXiaomiAutostart(c)
+            }
             StepId.MIC -> requestMic()
             StepId.BLUETOOTH -> Readiness.openBluetoothSettings(c)
             StepId.LOCATION -> Readiness.openLocationSettings(c)
             StepId.FIRST -> { ui.setManualDone(s.id.key, true); next() }
             StepId.CAR -> next()      // свои кнопки в renderCar
+            StepId.CAR_WIFI -> next()      // свои кнопки в renderCarWifi
+            StepId.CAR_PICK -> pickCar()
         }
     }
 
     private fun onExtra(s: StepInfo) {
         try {
             when (s.id) {
-                StepId.BACKGROUND -> Readiness.openXiaomiAutostart(ctx)
+                StepId.BACKGROUND -> if (Readiness.isHonor()) Readiness.openHonorLaunch(ctx) else Readiness.openXiaomiAutostart(ctx)
                 else -> {}
             }
         } catch (e: Exception) {
@@ -397,5 +542,12 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             }, lp(0, WRAP, 1f))
             addView(c.icon(R.drawable.ic_chevron, 20, c.clr(R.color.on2)))
         }
+    }
+
+    private companion object {
+        /** Тот же код, что в настройках: BLUETOOTH_CONNECT перед выбором машины (38 занят диалогом CDM). */
+        const val REQ_CAR_BT = 39
+        const val CW_CHECK_TIMEOUT_MS = 60_000L
+        const val CW_CHECK_HOLD_MS = 5_000L
     }
 }

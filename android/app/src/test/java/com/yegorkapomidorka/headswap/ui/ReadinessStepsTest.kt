@@ -16,7 +16,8 @@ class ReadinessStepsTest {
 
     @Test
     fun everyStepListedOnceAndKeysUnique() {
-        assertEquals(StepId.values().toSet(), ids.toSet())
+        // HOG CarLink: шаги USB и «Какая у вас машина» убраны из списка (enum остался)
+        assertEquals(StepId.values().toSet() - setOf(StepId.FIRST, StepId.CAR), ids.toSet())
         assertEquals(ids.size, ids.toSet().size)
         assertEquals(StepId.values().size, StepId.values().map { it.key }.toSet().size)
     }
@@ -42,11 +43,11 @@ class ReadinessStepsTest {
     }
 
     @Test
-    fun onlyCarStepHasBodyInsteadOfList() {
+    fun onlyCarWifiStepHasBodyInsteadOfList() {
         for (s in Readiness.STEPS) {
-            if (s.id == StepId.CAR) {
+            if (s.id == StepId.CAR_WIFI) {
                 assertNull(s.list)
-                assertEquals(R.string.step_car_body, s.body)
+                assertEquals(R.string.step_car_wifi_body, s.body)
             } else {
                 assertNotNull(s.id.key, s.list)
                 assertNull(s.id.key, s.body)
@@ -63,9 +64,10 @@ class ReadinessStepsTest {
     }
 
     @Test
-    fun carIsLastAndSkippable() {
-        assertEquals(StepId.CAR, ids.last())
-        assertEquals(StepId.FIRST, ids[ids.size - 2])
-        assertEquals(R.string.onb_skip, Readiness.info(StepId.CAR).skip)
+    fun carWifiThenCarPickAreLastAndPostponable() {
+        assertEquals(StepId.CAR_PICK, ids.last())
+        assertEquals(StepId.CAR_WIFI, ids[ids.size - 2])
+        assertEquals(R.string.onb_later, Readiness.info(StepId.CAR_PICK).skip)
+        assertEquals(R.string.onb_later, Readiness.info(StepId.CAR_WIFI).skip)
     }
 }

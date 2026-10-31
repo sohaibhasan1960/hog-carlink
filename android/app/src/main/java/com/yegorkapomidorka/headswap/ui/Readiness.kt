@@ -14,6 +14,8 @@ import android.provider.Settings
 import com.yegorkapomidorka.headswap.AppLog
 import com.yegorkapomidorka.headswap.R
 import com.yegorkapomidorka.headswap.aa.AaPrefs
+import com.yegorkapomidorka.headswap.link.car.CarProfile
+import com.yegorkapomidorka.headswap.link.car.CarWifi
 
 /** Всё, что надо включить перед поездкой: порядок, тексты, автоопределение «уже сделано». Общее для онбординга и чеклиста. */
 enum class StepId(val key: String) {
@@ -29,6 +31,12 @@ enum class StepId(val key: String) {
 
     /** Выбор машины: проверенные сообществом настройки (CarPreset). Последний шаг; опытные пропускают. */
     CAR("car"),
+
+    /** HOG CarLink: Wi-Fi машины (SSID и пароль): телефон входит в её точку доступа сам. */
+    CAR_WIFI("car_wifi"),
+
+    /** HOG CarLink: машина по Bluetooth (CDM) и «Устройства поблизости»: автозапуск, когда машина включилась. */
+    CAR_PICK("car_pick"),
 }
 
 /**
@@ -47,9 +55,10 @@ class StepInfo(
     /** Короткое название для чеклиста. */
     val short: Int,
 ) {
-    /** Пункты списка; на шаге фона пункты про «Автозапуск» (3-4) есть только на Xiaomi. */
+    /** Пункты списка; на шаге фона пункты про «Автозапуск» (3-4) есть только на Xiaomi, на Honor - свои про «Запуск приложений». */
     fun listItems(ctx: Context, xiaomi: Boolean = Readiness.isXiaomi()): List<String> {
         val all = list?.let { ctx.resources.getStringArray(it).toList() } ?: return emptyList()
+        if (id == StepId.BACKGROUND && Readiness.isHonor()) return all.take(2) + ctx.resources.getStringArray(R.array.step_background_honor_list)
         return if (id == StepId.BACKGROUND && !xiaomi) all.take(2) else all
     }
 }
@@ -88,17 +97,25 @@ object Readiness {
             StepId.LOCATION, R.string.step_location_title, R.array.step_location_list, null, R.string.step_location_hint,
             R.string.step_location_primary, null, R.string.onb_already_done, R.string.step_location_short,
         ),
+        // HOG CarLink: только беспровод на одной машине - шаги «Первое подключение по USB» и «Какая у вас машина» убраны
+        // (настройки по умолчанию уже под ГУ 800x480), вместо них - сеть машины и выбор машины по Bluetooth.
         StepInfo(
-            StepId.FIRST, R.string.step_first_title, R.array.step_first_list, null, R.string.step_first_hint,
-            R.string.step_first_primary, null, R.string.onb_back, R.string.step_first_short,
+            StepId.CAR_WIFI, R.string.step_car_wifi_title, null, R.string.step_car_wifi_body, R.string.step_car_wifi_hint,
+            R.string.step_car_wifi_primary, null, R.string.onb_later, R.string.step_car_wifi_short,
         ),
         StepInfo(
-            StepId.CAR, R.string.step_car_title, null, R.string.step_car_body, null,
-            R.string.car_apply, null, R.string.onb_skip, R.string.step_car_short,
+            StepId.CAR_PICK, R.string.step_car_pick_title, R.array.step_car_pick_list, null, R.string.step_car_pick_hint,
+            R.string.step_car_pick_primary, null, R.string.onb_later, R.string.step_car_pick_short,
         ),
     )
 
     fun info(id: StepId): StepInfo = STEPS.first { it.id == id }
+
+    /** Honor/Huawei (MagicOS, EMUI): «Запуск приложений» вручную, иначе система гасит фон и автозапуск. */
+    fun isHonor(): Boolean {
+        val m = Build.MANUFACTURER.lowercase()
+        return m.contains("honor") || m.contains("huawei")
+    }
 
     fun isXiaomi(): Boolean {
         val m = Build.MANUFACTURER.lowercase()
@@ -112,6 +129,8 @@ object Readiness {
         StepId.MIC -> ctx.checkSelfPermission(Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
         StepId.BACKGROUND -> batteryOk(ctx)
         StepId.CAR -> if (AaPrefs(ctx).carPreset != null) true else null      // пропуск - ручная отметка
+        StepId.CAR_WIFI -> CarWifi(ctx).isSet
+        StepId.CAR_PICK -> CarProfile(ctx).isSet && carBtGranted(ctx)
         StepId.LOCATION -> try {
             ctx.getSystemService(LocationManager::class.java).isLocationEnabled
         } catch (_: Exception) {
@@ -120,13 +139,16 @@ object Readiness {
         else -> null
     }
 
+    fun carBtGranted(ctx: Context): Boolean =
+        Build.VERSION.SDK_INT < 31 || ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+
     fun batteryOk(ctx: Context): Boolean =
         ctx.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(ctx.packageName)
 
     /** Выполнено: автоопределение, а где его нет - ручная отметка. Фон на Xiaomi требует ещё и ручной отметки. */
     fun isDone(ctx: Context, id: StepId): Boolean {
         val ui = UiPrefs(ctx)
-        if (id == StepId.BACKGROUND) return batteryOk(ctx) && (!isXiaomi() || ui.isManualDone(id.key))
+        if (id == StepId.BACKGROUND) return batteryOk(ctx) && (!(isXiaomi() || isHonor()) || ui.isManualDone(id.key))
         return auto(ctx, id) ?: ui.isManualDone(id.key)
     }
 
@@ -170,6 +192,27 @@ object Readiness {
                 AppLog.e("не открыть карточку приложения", e2)
             }
         }
+    }
+
+    /**
+     * HOG CarLink: «Запуск приложений» Honor/Huawei (ручное управление: автозапуск, вторичный запуск, работа в фоне).
+     * Экран у прошивок разный: пробуем известные, иначе карточка приложения.
+     */
+    fun openHonorLaunch(ctx: Context) {
+        val known = listOf(
+            "com.hihonor.systemmanager" to "com.hihonor.systemmanager.startupmgr.ui.StartupNormalAppListActivity",
+            "com.huawei.systemmanager" to "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity",
+            "com.huawei.systemmanager" to "com.huawei.systemmanager.appcontrol.activity.StartupAppControlActivity",
+        )
+        for ((pkg, cls) in known) {
+            try {
+                ctx.startActivity(Intent().setComponent(ComponentName(pkg, cls)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                return
+            } catch (_: Exception) {
+            }
+        }
+        AppLog.i("«Запуск приложений» Honor не открылся, открываю карточку приложения")
+        appDetails(ctx)
     }
 
     fun openLocationSettings(ctx: Context) = openSettings(ctx, Settings.ACTION_LOCATION_SOURCE_SETTINGS)

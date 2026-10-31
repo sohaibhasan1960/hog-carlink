@@ -27,16 +27,16 @@
         <item>Tap ⋮ at the top right</item>
         <item>Choose “Start head unit server”</item>
     </string-array>
-    <string name="step_autostart_hint">You only need to turn it on once: the head unit server keeps running in the background, Headswap does not turn it off. If Android closes it on its own, turn it on again from the Android Auto settings. There is no auto-start through accessibility any more, so the head unit server has to be started by hand.</string>
+    <string name="step_autostart_hint">Turn it on once. If Android stops it (after a phone restart or an Android Auto update), HOG CarLink shows a notification with a button that opens Android Auto.</string>
     <string name="step_autostart_primary">Open Android Auto</string>
     <string name="step_autostart_short">Head unit server</string>
 
     <string name="step_notif_title">Turn on notifications</string>
     <string-array name="step_notif_list">
         <item>Tap “Allow” at the bottom of the screen</item>
-        <item>Tap “Allow” in the Android window “Allow Headswap to send you notifications?”</item>
+        <item>Tap “Allow” in the Android window “Allow HOG CarLink to send you notifications?”</item>
     </string-array>
-    <string name="step_notif_hint">The notification shade shows how the connection is going, and Android will not unload Headswap while the screen is off.</string>
+    <string name="step_notif_hint">The notification shade shows how the connection is going, and Android will not unload HOG CarLink while the screen is off.</string>
     <string name="step_notif_short">Notifications</string>
 
     <!-- Items 3-4 (autostart) are shown on Xiaomi only -->
@@ -45,7 +45,7 @@
         <item>Tap “Remove battery limit”</item>
         <item>Choose “No restrictions”</item>
         <item>Go back and tap “Autostart”</item>
-        <item>Scroll to Headswap and turn the switch on</item>
+        <item>Scroll to HOG CarLink and turn the switch on</item>
     </string-array>
     <string name="step_background_primary">Remove battery limit</string>
     <string name="step_background_extra">Autostart</string>
@@ -110,4 +110,29 @@
     <string name="step_car_title">Which car do you have?</string>
     <string name="step_car_short">Car</string>
     <string name="step_car_body">We will fill in the settings the community verified on this car. Experienced users can skip this step.</string>
+
+    <!-- HOG CarLink: wireless setup steps -->
+    <string-array name="step_background_honor_list">
+        <item>Tap “App launch settings”</item>
+        <item>Find HOG CarLink and switch it to “Manage manually”</item>
+        <item>Turn on Auto-launch, Secondary launch and Run in background</item>
+    </string-array>
+    <string name="step_background_extra_honor">App launch settings</string>
+
+    <string name="step_car_wifi_title">Add your car Wi-Fi</string>
+    <string name="step_car_wifi_body">Enter the Wi-Fi name and password shown on the car screen. The phone joins it by itself every time the car starts, and the internet stays on mobile data.</string>
+    <string name="step_car_wifi_hint">If Android asks to allow the connection, tap “Connect”. It asks only once.</string>
+    <string name="step_car_wifi_primary">Save and check</string>
+    <string name="step_car_wifi_short">Car Wi-Fi</string>
+    <string name="step_car_wifi_fail">Saved. The car Wi-Fi is not in range now: that is fine if the car is off, the phone will join it in the car.</string>
+
+    <string name="step_car_pick_title">Choose your car</string>
+    <string-array name="step_car_pick_list">
+        <item>Tap “Choose car”</item>
+        <item>Allow “Nearby devices”</item>
+        <item>Pick your car from the list and confirm</item>
+    </string-array>
+    <string name="step_car_pick_hint">When the phone connects to the car over Bluetooth, HOG CarLink starts by itself: no buttons to press.</string>
+    <string name="step_car_pick_primary">Choose car</string>
+    <string name="step_car_pick_short">Your car</string>
 </resources>
