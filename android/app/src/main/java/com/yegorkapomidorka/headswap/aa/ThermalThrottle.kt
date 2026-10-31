@@ -8,6 +8,12 @@ interface ThermalSource {
     /** Прогноз getThermalHeadroom на 10 с (1.0 = SEVERE), NaN = недоступен. */
     fun headroom(): Float
 
+    /**
+     * HOG CarLink: идёт телефонный звонок (AudioManager.mode IN_CALL / IN_COMMUNICATION, без разрешений). Голос звонка идёт
+     * по Bluetooth SCO на тех же 2,4 ГГц, что и видео в машину: Wi-Fi на время звонка проседает, поэтому видео разгружается как при HOT.
+     */
+    fun inCall(): Boolean = false
+
     object NONE : ThermalSource {
         override fun status() = 0
         override fun headroom() = Float.NaN
@@ -45,8 +51,9 @@ class ThermalThrottle(private val relaxMs: Long = RELAX_MS) {
     private var lowerSinceMs = NEVER
     private var lastMs = NEVER
 
-    /** Ступень по одному замеру, без гистерезиса. */
-    fun levelFor(status: Int, headroom: Float): ThermalLevel = when {
+    /** Ступень по одному замеру, без гистерезиса. [inCall] - звонок: сразу HOT (15 fps, половина битрейта). */
+    fun levelFor(status: Int, headroom: Float, inCall: Boolean = false): ThermalLevel = when {
+        inCall -> ThermalLevel.HOT
         status >= STATUS_SEVERE -> ThermalLevel.HOT
         status == STATUS_MODERATE -> ThermalLevel.WARM
         !headroom.isNaN() && headroom >= WARM_HEADROOM -> ThermalLevel.WARM
@@ -54,10 +61,10 @@ class ThermalThrottle(private val relaxMs: Long = RELAX_MS) {
     }
 
     /** Очередной замер. Возвращает новую ступень, если она сменилась, иначе null. */
-    fun update(nowMs: Long, status: Int, headroom: Float): ThermalLevel? {
+    fun update(nowMs: Long, status: Int, headroom: Float, inCall: Boolean = false): ThermalLevel? {
         if (lastMs != NEVER && level != ThermalLevel.NORMAL) throttledMs += maxOf(nowMs - lastMs, 0L)
         lastMs = nowMs
-        val want = levelFor(status, headroom)
+        val want = levelFor(status, headroom, inCall)
         if (want > level) {
             level = want
             lowerSinceMs = NEVER

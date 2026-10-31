@@ -96,6 +96,11 @@ class AaTranscoder(
         if (running) return
         val c = MediaCodec.createEncoderByType(MIME)
         encoderName = c.name
+        intraRefreshSupported = try {
+            c.codecInfo.getCapabilitiesForType(MIME).isFeatureSupported(MediaCodecInfo.CodecCapabilities.FEATURE_IntraRefresh)
+        } catch (_: Exception) {
+            false
+        }
         var configured = false
         var lastErr: Exception? = null
         for (level in 0..2) {
@@ -103,7 +108,8 @@ class AaTranscoder(
                 if (level > 0) c.reset()
                 c.configure(format(level), null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
                 encoderNote = when (level) {
-                    0 -> "baseline+CBR+noB+repeat100ms+realtime"
+                    0 -> "baseline+CBR+noB+repeat100ms+realtime" + (if (intraRefreshSupported && !tuning.contains("nointra")) "+gop${I_FRAME_INTERVAL_S}s+intra" else "+gop1s") +
+                        (if (tuning.contains("nolat")) "" else "+lat1")
                     1 -> "baseline+CBR+noB+repeat100ms"
                     else -> "минимальный формат+repeat100ms"
                 }
@@ -200,7 +206,11 @@ class AaTranscoder(
         f.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
         f.setInteger(MediaFormat.KEY_BIT_RATE, bitrate)
         f.setInteger(MediaFormat.KEY_FRAME_RATE, fps)
-        f.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
+        // HOG CarLink: IDR раз в 4 с вместо каждой секунды, между ними постепенное обновление (intra refresh): по воздуху
+        // IDR на 800x480 в ~10x больше P-кадра и каждую секунду забивал канал всплеском; "nointra" в tuning - как было
+        val intra = !tuning.contains("nointra") && level == 0 && intraRefreshSupported
+        f.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, if (intra) I_FRAME_INTERVAL_S else 1)
+        if (intra) f.setInteger(MediaFormat.KEY_INTRA_REFRESH_PERIOD, fps)
         // как у Baidu (Recorder.java:1364, MediaFormatUtils.java:48): на статичном экране кадр повторяется раз в 100 мс
         val repeat = Regex("""repeat=(\d+)""").find(tuning)?.groupValues?.get(1)?.toLong() ?: REPEAT_AFTER_US
         f.setLong(MediaFormat.KEY_REPEAT_PREVIOUS_FRAME_AFTER, repeat)
@@ -217,9 +227,14 @@ class AaTranscoder(
         if (level == 0) {
             if (!tuning.contains("norealtime")) f.setInteger(MediaFormat.KEY_PRIORITY, 0)   // realtime
             if (Build.VERSION.SDK_INT >= 30 && !tuning.contains("nolowlat")) f.setInteger(MediaFormat.KEY_LOW_LATENCY, 1)
+            // HOG CarLink: c2.qti.avc.encoder по умолчанию держит 4 кадра (latency=4 в формате вывода, ~130 мс на 30 fps); просим 1
+            if (!tuning.contains("nolat")) f.setInteger(MediaFormat.KEY_LATENCY, 1)
         }
         return f
     }
+
+    /** FEATURE_IntraRefresh у выбранного энкодера; без неё ключ KEY_INTRA_REFRESH_PERIOD игнорируется и GOP остаётся 1 с. */
+    private var intraRefreshSupported = false
 
     // ---------------- вход AA ----------------
 
@@ -583,6 +598,8 @@ class AaTranscoder(
     }
 
     companion object {
+        const val I_FRAME_INTERVAL_S = 4
+
         const val MIME = "video/avc"
         const val REPEAT_AFTER_US = 100_000L
 

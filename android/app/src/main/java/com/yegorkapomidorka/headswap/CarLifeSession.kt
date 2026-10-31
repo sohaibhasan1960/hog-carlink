@@ -79,6 +79,8 @@ class CarLifeSession(
     private var thermalHeadroom = Float.NaN
     private var headroomAtMs = NEVER_MS
     private var thermalPassthroughLogged = false
+    private var inCall = false                          // только нить cl-sched
+    private var callSinceMs = NEVER_MS
     private val pauseKeepaliveMs = if (air) PAUSE_KEEPALIVE_AIR_MS else PAUSE_KEEPALIVE_MS
     private var overflows = 0
     private var maxQueueFrames = 0
@@ -1190,7 +1192,15 @@ class CarLifeSession(
                 AppLog.i("нагрев: статус телефона ${thermalName(thermalStatus)} -> ${thermalName(status)} (headroom ${headroomText()})")
                 thermalStatus = status
             }
-            val level = thermalThrottle.update(now, status, thermalHeadroom) ?: return
+            val call = thermal.inCall()
+            if (call != inCall) {
+                inCall = call
+                val durS = if (call || callSinceMs == NEVER_MS) 0L else (now - callSinceMs) / 1000
+                callSinceMs = if (call) now else NEVER_MS
+                AppLog.i("звонок: ${if (call) "начался - видео 15 fps, половина битрейта" else "закончился ($durS с)"}", true)
+                WLog.ev(WLog.VIDEO, "call", "state" to if (call) "on" else "off", "durS" to durS)
+            }
+            val level = thermalThrottle.update(now, status, thermalHeadroom, call) ?: return
             applyThermal(level)
         } catch (e: Exception) {
             AppLog.e("нагрев", e)
@@ -1198,7 +1208,7 @@ class CarLifeSession(
     }
 
     private fun applyThermal(level: ThermalLevel) {
-        val why = "статус ${thermalName(thermalStatus)}, headroom ${headroomText()}"
+        val why = (if (inCall) "звонок, " else "") + "статус ${thermalName(thermalStatus)}, headroom ${headroomText()}"
         if (!bridge.transcodeEnabled) {
             if (level != ThermalLevel.NORMAL && !thermalPassthroughLogged) {
                 thermalPassthroughLogged = true

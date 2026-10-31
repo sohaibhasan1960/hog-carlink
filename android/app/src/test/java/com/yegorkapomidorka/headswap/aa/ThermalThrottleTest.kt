@@ -34,6 +34,21 @@ class ThermalThrottleTest {
     }
 
     @Test
+    fun phoneCallIsHotAndRelaxesAfterIt() {
+        val t = ThermalThrottle(relaxMs = 1000)
+        assertNull(t.update(0, 0, nan, inCall = false))
+        assertEquals(ThermalLevel.HOT, t.update(1000, 0, nan, inCall = true))
+        assertEquals(15, t.capFps(30))
+        assertEquals(2_000_000, t.capBitrate(4_000_000))
+        assertNull(t.update(2000, 0, nan, inCall = true))
+        assertNull(t.update(3000, 0, nan, inCall = false))      // звонок кончился: вверх только после relaxMs
+        assertEquals(ThermalLevel.WARM, t.update(4000, 0, nan, inCall = false))
+        assertEquals(ThermalLevel.NORMAL, t.update(5000, 0, nan, inCall = false))
+        assertEquals(ThermalLevel.HOT, t.levelFor(0, nan, inCall = true))
+        assertEquals(ThermalLevel.NORMAL, t.levelFor(0, nan))
+    }
+
+    @Test
     fun headroomForecastThrottlesBeforeModerate() {
         val t = ThermalThrottle()
         assertEquals(ThermalLevel.WARM, t.update(0, 1, 0.9f))

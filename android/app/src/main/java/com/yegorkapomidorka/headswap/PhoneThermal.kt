@@ -1,6 +1,7 @@
 package com.yegorkapomidorka.headswap
 
 import android.content.Context
+import android.media.AudioManager
 import android.os.Build
 import android.os.PowerManager
 import com.yegorkapomidorka.headswap.aa.ThermalSource
@@ -8,6 +9,15 @@ import com.yegorkapomidorka.headswap.aa.ThermalSource
 /** Нагрев телефона из PowerManager: статус (API 29) и прогноз headroom на 10 с (API 30; на старых и без HAL - NaN). */
 class PhoneThermal(ctx: Context) : ThermalSource {
     private val pm = ctx.getSystemService(PowerManager::class.java)
+    private val am = ctx.getSystemService(AudioManager::class.java)
+
+    /** Звонок: режим аудио IN_CALL (GSM/VoLTE) или IN_COMMUNICATION (VoIP: WhatsApp и т.п.). */
+    override fun inCall(): Boolean = try {
+        val m = am?.mode ?: AudioManager.MODE_NORMAL
+        m == AudioManager.MODE_IN_CALL || m == AudioManager.MODE_IN_COMMUNICATION
+    } catch (_: Exception) {
+        false
+    }
 
     override fun status(): Int = try {
         pm?.currentThermalStatus ?: 0
