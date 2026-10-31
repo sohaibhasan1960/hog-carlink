@@ -12,6 +12,7 @@ Changes against upstream tag `v2.6.0` (see `git log v2.6.0..`):
 - VW BT 5075 treated like VW BT 1420 over Wi-Fi: heartbeat on PAUSE, fast resume
 - Arabic text for the head unit server warnings
 - 2.6.0-hog.2: re-request the car Wi-Fi network (up to 10 times, 5 s apart) after onUnavailable; an approved request on Android 16 gives up after 3 scans
+- 2.6.0-hog.3: restart the car network request when the car appears over Bluetooth or Wait is pressed again; "HOG CarLink" on the start screen
 
 Build: `cd android && ./gradlew assembleRelease`. Needs JDK 17+, Android SDK platform 37,
 `~/.android-keys/carlink-release.properties`, and the AA head unit certs in
