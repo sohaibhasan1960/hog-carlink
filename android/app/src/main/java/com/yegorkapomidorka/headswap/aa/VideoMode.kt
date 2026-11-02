@@ -106,7 +106,7 @@ enum class VideoMode(
      * HOG CarLink: то же окно, но ГУ отдаётся кадр 1280x688 вместо запрошенных 800x480 - проба резкости. Если ГУ не шлёт START
      * или закрывает соединение, сессия сама переходит на [ID6] и запоминает это (CarLifeSession, проба HD).
      */
-    ID6_HD(R.string.video_id6_hd_title, R.string.video_id6_hd_sub, "1280x720", 0, 32, 224, 1280, 688, 5_000_000),
+    ID6_HD(R.string.video_id6_hd_title, R.string.video_id6_hd_sub, "1280x720", 0, 32, 224, 1280, 688, 4_000_000),
     WIDE(R.string.video_wide_title, R.string.video_wide_sub, "1280x720", 0, 240, 160, 1280, 480, 4_000_000),
     /** 1728×648 - нативный экран Desay SV G6S (Мазда): из кадра AA 1920×1080 вырезается центр, поля по обеим осям. */
     WIDE_MID(R.string.video_wide_mid_title, R.string.video_wide_mid_sub, "1920x1080", 192, 432, 160, 1728, 648, 5_000_000),

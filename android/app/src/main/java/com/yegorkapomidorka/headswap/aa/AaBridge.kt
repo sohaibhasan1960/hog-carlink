@@ -358,6 +358,7 @@ class AaBridgeCore(
         carlifePaused = false
         exitPending = false
         huPausedAa = false
+        decoderLosses = 0
         resumeOnHuMusic = false
         lastHuResumeMs = NEVER
         gotIdr = false
@@ -1639,9 +1640,16 @@ class AaBridgeCore(
     @Synchronized
     override fun onNeedAaKeyFrame() {
         gotIdr = false
-        waitSince = clockMs()
-        log("BRIDGE декодер потерял кадр: жду новый IDR от AA", true)
+        // HOG CarLink: ключевой кадр на ближайшем tick (<= 0,5 с), а не через KEYFRAME_WAIT_MS: каждая потеря = стоп-кадр на ГУ
+        // на 1,5-2,6 с (лог 2026-11-02), а пять подряд за 25 с - ГУ закрывает соединение
+        waitSince = clockMs() - KEYFRAME_WAIT_MS
+        decoderLosses++
+        log("BRIDGE декодер потерял кадр: жду новый IDR от AA (потерь за сессию: $decoderLosses)", true)
     }
+
+    /** HOG CarLink: потери кадров декодером с начала CarLife-сессии - сигнал перегрузки телефона для CarLifeSession.checkThermal. */
+    @Volatile var decoderLosses = 0
+        private set
 
     @Synchronized
     override fun onTranscodeError(msg: String) {

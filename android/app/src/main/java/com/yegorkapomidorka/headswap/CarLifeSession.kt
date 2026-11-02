@@ -81,6 +81,10 @@ class CarLifeSession(
     private var thermalPassthroughLogged = false
     private var inCall = false                          // только нить cl-sched
     private var callSinceMs = NEVER_MS
+    /** HOG CarLink: потери кадров декодером AA (bridge.decoderLosses) - моменты, чтобы считать «2 за минуту = перегрузка». */
+    private val lossTimes = ArrayDeque<Long>()
+    private var lossesSeen = 0
+    private var overloaded = false
     private val pauseKeepaliveMs = if (air) PAUSE_KEEPALIVE_AIR_MS else PAUSE_KEEPALIVE_MS
     private var overflows = 0
     private var maxQueueFrames = 0
@@ -1200,7 +1204,19 @@ class CarLifeSession(
                 AppLog.i("звонок: ${if (call) "начался - видео 15 fps, половина битрейта" else "закончился ($durS с)"}", true)
                 WLog.ev(WLog.VIDEO, "call", "state" to if (call) "on" else "off", "durS" to durS)
             }
-            val level = thermalThrottle.update(now, status, thermalHeadroom, call) ?: return
+            val losses = bridge.decoderLosses
+            while (lossesSeen < losses) {
+                lossesSeen++
+                lossTimes.addLast(now)
+            }
+            while (lossTimes.isNotEmpty() && now - lossTimes.first() > OVERLOAD_WINDOW_MS) lossTimes.removeFirst()
+            val over = lossTimes.size >= OVERLOAD_LOSSES
+            if (over != overloaded) {
+                overloaded = over
+                AppLog.i("нагрузка: ${if (over) "декодер AA потерял ${lossTimes.size} кадра за ${OVERLOAD_WINDOW_MS / 1000} с - разгружаю до 20 fps" else "потерь нет минуту - снимаю разгрузку"}", true)
+                WLog.ev(WLog.VIDEO, "overload", "state" to if (over) "on" else "off", "losses" to lossTimes.size)
+            }
+            val level = thermalThrottle.update(now, status, thermalHeadroom, call, over) ?: return
             applyThermal(level)
         } catch (e: Exception) {
             AppLog.e("нагрев", e)
@@ -1208,7 +1224,7 @@ class CarLifeSession(
     }
 
     private fun applyThermal(level: ThermalLevel) {
-        val why = (if (inCall) "звонок, " else "") + "статус ${thermalName(thermalStatus)}, headroom ${headroomText()}"
+        val why = (if (inCall) "звонок, " else "") + (if (overloaded) "перегрузка, " else "") + "статус ${thermalName(thermalStatus)}, headroom ${headroomText()}"
         if (!bridge.transcodeEnabled) {
             if (level != ThermalLevel.NORMAL && !thermalPassthroughLogged) {
                 thermalPassthroughLogged = true
@@ -1296,6 +1312,9 @@ class CarLifeSession(
         /** HOG CarLink, проба HD: столько ждём START после INIT_DONE с чужим размером (ID.6 шлёт за 3 мс). */
         const val HD_PROBE_MS = 8_000L
         const val HD_FALLBACK_REASON = "hd-fallback"
+        /** HOG CarLink: столько потерь кадров декодером за окно = перегрузка телефона (ступень WARM, пока потерь нет минуту). */
+        const val OVERLOAD_LOSSES = 2
+        const val OVERLOAD_WINDOW_MS = 60_000L
 
         /** getThermalHeadroom чаще раза в секунду отдаёт NaN, прогноз на 10 с - хватает раза в 10 с. */
         private const val HEADROOM_POLL_MS = 10_000L

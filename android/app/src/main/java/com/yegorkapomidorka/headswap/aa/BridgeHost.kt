@@ -119,6 +119,6 @@ class BridgeHost(
 
     companion object {
         /** Сколько держать AA-сессию живой после потери USB. */
-        const val GRACE_MS = 8_000L
+        const val GRACE_MS = 30_000L     // HOG CarLink: было 8 с; ID.6 возвращается через 5-15 с после своего EOF (лог 2026-11-01)
     }
 }

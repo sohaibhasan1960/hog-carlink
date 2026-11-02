@@ -51,20 +51,24 @@ class ThermalThrottle(private val relaxMs: Long = RELAX_MS) {
     private var lowerSinceMs = NEVER
     private var lastMs = NEVER
 
-    /** Ступень по одному замеру, без гистерезиса. [inCall] - звонок: сразу HOT (15 fps, половина битрейта). */
-    fun levelFor(status: Int, headroom: Float, inCall: Boolean = false): ThermalLevel = when {
+    /**
+     * Ступень по одному замеру, без гистерезиса. [inCall] - звонок: сразу HOT (15 fps, половина битрейта).
+     * [overloaded] - телефон не успевает (декодер AA теряет кадры): не ниже WARM (20 fps, 0,75 битрейта).
+     */
+    fun levelFor(status: Int, headroom: Float, inCall: Boolean = false, overloaded: Boolean = false): ThermalLevel = when {
         inCall -> ThermalLevel.HOT
         status >= STATUS_SEVERE -> ThermalLevel.HOT
+        overloaded -> ThermalLevel.WARM
         status == STATUS_MODERATE -> ThermalLevel.WARM
         !headroom.isNaN() && headroom >= WARM_HEADROOM -> ThermalLevel.WARM
         else -> ThermalLevel.NORMAL
     }
 
     /** Очередной замер. Возвращает новую ступень, если она сменилась, иначе null. */
-    fun update(nowMs: Long, status: Int, headroom: Float, inCall: Boolean = false): ThermalLevel? {
+    fun update(nowMs: Long, status: Int, headroom: Float, inCall: Boolean = false, overloaded: Boolean = false): ThermalLevel? {
         if (lastMs != NEVER && level != ThermalLevel.NORMAL) throttledMs += maxOf(nowMs - lastMs, 0L)
         lastMs = nowMs
-        val want = levelFor(status, headroom, inCall)
+        val want = levelFor(status, headroom, inCall, overloaded)
         if (want > level) {
             level = want
             lowerSinceMs = NEVER

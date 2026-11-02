@@ -20,7 +20,7 @@ class VideoModeTest {
             VideoMode.R1080 to Row("1920x1080", 0, 0, 240, 1920, 1080, 8_000_000),
             VideoMode.R1440 to Row("2560x1440", 0, 0, 320, 2560, 1440, 12_000_000),
             VideoMode.ID6 to Row("1280x720", 0, 32, 224, 800, 480, 4_000_000),
-            VideoMode.ID6_HD to Row("1280x720", 0, 32, 224, 1280, 688, 5_000_000),
+            VideoMode.ID6_HD to Row("1280x720", 0, 32, 224, 1280, 688, 4_000_000),
             VideoMode.WIDE to Row("1280x720", 0, 240, 160, 1280, 480, 4_000_000),
             VideoMode.WIDE_MID to Row("1920x1080", 192, 432, 160, 1728, 648, 5_000_000),
             VideoMode.WIDE_HD to Row("1920x1080", 0, 360, 160, 1920, 720, 6_000_000),

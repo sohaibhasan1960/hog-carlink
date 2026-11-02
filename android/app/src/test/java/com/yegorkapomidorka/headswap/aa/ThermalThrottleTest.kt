@@ -49,6 +49,16 @@ class ThermalThrottleTest {
     }
 
     @Test
+    fun overloadIsWarmButCallAndSevereWin() {
+        val t = ThermalThrottle(relaxMs = 1000)
+        assertEquals(ThermalLevel.WARM, t.update(0, 0, nan, overloaded = true))
+        assertEquals(20, t.capFps(30))
+        assertEquals(ThermalLevel.HOT, t.update(1000, 0, nan, inCall = true, overloaded = true))
+        assertEquals(ThermalLevel.HOT, t.levelFor(ThermalThrottle.STATUS_SEVERE, nan, overloaded = true))
+        assertEquals(ThermalLevel.WARM, t.levelFor(0, nan, overloaded = true))
+    }
+
+    @Test
     fun headroomForecastThrottlesBeforeModerate() {
         val t = ThermalThrottle()
         assertEquals(ThermalLevel.WARM, t.update(0, 1, 0.9f))
