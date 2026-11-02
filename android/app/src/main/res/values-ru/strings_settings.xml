@@ -249,4 +249,10 @@
     <string name="video_id6_sub">Верные пропорции для окна CarLife на ID.6 (ГУ растягивает 800×480)</string>
     <string name="video_id6_hd_title">VW ID.6 1280×688 (резче)</string>
     <string name="video_id6_hd_sub">Кадр крупнее, чем просит ГУ; если машина его не примет, сам перейдёт на 800×480</string>
+    <!-- HOG CarLink: выбор сети машины из списка -->
+    <string name="wl_cw_scan">Найти сети рядом</string>
+    <string name="wl_cw_scanning">Ищу…</string>
+    <string name="wl_cw_scan_title">Сети рядом</string>
+    <string name="wl_cw_scan_none">Сетей не найдено. Машина должна быть включена и рядом; повторите.</string>
+    <string name="wl_cw_scan_location">Включите геолокацию в настройках телефона: без неё Android не показывает сети рядом.</string>
 </resources>

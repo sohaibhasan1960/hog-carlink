@@ -23,6 +23,7 @@ import com.yegorkapomidorka.headswap.aa.CarPreset
 import com.yegorkapomidorka.headswap.link.car.CarNetwork
 import com.yegorkapomidorka.headswap.link.car.CarPairing
 import com.yegorkapomidorka.headswap.link.car.CarWifi
+import com.yegorkapomidorka.headswap.link.car.WifiScan
 
 /**
  * Онбординг (Onboarding.dc.html) и чеклист готовности. Шаги из Readiness.STEPS; при первом запуске уже выполненные
@@ -64,6 +65,10 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
     }
 
     override fun onPermissionResult() {
+        awaitingWifiScan?.let {
+            awaitingWifiScan = null
+            if (WifiScan.granted(ctx)) it()
+        }
         if (awaitingCarBt) {
             awaitingCarBt = false
             CarPairing.start(host)      // отказ выбор не блокирует: шаг останется невыполненным
@@ -249,6 +254,18 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
         body.addView(ssid, lp(MATCH, c.dp(56)).margins(c, 0, 8, 0, 0))
         body.addView(pass, lp(MATCH, c.dp(56)))
         val result = c.text("", 14f, 500, c.clr(R.color.on2)).apply { visibility = View.GONE }
+        body.addView(
+            c.outlineButton(c.getString(R.string.wl_cw_scan), heightDp = 52, sp = 15f).apply {
+                setOnClickListener {
+                    scanCarWifi(ssid) { msg ->
+                        result.text = msg
+                        result.setTextColor(c.clr(R.color.warn))
+                        result.visibility = if (msg.isEmpty()) View.GONE else View.VISIBLE
+                    }
+                }
+            },
+            lp(MATCH, c.dp(52)),
+        )
         body.addView(result, lp(MATCH, WRAP))
         s.hint?.let {
             body.addView(
@@ -333,6 +350,37 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
     }
 
     /** HOG CarLink: выбор машины. На Android 12+ сначала «Устройства поблизости» (без него ACL машины не доставляются). */
+    private var awaitingWifiScan: (() -> Unit)? = null
+
+    /** HOG CarLink: список сетей рядом -> имя сети машины в поле (см. WifiScan). */
+    private fun scanCarWifi(field: EditText, warn: (String) -> Unit) {
+        val c = ctx
+        if (!WifiScan.granted(c)) {
+            awaitingWifiScan = { scanCarWifi(field, warn) }
+            host.requestPermissions(WifiScan.PERMISSIONS, REQ_WIFI_SCAN)
+            return
+        }
+        if (!WifiScan.locationOn(c)) {
+            warn(c.getString(R.string.wl_cw_scan_location))
+            return
+        }
+        WifiScan.start(c)
+        warn(c.getString(R.string.wl_cw_scanning))
+        cwHandler.postDelayed({
+            val nets = WifiScan.nearby(c)
+            if (nets.isEmpty()) {
+                warn(c.getString(R.string.wl_cw_scan_none))
+                return@postDelayed
+            }
+            warn("")
+            android.app.AlertDialog.Builder(c, R.style.Theme_Headswap_Dialog)
+                .setTitle(R.string.wl_cw_scan_title)
+                .setItems(nets.map { "${WifiScan.bars(it.level)}  ${it.ssid}" }.toTypedArray()) { _, i -> field.setText(nets[i].ssid) }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }, WifiScan.SETTLE_MS)
+    }
+
     private fun pickCar() {
         if (!Readiness.carBtGranted(ctx)) {
             awaitingCarBt = true
@@ -547,6 +595,7 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
     private companion object {
         /** Тот же код, что в настройках: BLUETOOTH_CONNECT перед выбором машины (38 занят диалогом CDM). */
         const val REQ_CAR_BT = 39
+        const val REQ_WIFI_SCAN = 40
         const val CW_CHECK_TIMEOUT_MS = 60_000L
         const val CW_CHECK_HOLD_MS = 5_000L
     }

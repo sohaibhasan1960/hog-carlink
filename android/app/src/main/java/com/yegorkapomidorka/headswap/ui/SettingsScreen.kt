@@ -50,6 +50,7 @@ import com.yegorkapomidorka.headswap.link.car.CarNetwork
 import com.yegorkapomidorka.headswap.link.car.CarPairing
 import com.yegorkapomidorka.headswap.link.car.CarProfile
 import com.yegorkapomidorka.headswap.link.car.CarWifi
+import com.yegorkapomidorka.headswap.link.car.WifiScan
 import com.yegorkapomidorka.headswap.link.diag.NetProbe
 import com.yegorkapomidorka.headswap.update.UpdatePrefs
 import com.yegorkapomidorka.headswap.update.Updater
@@ -421,6 +422,10 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
 
     override fun onPermissionResult() {
         refreshMic()
+        if (cwAwaitingScan) {
+            cwAwaitingScan = false
+            if (WifiScan.granted(ctx)) onCarWifiScan()
+        }
         if (wlAwaitingPermission) {
             wlAwaitingPermission = false
             val lan = Build.VERSION.SDK_INT < 37 || NetProbe.localNetworkGranted(ctx) == "granted"
@@ -468,6 +473,9 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
             .also { card.addView(it, lp(MATCH, c.dp(52))) }
         wlCwPass = wifiField(c.getString(R.string.wl_cw_pass_hint), password = true).apply { setText(cw.pass) }
             .also { card.addView(it, lp(MATCH, c.dp(52))) }
+        // HOG CarLink: имя сети из списка сетей рядом (пароль всё равно вручную: сохранённые сети телефона приложению недоступны)
+        card.addView(c.outlineButton(c.getString(R.string.wl_cw_scan), heightDp = 56, sp = 16f).apply { setOnClickListener { onCarWifiScan() } },
+            lp(MATCH, c.dp(56)))
         wlCwResult = c.text("", 13f, 400, c.clr(R.color.on2)).apply { visibility = View.GONE }.also { card.addView(it, lp(MATCH, WRAP)) }
         card.addView(c.outlineButton(c.getString(R.string.wl_cw_save), heightDp = 56, sp = 16f).apply { setOnClickListener { onCarWifiSave() } },
             lp(MATCH, c.dp(56)))
@@ -615,6 +623,42 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         startWireless()
     }
 
+    private var cwAwaitingScan = false
+
+    /** HOG CarLink: список сетей рядом -> имя сети машины в поле. Геолокация нужна и для разрешения, и как переключатель. */
+    private fun onCarWifiScan() {
+        val c = ctx
+        fun warn(t: String) {
+            wlCwResult?.text = t
+            wlCwResult?.setTextColor(c.clr(R.color.warn))
+            wlCwResult?.visibility = if (t.isEmpty()) View.GONE else View.VISIBLE
+        }
+        if (!WifiScan.granted(c)) {
+            cwAwaitingScan = true
+            host.requestPermissions(WifiScan.PERMISSIONS, REQ_WIFI_SCAN)
+            return
+        }
+        if (!WifiScan.locationOn(c)) {
+            warn(c.getString(R.string.wl_cw_scan_location))
+            return
+        }
+        WifiScan.start(c)
+        warn(c.getString(R.string.wl_cw_scanning))
+        android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+            val nets = WifiScan.nearby(c)
+            if (nets.isEmpty()) {
+                warn(c.getString(R.string.wl_cw_scan_none))
+                return@postDelayed
+            }
+            warn("")
+            AlertDialog.Builder(c, R.style.Theme_Headswap_Dialog)
+                .setTitle(R.string.wl_cw_scan_title)
+                .setItems(nets.map { "${WifiScan.bars(it.level)}  ${it.ssid}" }.toTypedArray()) { _, i -> wlCwSsid?.setText(nets[i].ssid) }
+                .setNegativeButton(android.R.string.cancel, null)
+                .show()
+        }, WifiScan.SETTLE_MS)
+    }
+
     private fun startWireless() {
         AppLog.i("кнопка «Ждать машину по Wi-Fi»")
         ctx.startForegroundService(Intent(ctx, BridgeService::class.java).setAction(BridgeService.ACTION_WIFI_B))
@@ -625,6 +669,8 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         const val REQ_LOCAL_NETWORK = 37
         /** BLUETOOTH_CONNECT перед выбором машины (38 занят диалогом CDM, CarPairing.REQ_CAR_PAIR). */
         const val REQ_CAR_BT = 39
+        /** HOG CarLink: геолокация для списка сетей рядом (WifiScan). */
+        const val REQ_WIFI_SCAN = 40
         /** Проверка Wi-Fi машины из настроек: сколько ждём одобрения и входа, и сколько держим сеть после входа. */
         const val CW_CHECK_TIMEOUT_MS = 60_000L
         const val CW_CHECK_HOLD_MS = 5_000L

@@ -249,4 +249,10 @@
     <string name="video_id6_sub">Correct proportions for the CarLife window of the ID.6 (the head unit stretches 800×480)</string>
     <string name="video_id6_hd_title">VW ID.6 1280×688 (sharper)</string>
     <string name="video_id6_hd_sub">Sends a larger frame than the head unit asks for; switches to 800×480 by itself if the car rejects it</string>
+    <!-- HOG CarLink: выбор сети машины из списка -->
+    <string name="wl_cw_scan">Find nearby networks</string>
+    <string name="wl_cw_scanning">Scanning…</string>
+    <string name="wl_cw_scan_title">Nearby networks</string>
+    <string name="wl_cw_scan_none">No networks found. Make sure the car is on and nearby, then try again.</string>
+    <string name="wl_cw_scan_location">Turn on Location in the phone settings: Android lists nearby networks only with it.</string>
 </resources>

@@ -249,4 +249,10 @@
     <string name="video_id6_sub">نسب صحيحة لنافذة CarLife في الـID.6 (الشاشة تمطّ 800×480)</string>
     <string name="video_id6_hd_title">VW ID.6 1280×688 (أوضح)</string>
     <string name="video_id6_hd_sub">يرسل صورة أكبر مما تطلبه الشاشة؛ وإن رفضتها السيارة يعود وحده إلى 800×480</string>
+    <!-- HOG CarLink: выбор сети машины из списка -->
+    <string name="wl_cw_scan">البحث عن الشبكات القريبة</string>
+    <string name="wl_cw_scanning">جارٍ البحث…</string>
+    <string name="wl_cw_scan_title">الشبكات القريبة</string>
+    <string name="wl_cw_scan_none">لم تُعثر على شبكات. تأكد أن السيارة شغّالة وقريبة، ثم حاول مرة أخرى.</string>
+    <string name="wl_cw_scan_location">شغّل الموقع من إعدادات الهاتف: لا يعرض أندرويد الشبكات القريبة من دونه.</string>
 </resources>
