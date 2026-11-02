@@ -110,7 +110,7 @@
     <string name="set_sum_appearance">Язык: %1$s · тема: %2$s</string>
     <string name="set_sum_mic">микрофон: %1$s</string>
     <string name="set_sum_headunit">Сертификат %1$s</string>
-    <string name="set_footer">HOG CarLink %1$s · на основе Headswap (GPL-3.0)</string>
+    <string name="set_footer">HOG CarLink %1$s · на основе Headswap (GPL-3.0) · QR: ZXing (Apache-2.0)</string>
 
     <!-- Video modes (VideoMode) -->
     <string name="video_r800_title">800×480</string>

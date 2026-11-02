@@ -110,7 +110,7 @@
     <string name="set_sum_appearance">اللغة: %1$s · المظهر: %2$s</string>
     <string name="set_sum_mic">الميكروفون: %1$s</string>
     <string name="set_sum_headunit">الشهادة %1$s</string>
-    <string name="set_footer">HOG CarLink %1$s · مبني على Headswap (GPL-3.0)</string>
+    <string name="set_footer">HOG CarLink %1$s · مبني على Headswap (GPL-3.0) · QR: ZXing (Apache-2.0)</string>
 
     <!-- Video modes (VideoMode) -->
     <string name="video_r800_title">800×480</string>
