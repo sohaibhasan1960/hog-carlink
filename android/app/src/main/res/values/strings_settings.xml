@@ -255,4 +255,12 @@
     <string name="wl_cw_scan_title">Nearby networks</string>
     <string name="wl_cw_scan_none">No networks found. Make sure the car is on and nearby, then try again.</string>
     <string name="wl_cw_scan_location">Turn on Location in the phone settings: Android lists nearby networks only with it.</string>
+    <!-- HOG CarLink: QR code of the car Wi-Fi (QrScan) -->
+    <string name="wl_cw_qr">Scan the car\'s Wi-Fi QR code</string>
+    <string name="wl_cw_qr_title">Car Wi-Fi QR code</string>
+    <string name="wl_cw_qr_hint">Point the camera at the hotspot QR code on the car screen. The network name and password fill in by themselves.</string>
+    <string name="wl_cw_qr_filled">Network name and password taken from the QR code. Tap Save.</string>
+    <string name="wl_cw_qr_not_wifi">This is not a Wi-Fi code. It contains: %1$s</string>
+    <string name="wl_cw_qr_no_camera">Camera unavailable: %1$s</string>
+    <string name="wl_cw_qr_permission">Allow camera access to scan the code; the camera is used only while scanning.</string>
 </resources>

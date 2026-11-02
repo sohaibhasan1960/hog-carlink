@@ -255,4 +255,12 @@
     <string name="wl_cw_scan_title">الشبكات القريبة</string>
     <string name="wl_cw_scan_none">لم تُعثر على شبكات. تأكد أن السيارة شغّالة وقريبة، ثم حاول مرة أخرى.</string>
     <string name="wl_cw_scan_location">شغّل الموقع من إعدادات الهاتف: لا يعرض أندرويد الشبكات القريبة من دونه.</string>
+    <!-- HOG CarLink: QR code of the car Wi-Fi (QrScan) -->
+    <string name="wl_cw_qr">مسح رمز QR لشبكة السيارة</string>
+    <string name="wl_cw_qr_title">رمز QR لشبكة Wi-Fi السيارة</string>
+    <string name="wl_cw_qr_hint">وجّه الكاميرا إلى رمز QR لنقطة الاتصال على شاشة السيارة. يُملأ اسم الشبكة وكلمة المرور تلقائياً.</string>
+    <string name="wl_cw_qr_filled">أُخذ اسم الشبكة وكلمة المرور من رمز QR. اضغط «حفظ».</string>
+    <string name="wl_cw_qr_not_wifi">هذا ليس رمز Wi-Fi. محتواه: %1$s</string>
+    <string name="wl_cw_qr_no_camera">الكاميرا غير متاحة: %1$s</string>
+    <string name="wl_cw_qr_permission">اسمح بالوصول إلى الكاميرا لقراءة الرمز؛ تُستخدم الكاميرا أثناء المسح فقط.</string>
 </resources>

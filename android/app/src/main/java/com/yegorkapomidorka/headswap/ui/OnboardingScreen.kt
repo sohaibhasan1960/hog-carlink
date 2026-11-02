@@ -23,6 +23,7 @@ import com.yegorkapomidorka.headswap.aa.CarPreset
 import com.yegorkapomidorka.headswap.link.car.CarNetwork
 import com.yegorkapomidorka.headswap.link.car.CarPairing
 import com.yegorkapomidorka.headswap.link.car.CarWifi
+import com.yegorkapomidorka.headswap.link.car.WifiQr
 import com.yegorkapomidorka.headswap.link.car.WifiScan
 
 /**
@@ -69,6 +70,10 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             awaitingWifiScan = null
             if (WifiScan.granted(ctx)) it()
         }
+        awaitingQr?.let {
+            awaitingQr = null
+            it(QrScan.granted(ctx))
+        }
         if (awaitingCarBt) {
             awaitingCarBt = false
             CarPairing.start(host)      // отказ выбор не блокирует: шаг останется невыполненным
@@ -82,6 +87,8 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
     override fun onHide() {
         cwCheck?.release("onboarding")
         cwCheck = null
+        qrScan?.dismiss()
+        qrScan = null
     }
 
     override fun onBack(): Boolean {
@@ -266,6 +273,21 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             },
             lp(MATCH, c.dp(52)),
         )
+        // HOG CarLink: QR-код Wi-Fi с экрана машины -> оба поля сразу
+        if (QrScan.hasCamera(c)) {
+            body.addView(
+                c.outlineButton(c.getString(R.string.wl_cw_qr), heightDp = 52, sp = 15f).apply {
+                    setOnClickListener {
+                        scanCarWifiQr(ssid, pass) { msg, color ->
+                            result.text = msg
+                            result.setTextColor(c.clr(color))
+                            result.visibility = if (msg.isEmpty()) View.GONE else View.VISIBLE
+                        }
+                    }
+                },
+                lp(MATCH, c.dp(52)),
+            )
+        }
         body.addView(result, lp(MATCH, WRAP))
         s.hint?.let {
             body.addView(
@@ -379,6 +401,36 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
                 .setNegativeButton(android.R.string.cancel, null)
                 .show()
         }, WifiScan.SETTLE_MS)
+    }
+
+    private var awaitingQr: ((Boolean) -> Unit)? = null
+    private var qrScan: QrScan? = null
+
+    /** HOG CarLink: QR-код Wi-Fi с экрана машины -> имя сети и пароль в поля (см. QrScan, WifiQr). */
+    private fun scanCarWifiQr(ssid: EditText, pass: EditText, show: (String, Int) -> Unit) {
+        val c = ctx
+        if (!QrScan.granted(c)) {
+            awaitingQr = { ok -> if (ok) scanCarWifiQr(ssid, pass, show) else show(c.getString(R.string.wl_cw_qr_permission), R.color.warn) }
+            host.requestPermissions(arrayOf(QrScan.PERMISSION), REQ_QR_SCAN)
+            return
+        }
+        qrScan?.dismiss()
+        qrScan = QrScan(
+            c, c.getString(R.string.wl_cw_qr_title), c.getString(R.string.wl_cw_qr_hint),
+            onText = { text ->
+                val net = WifiQr.parse(text)
+                if (net == null) {
+                    AppLog.i("онбординг: QR Wi-Fi машины: не Wi-Fi код (${text.length} симв.)")
+                    show(c.getString(R.string.wl_cw_qr_not_wifi, text.take(QR_SHOW_CHARS)), R.color.warn)
+                } else {
+                    ssid.setText(net.ssid)
+                    pass.setText(net.pass)
+                    AppLog.i("онбординг: QR Wi-Fi машины: сеть «${net.ssid}», пароль " + if (net.pass.isEmpty()) "пустой" else "${net.pass.length} симв.")
+                    show(c.getString(R.string.wl_cw_qr_filled), R.color.ok)
+                }
+            },
+            onError = { show(c.getString(R.string.wl_cw_qr_no_camera, it), R.color.warn) },
+        ).also { it.show() }
     }
 
     private fun pickCar() {
@@ -596,6 +648,8 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
         /** Тот же код, что в настройках: BLUETOOTH_CONNECT перед выбором машины (38 занят диалогом CDM). */
         const val REQ_CAR_BT = 39
         const val REQ_WIFI_SCAN = 40
+        const val REQ_QR_SCAN = 41
+        const val QR_SHOW_CHARS = 60
         const val CW_CHECK_TIMEOUT_MS = 60_000L
         const val CW_CHECK_HOLD_MS = 5_000L
     }

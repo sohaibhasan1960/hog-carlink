@@ -90,6 +90,8 @@ androidComponents {
 }
 
 dependencies {
+    // HOG CarLink: QR-code of the car Wi-Fi (ui/QrScan). Pure Java, Apache-2.0, no transitive deps; camera is framework Camera2
+    implementation("com.google.zxing:core:3.5.3")
     testImplementation("junit:junit:4.13.2")
     // В unit-тестах android.jar — заглушки (isReturnDefaultValues), настоящий org.json нужен LogDiag
     testImplementation("org.json:json:20240303")

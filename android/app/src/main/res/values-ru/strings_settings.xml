@@ -255,4 +255,12 @@
     <string name="wl_cw_scan_title">Сети рядом</string>
     <string name="wl_cw_scan_none">Сетей не найдено. Машина должна быть включена и рядом; повторите.</string>
     <string name="wl_cw_scan_location">Включите геолокацию в настройках телефона: без неё Android не показывает сети рядом.</string>
+    <!-- HOG CarLink: QR-код Wi-Fi машины (QrScan) -->
+    <string name="wl_cw_qr">Сканировать QR-код Wi-Fi машины</string>
+    <string name="wl_cw_qr_title">QR-код Wi-Fi машины</string>
+    <string name="wl_cw_qr_hint">Наведите камеру на QR-код точки доступа на экране машины. Имя сети и пароль заполнятся сами.</string>
+    <string name="wl_cw_qr_filled">Имя сети и пароль взяты из QR-кода. Нажмите «Сохранить».</string>
+    <string name="wl_cw_qr_not_wifi">Это не код Wi-Fi. В нём: %1$s</string>
+    <string name="wl_cw_qr_no_camera">Камера недоступна: %1$s</string>
+    <string name="wl_cw_qr_permission">Разрешите доступ к камере, чтобы считать код; камера нужна только на время сканирования.</string>
 </resources>
