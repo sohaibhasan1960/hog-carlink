@@ -28,7 +28,7 @@
     <string name="pr_test_adhan">تجربة الأذان</string>
     <string name="pr_read_text">قراءة نص الأذكار</string>
     <string name="pr_install_voice">تثبيت الصوت العربي</string>
-    <string name="pr_credits">تُحسب المواقيت على الهاتف. الأذكار: حصن المسلم (قاعدة Seen-Arabic، ترخيص MIT). الأذان المدمج: Wikimedia Commons، ملكية عامة CC0.</string>
+    <string name="pr_credits">تُحسب المواقيت على الهاتف. نص الأذكار: حصن المسلم (قاعدة Seen-Arabic، ترخيص MIT)؛ التسجيلات من hisnmuslim.com وmp3quran.net. الأذان المدمج: Wikimedia Commons (ملكية عامة CC0؛ وأذان عاقب عزيز بترخيص CC BY-SA 4.0).</string>
     <string name="pr_no_place">لم يُحدَّد الموقع بعد. اضغط «تحديد موقعي».</string>
     <string name="pr_auto">تلقائي</string>
     <string name="pr_next">التالية: %1$s بعد %2$s</string>
@@ -85,4 +85,14 @@
     <string name="pr_city">إدخال المدينة يدويًا</string>
     <string name="pr_city_hint">مثال: عمّان</string>
     <string name="pr_city_failed">لم تُعثر على المدينة. تحقق من الاسم والاتصال بالإنترنت.</string>
+    <string name="pr_adhan_speed">سرعة الأذان</string>
+    <string name="pr_adhan_file_note">تريد أذان مكة أو المدينة؟ احفظ تسجيلًا لديك في الهاتف واختر «اختيار ملف من الهاتف».</string>
+    <string name="pr_human">الأذكار بصوت حقيقي</string>
+    <string name="pr_human_sub">تسجيلات حصن المسلم بصوت الشيخ حمد الدريهم (والمعوذات بصوت الشيخ مشاري العفاسي). تُنزَّل مرة واحدة (نحو 13 ميغابايت) ثم تعمل دون إنترنت</string>
+    <string name="pr_adhan_calm">الأذان المدمج 1 (هادئ، 2:34)</string>
+    <string name="pr_adhan_fast">الأذان المدمج 2 (أسرع، 1:26)</string>
+    <string name="pr_speed_fast">أسرع</string>
+    <string name="pr_speed_bit">أسرع قليلًا</string>
+    <string name="pr_speed_normal">عادية</string>
+    <string name="pr_human_offline">لا يوجد إنترنت لتنزيل التسجيلات: المتابعة بصوت الهاتف</string>
 </resources>

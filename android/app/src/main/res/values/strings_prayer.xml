@@ -28,7 +28,7 @@
     <string name="pr_test_adhan">Test the adhan</string>
     <string name="pr_read_text">Read the adhkar text</string>
     <string name="pr_install_voice">Install the Arabic voice</string>
-    <string name="pr_credits">Times are calculated on the phone. Adhkar: Hisn al-Muslim (Seen-Arabic dataset, MIT). Built-in adhan: Wikimedia Commons, CC0.</string>
+    <string name="pr_credits">Times are calculated on the phone. Adhkar text: Hisn al-Muslim (Seen-Arabic dataset, MIT); recordings from hisnmuslim.com and mp3quran.net. Built-in adhans: Wikimedia Commons (CC0; Aaqib Azeez, CC BY-SA 4.0).</string>
     <string name="pr_no_place">Location not set yet. Tap Find my location.</string>
     <string name="pr_auto">automatic</string>
     <string name="pr_next">Next: %1$s in %2$s</string>
@@ -85,4 +85,14 @@
     <string name="pr_city">Enter city name</string>
     <string name="pr_city_hint">e.g. Amman</string>
     <string name="pr_city_failed">City not found. Check the name and the internet connection.</string>
+    <string name="pr_adhan_speed">Adhan speed</string>
+    <string name="pr_adhan_file_note">Want the Makkah or Madinah adhan? Save a recording you have on the phone and choose “Choose a file on the phone”.</string>
+    <string name="pr_human">Adhkar in a real voice</string>
+    <string name="pr_human_sub">Recordings of Hisn al-Muslim read by Sheikh Hamad Al-Duraihim (the Mu\'awwidhat by Sheikh Mishary Alafasy). Downloaded once (about 13 MB), then they play without internet</string>
+    <string name="pr_adhan_calm">Built-in adhan 1 (calm, 2:34)</string>
+    <string name="pr_adhan_fast">Built-in adhan 2 (faster, 1:26)</string>
+    <string name="pr_speed_fast">Faster</string>
+    <string name="pr_speed_bit">A little faster</string>
+    <string name="pr_speed_normal">Normal</string>
+    <string name="pr_human_offline">No internet for the recordings: continuing with the phone voice</string>
 </resources>

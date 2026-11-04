@@ -28,7 +28,7 @@
     <string name="pr_test_adhan">Проверить азан</string>
     <string name="pr_read_text">Текст азкаров</string>
     <string name="pr_install_voice">Установить арабский голос</string>
-    <string name="pr_credits">Время рассчитывается на телефоне. Азкары: «Крепость мусульманина» (набор Seen-Arabic, MIT). Встроенный азан: Wikimedia Commons, CC0.</string>
+    <string name="pr_credits">Время рассчитывается на телефоне. Текст азкаров: «Крепость мусульманина» (набор Seen-Arabic, MIT); записи - hisnmuslim.com и mp3quran.net. Встроенные азаны: Wikimedia Commons (CC0; Aaqib Azeez, CC BY-SA 4.0).</string>
     <string name="pr_no_place">Место не задано. Нажмите «Определить место».</string>
     <string name="pr_auto">автоматически</string>
     <string name="pr_next">Следующий: %1$s через %2$s</string>
@@ -85,4 +85,14 @@
     <string name="pr_city">Ввести город</string>
     <string name="pr_city_hint">например, Амман</string>
     <string name="pr_city_failed">Город не найден. Проверьте название и интернет.</string>
+    <string name="pr_adhan_speed">Скорость азана</string>
+    <string name="pr_adhan_file_note">Нужен азан Мекки или Медины? Сохраните свою запись на телефоне и выберите «Выбрать файл на телефоне».</string>
+    <string name="pr_human">Азкары живым голосом</string>
+    <string name="pr_human_sub">Записи «Крепости мусульманина» в чтении шейха Хамада ад-Дурейхима (суры-защитницы - шейх Мишари аль-Афаси). Скачиваются один раз (около 13 МБ), дальше играют без интернета</string>
+    <string name="pr_adhan_calm">Встроенный азан 1 (спокойный, 2:34)</string>
+    <string name="pr_adhan_fast">Встроенный азан 2 (быстрее, 1:26)</string>
+    <string name="pr_speed_fast">Быстрее</string>
+    <string name="pr_speed_bit">Чуть быстрее</string>
+    <string name="pr_speed_normal">Обычная</string>
+    <string name="pr_human_offline">Нет интернета для записей: дальше голосом телефона</string>
 </resources>

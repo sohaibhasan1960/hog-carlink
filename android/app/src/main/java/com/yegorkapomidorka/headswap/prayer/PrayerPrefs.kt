@@ -90,6 +90,21 @@ class PrayerPrefs(ctx: Context) {
         get() = sp.getBoolean("full_repeat", false)
         set(v) = sp.edit().putBoolean("full_repeat", v).apply()
 
+    /** Азкары живым голосом (записи «Крепости мусульманина»); false - синтез речи телефона. */
+    var adhkarHuman: Boolean
+        get() = sp.getBoolean("adhkar_human", true)
+        set(v) = sp.edit().putBoolean("adhkar_human", v).apply()
+
+    /** Встроенная запись азана: [ADHAN_CALM] (2:34) или [ADHAN_FAST] (1:26). */
+    var adhanBuiltin: String
+        get() = sp.getString("adhan_builtin", ADHAN_CALM) ?: ADHAN_CALM
+        set(v) = sp.edit().putString("adhan_builtin", v).apply()
+
+    /** Скорость азана: 1.0 / 1.15 / 1.3 (тон не меняется). */
+    var adhanSpeed: Float
+        get() = sp.getFloat("adhan_speed", 1f)
+        set(v) = sp.edit().putFloat("adhan_speed", v).apply()
+
     /** Голос синтеза речи (имя Voice); пусто - по умолчанию. */
     var ttsVoice: String
         get() = sp.getString("tts_voice", "") ?: ""
@@ -139,5 +154,8 @@ class PrayerPrefs(ctx: Context) {
 
     companion object {
         val DHIKR_STEPS = intArrayOf(0, 15, 30, 60, 120)
+        const val ADHAN_CALM = "calm"
+        const val ADHAN_FAST = "fast"
+        val ADHAN_SPEEDS = floatArrayOf(1f, 1.15f, 1.3f)
     }
 }

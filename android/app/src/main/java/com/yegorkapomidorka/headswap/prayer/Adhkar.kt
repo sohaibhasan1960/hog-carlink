@@ -8,13 +8,14 @@ import org.json.JSONArray
  * Разбор и план чтения без Android - для теста.
  */
 object Adhkar {
-    data class Item(val type: Int, val count: Int, val text: String, val source: String)
+    /** [audio] - запись живым голосом (сайт «Крепости мусульманина», чтец Хамад ад-Дурейхим; три «Куль» - Мишари аль-Афаси). */
+    data class Item(val type: Int, val count: Int, val text: String, val source: String, val audio: String = "")
 
     fun parse(json: String): List<Item> {
         val a = JSONArray(json)
         return List(a.length()) { i ->
             val o = a.getJSONObject(i)
-            Item(o.getInt("t"), o.getInt("n"), o.getString("c"), o.optString("s"))
+            Item(o.getInt("t"), o.getInt("n"), o.getString("c"), o.optString("s"), o.optString("a"))
         }
     }
 
@@ -38,6 +39,9 @@ object Adhkar {
         return if (fullRepeat || item.count <= FULL_REPEAT_MAX) List(item.count.coerceAtLeast(1)) { t }
         else listOf(t, countPhrase(item.count))
     }
+
+    /** Сколько раз проиграть запись: полностью до [FULL_REPEAT_MAX] (или всегда при полном повторе), иначе один раз. */
+    fun plays(item: Item, fullRepeat: Boolean): Int = if (fullRepeat || item.count <= FULL_REPEAT_MAX) item.count.coerceAtLeast(1) else 1
 
     /** «تُكرَّر عشر مرات» / «مئة مرة». */
     fun countPhrase(n: Int): String = when (n) {

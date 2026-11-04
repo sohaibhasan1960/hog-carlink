@@ -203,7 +203,9 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
         box.addView(ToggleRow(c, c.getString(R.string.pr_sound_always), c.getString(R.string.pr_sound_always_sub), prefs.soundAlways) {
             prefs.soundAlways = it
         }.view, lp(MATCH, WRAP))
-        box.addView(valueRow(c.getString(R.string.pr_adhan_sound), prefs.adhanName.ifBlank { c.getString(R.string.pr_adhan_builtin) }) { pickAdhan() })
+        box.addView(valueRow(c.getString(R.string.pr_adhan_sound), prefs.adhanName.ifBlank { adhanBuiltinLabel() }) { pickAdhan() })
+        box.addView(valueRow(c.getString(R.string.pr_adhan_speed), speedLabel(prefs.adhanSpeed)) { pickSpeed() })
+        box.addView(c.text(c.getString(R.string.pr_adhan_file_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
 
         box.addView(c.sectionTitle(c.getString(R.string.pr_sec_iqama)))
         box.addView(ToggleRow(c, c.getString(R.string.pr_iqama_on), c.getString(R.string.pr_iqama_on_sub), prefs.iqamaOn) {
@@ -235,6 +237,9 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
             prefs.fullRepeat = it
         }.view, lp(MATCH, WRAP))
         box.addView(valueRow(c.getString(R.string.pr_dhikr_every), dhikrLabel(prefs.dhikrEvery)) { pickDhikr() })
+        box.addView(ToggleRow(c, c.getString(R.string.pr_human), c.getString(R.string.pr_human_sub), prefs.adhkarHuman) {
+            prefs.adhkarHuman = it
+        }.view, lp(MATCH, WRAP))
         box.addView(valueRow(c.getString(R.string.pr_voice), prefs.ttsVoice.ifBlank { c.getString(R.string.pr_voice_default) }.let { voiceLabel(it) }) { pickVoice() })
         box.addView(valueRow(c.getString(R.string.pr_morning_audio), prefs.adhkarName(true).ifBlank { c.getString(R.string.pr_audio_tts) }) { pickAdhkarAudio(true) })
         box.addView(valueRow(c.getString(R.string.pr_evening_audio), prefs.adhkarName(false).ifBlank { c.getString(R.string.pr_audio_tts) }) { pickAdhkarAudio(false) })
@@ -390,13 +395,35 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
 
     // ---------------- свой файл азана ----------------
 
+    private fun adhanBuiltinLabel() = ctx.getString(
+        if (prefs.adhanBuiltin == PrayerPrefs.ADHAN_FAST) R.string.pr_adhan_fast else R.string.pr_adhan_calm)
+
+    private fun speedLabel(v: Float) = ctx.getString(when {
+        v >= 1.25f -> R.string.pr_speed_fast
+        v > 1.01f -> R.string.pr_speed_bit
+        else -> R.string.pr_speed_normal
+    })
+
+    private fun pickSpeed() {
+        val speeds = PrayerPrefs.ADHAN_SPEEDS
+        AlertDialog.Builder(host).setTitle(R.string.pr_adhan_speed)
+            .setSingleChoiceItems(speeds.map { speedLabel(it) }.toTypedArray(), speeds.indexOfFirst { it == prefs.adhanSpeed }.coerceAtLeast(0)) { d, i ->
+                prefs.adhanSpeed = speeds[i]
+                d.dismiss()
+                buildSettings()
+            }.show()
+    }
+
     private fun pickAdhan() {
         AlertDialog.Builder(host).setTitle(R.string.pr_adhan_sound)
-            .setItems(arrayOf(ctx.getString(R.string.pr_adhan_builtin), ctx.getString(R.string.pr_adhan_file))) { _, i ->
-                if (i == 0) {
+            .setItems(arrayOf(ctx.getString(R.string.pr_adhan_calm), ctx.getString(R.string.pr_adhan_fast), ctx.getString(R.string.pr_adhan_file))) { _, i ->
+                if (i < 2) {
                     prefs.adhanUri = ""
                     prefs.adhanName = ""
+                    prefs.adhanBuiltin = if (i == 0) PrayerPrefs.ADHAN_CALM else PrayerPrefs.ADHAN_FAST
                     buildSettings()
+                    // сразу послушать выбранный
+                    PrayerPlayer.start(ctx, PrayerPlayer.What.TEST_ADHAN, com.yegorkapomidorka.headswap.prayer.Prayer.DHUHR)
                 } else {
                     val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("audio/*")
                     try {

@@ -102,6 +102,11 @@ class PrayerPlayer : Service() {
                 }
                 val list = if (what == What.MORNING) Adhkar.morning(all) else Adhkar.evening(all)
                 val full = PrayerPrefs(this).fullRepeat
+                // живой голос (записи «Крепости мусульманина»); синтез речи - по выбору или без интернета
+                if (PrayerPrefs(this).adhkarHuman) {
+                    playHuman(list, full)
+                    return START_NOT_STICKY
+                }
                 speak(list.flatMap { item -> Adhkar.utterances(item, full).map { item.text to it } }, short = false)
             }
         }
@@ -240,6 +245,15 @@ class PrayerPlayer : Service() {
             mp.setOnCompletionListener { finish("азан доиграл") }
             mp.setOnErrorListener { _, w, x -> AppLog.i("намаз: ошибка плеера $w/$x"); finish("ошибка плеера"); true }
             mp.prepare()
+            // быстрее без смены тона (растяжение времени)
+            val speed = prefs.adhanSpeed
+            if (speed != 1f) {
+                try {
+                    mp.playbackParams = mp.playbackParams.setSpeed(speed)
+                } catch (e: Exception) {
+                    AppLog.i("намаз: скорость азана не задана: ${e.message}")
+                }
+            }
             mp.start()
         } catch (e: Exception) {
             AppLog.e("намаз: азан не запустился", e)
@@ -248,7 +262,95 @@ class PrayerPlayer : Service() {
     }
 
     private fun rawSource(mp: MediaPlayer) {
-        resources.openRawResourceFd(R.raw.adhan_default).use { fd -> mp.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length) }
+        val res = if (PrayerPrefs(this).adhanBuiltin == PrayerPrefs.ADHAN_FAST) R.raw.adhan_fast else R.raw.adhan_default
+        resources.openRawResourceFd(res).use { fd -> mp.setDataSource(fd.fileDescriptor, fd.startOffset, fd.length) }
+    }
+
+    // ---------------- азкары живым голосом ----------------
+
+    private var humanQueue: List<Pair<Adhkar.Item, Int>> = emptyList()
+    private var humanIndex = 0
+    private var humanRep = 0
+    /** Поколение очереди: после остановки запоздалые колбэки скачивания не играют. */
+    private var humanGen = 0
+
+    private fun playHuman(list: List<Adhkar.Item>, full: Boolean) {
+        if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) {
+            finish("фокус звука не дан (звонок?)")
+            return
+        }
+        humanQueue = list.filter { it.audio.isNotBlank() }.map { it to Adhkar.plays(it, full) }
+        humanIndex = 0
+        humanRep = 0
+        total = humanQueue.size
+        humanNext(++humanGen)
+    }
+
+    private fun humanNext(gen: Int) {
+        if (gen != humanGen) return
+        if (humanIndex >= humanQueue.size) {
+            finish("азкары прочитаны")
+            return
+        }
+        val (item, _) = humanQueue[humanIndex]
+        val app = applicationContext
+        Thread({
+            val f = AdhkarAudio.fetch(app, item.audio)
+            // следующую запись - заранее, пока играет эта
+            humanQueue.getOrNull(humanIndex + 1)?.let { AdhkarAudio.fetch(app, it.first.audio) }
+            main.post { if (gen == humanGen) humanPlay(gen, f) }
+        }, "adhkar-audio").start()
+    }
+
+    private fun humanPlay(gen: Int, file: java.io.File?) {
+        val (item, plays) = humanQueue[humanIndex]
+        if (file == null) {
+            // нет интернета и записи в кэше: остаток - голосом телефона
+            AppLog.i("азкары: нет записи, дальше синтез речи с №${humanIndex + 1}")
+            notify(title, getString(R.string.pr_human_offline))
+            val rest = humanQueue.drop(humanIndex).map { it.first }
+            val full = PrayerPrefs(this).fullRepeat
+            humanQueue = emptyList()
+            speak(rest.flatMap { i -> Adhkar.utterances(i, full).map { i.text to it } }, short = false)
+            return
+        }
+        val progress = " (${humanIndex + 1}/${humanQueue.size})"
+        notify(title + progress, item.text)
+        PrayerSession.playing(this, title + progress, item.text)
+        player?.release()
+        val mp = MediaPlayer()
+        player = mp
+        try {
+            mp.setAudioAttributes(attrs(AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH))
+            mp.setDataSource(file.path)
+            mp.setOnCompletionListener {
+                if (gen != humanGen) return@setOnCompletionListener
+                humanRep++
+                if (humanRep < plays) {
+                    it.seekTo(0)
+                    it.start()
+                } else {
+                    humanRep = 0
+                    humanIndex++
+                    humanNext(gen)
+                }
+            }
+            mp.setOnErrorListener { _, w, x ->
+                AppLog.i("азкары: ошибка записи $w/$x, пропускаю")
+                file.delete()
+                humanRep = 0
+                humanIndex++
+                humanNext(gen)
+                true
+            }
+            mp.prepare()
+            mp.start()
+        } catch (e: Exception) {
+            AppLog.e("азкары: запись не играет", e)
+            file.delete()
+            humanIndex++
+            humanNext(gen)
+        }
     }
 
     // ---------------- речь ----------------
@@ -390,6 +492,8 @@ class PrayerPlayer : Service() {
             it.release()
         }
         player = null
+        humanGen++
+        humanQueue = emptyList()
         pendingSpeech = null
         tts?.stop()
         getSystemService(AudioManager::class.java)?.let { am -> focus?.let { am.abandonAudioFocusRequest(it) } }
