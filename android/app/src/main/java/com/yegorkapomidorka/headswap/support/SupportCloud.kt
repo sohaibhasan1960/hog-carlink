@@ -80,6 +80,40 @@ class SupportCloud(ctx: Context) {
         return store(r.getString("idToken"), r.getString("refreshToken"), r.getString("localId"), r.getString("expiresIn"))
     }
 
+    /** Вход Google привязан к этому телефону: почта и имя для экрана поддержки; пусто - анонимно. */
+    val googleEmail: String get() = sp.getString(K_G_EMAIL, "") ?: ""
+    val googleName: String get() = sp.getString(K_G_NAME, "") ?: ""
+
+    /**
+     * Вход Google (ID-токен из Credential Manager): привязать к текущему анонимному аккаунту - uid, владелец и запросы
+     * сохраняются. Если этот Google уже привязан к другому аккаунту (вход на втором телефоне или после переустановки) -
+     * войти в тот аккаунт: видны его запросы, статус владельца проверяется заново.
+     */
+    @Throws(IOException::class)
+    @Synchronized
+    fun signInWithGoogle(googleIdToken: String) {
+        val post = "id_token=" + URLEncoder.encode(googleIdToken, "UTF-8") + "&providerId=google.com"
+        fun body(link: Boolean): String {
+            val o = JSONObject().put("postBody", post).put("requestUri", "http://localhost")
+                .put("returnSecureToken", true).put("returnIdpCredential", true)
+            if (link) o.put("idToken", token())
+            return o.toString()
+        }
+        val r = try {
+            http("POST", "$SIGN_IN_IDP?key=$API_KEY", body(link = true), null)
+        } catch (e: HttpError) {
+            if (!e.body.contains("FEDERATED_USER_ID_ALREADY_LINKED") && !e.body.contains("CREDENTIAL_TOO_OLD")) throw e
+            AppLog.i("поддержка: этот Google уже у другого аккаунта, вхожу в него", true)
+            val other = http("POST", "$SIGN_IN_IDP?key=$API_KEY", body(link = false), null)
+            isOwner = false
+            other
+        }
+        store(r.getString("idToken"), r.getString("refreshToken"), r.getString("localId"), r.optString("expiresIn", "3600"))
+        sp.edit().putString(K_G_EMAIL, r.optString("email")).putString(K_G_NAME, r.optString("displayName"))
+            .putBoolean(K_SENT, true).apply()
+        AppLog.i("поддержка: вход Google выполнен", true)
+    }
+
     private fun store(id: String, refresh: String, uid: String, expiresIn: String): String {
         sp.edit().putString(K_ID_TOKEN, id).putString(K_REFRESH, refresh).putString(K_UID, uid)
             .putLong(K_EXPIRES, System.currentTimeMillis() + (expiresIn.toLongOrNull() ?: 3600L) * 1000L).apply()
@@ -216,6 +250,9 @@ class SupportCloud(ctx: Context) {
         const val API_KEY = "AIzaSyBqRSUQsj0ans4q_p5Bs3X99uEZ8QVLFpQ"
         private const val SIGN_UP = "https://identitytoolkit.googleapis.com/v1/accounts:signUp"
         private const val SECURE_TOKEN = "https://securetoken.googleapis.com/v1/token"
+        private const val SIGN_IN_IDP = "https://identitytoolkit.googleapis.com/v1/accounts:signInWithIdp"
+        /** OAuth-клиент «Web» проекта hog-carlink (Firebase: Authentication -> Google -> Web SDK configuration). Не секрет. */
+        const val GOOGLE_WEB_CLIENT_ID = "30265274156-62atbm23nothts3vljnree5hop4ora87.apps.googleusercontent.com"
         const val DOC_ROOT = "projects/$PROJECT/databases/(default)/documents"
         private const val BASE = "https://firestore.googleapis.com/v1/projects/$PROJECT/databases/(default)/documents"
         private const val DOC_BASE = BASE
@@ -228,6 +265,8 @@ class SupportCloud(ctx: Context) {
         private const val K_UID = "uid"
         private const val K_EXPIRES = "expiresAt"
         private const val K_OWNER = "owner"
+        private const val K_G_EMAIL = "googleEmail"
+        private const val K_G_NAME = "googleName"
         private const val K_OWNER_SEEN = "ownerSeen"
         private const val K_REPLY_SEEN = "replySeen:"
         private const val K_SENT = "sent"

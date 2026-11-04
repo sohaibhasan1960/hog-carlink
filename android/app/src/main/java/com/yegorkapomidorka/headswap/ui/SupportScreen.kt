@@ -32,12 +32,17 @@ class SupportScreen(host: MainActivity) : Screen(host) {
     private lateinit var phone: EditText
     private lateinit var problem: EditText
     private val autoRow: ToggleRow
+    private val googleBox: LinearLayout
 
     init {
         val c = ctx
         val body = c.vbox(12).apply { pad(c, 16, 4, 16, 24) }
         ownerBox = c.vbox(10)
         body.addView(ownerBox, lp(MATCH, WRAP))
+
+        // HOG CarLink: вход Google - запросы и ответы сохраняются при переустановке и на другом телефоне
+        googleBox = c.vbox(8).apply { pad(c, 16, 14, 16, 14); background = c.shape(c.clr(R.color.surf), 20) }
+        body.addView(googleBox, lp(MATCH, WRAP))
 
         body.addView(c.sectionTitle(c.getString(R.string.sup_new)))
         val form = c.card().apply { pad(c, 16, 16, 16, 16) }
@@ -79,8 +84,42 @@ class SupportScreen(host: MainActivity) : Screen(host) {
     }
 
     override fun onShow() {
+        refreshGoogle()
         autoRow.setChecked(AutoReport.consent(ctx) == AutoReport.Consent.YES)
         refresh()
+    }
+
+    private fun refreshGoogle() {
+        val c = ctx
+        googleBox.removeAllViews()
+        val email = cloud.googleEmail
+        if (email.isNotBlank()) {
+            googleBox.addView(c.text(c.getString(R.string.sup_google_signed, email), 15f, 600, c.clr(R.color.ok)))
+            if (name.text.isBlank() && cloud.googleName.isNotBlank()) name.setText(cloud.googleName)
+            return
+        }
+        googleBox.addView(c.text(c.getString(R.string.sup_google_why), 14f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(20) })
+        if (!com.yegorkapomidorka.headswap.support.GoogleSignIn.supported) {
+            googleBox.addView(c.text(c.getString(R.string.sup_google_old), 13f, 400, c.clr(R.color.warn)))
+            return
+        }
+        googleBox.addView(c.containerButton(c.getString(R.string.sup_google_btn)).apply {
+            setOnClickListener {
+                show(c.getString(R.string.sup_google_wait), R.color.on2)
+                com.yegorkapomidorka.headswap.support.GoogleSignIn.start(host) { r ->
+                    when (r) {
+                        is com.yegorkapomidorka.headswap.support.GoogleSignIn.Result.Ok -> {
+                            show(c.getString(R.string.sup_google_done), R.color.ok)
+                            SupportJob.schedule(c)
+                            refreshGoogle()
+                            refresh()
+                        }
+                        is com.yegorkapomidorka.headswap.support.GoogleSignIn.Result.Cancelled -> show("", R.color.on2)
+                        is com.yegorkapomidorka.headswap.support.GoogleSignIn.Result.Failed -> show(c.getString(R.string.sup_google_failed, r.why), R.color.warn)
+                    }
+                }
+            }
+        })
     }
 
     private fun field(hint: String, multi: Boolean): EditText = EditText(ctx).apply {

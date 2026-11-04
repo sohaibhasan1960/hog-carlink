@@ -42,4 +42,12 @@
     <string name="ar_name">تقرير تلقائي</string>
     <string name="ar_switch">إرسال تقارير الأعطال تلقائيًا</string>
     <string name="ar_switch_sub">بعد أي عطل يُرسل سجل التطبيق إلى الدعم، دون جهات الاتصال أو الموقع.</string>
+    <!-- HOG CarLink: вход Google (support/GoogleSignIn) -->
+    <string name="sup_google_signed">مسجّل بحساب Google: %1$s</string>
+    <string name="sup_google_why">سجّل الدخول بحساب Google لتبقى طلباتك والردود عليها بعد إعادة تثبيت التطبيق أو على هاتف آخر.</string>
+    <string name="sup_google_old">تسجيل الدخول بحساب Google يحتاج Android 14 أو أحدث.</string>
+    <string name="sup_google_btn">تسجيل الدخول بحساب Google</string>
+    <string name="sup_google_wait">جارٍ فتح تسجيل الدخول…</string>
+    <string name="sup_google_done">تم. طلباتك مرتبطة بحسابك في Google.</string>
+    <string name="sup_google_failed">تعذّر تسجيل الدخول: %1$s</string>
 </resources>

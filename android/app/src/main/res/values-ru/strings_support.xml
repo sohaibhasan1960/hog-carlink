@@ -42,4 +42,12 @@
     <string name="ar_name">Автоотчёт</string>
     <string name="ar_switch">Отправлять отчёты о сбоях автоматически</string>
     <string name="ar_switch_sub">После сбоя журнал приложения уходит в поддержку. Без контактов и геопозиции.</string>
+    <!-- HOG CarLink: вход Google (support/GoogleSignIn) -->
+    <string name="sup_google_signed">Вход через Google: %1$s</string>
+    <string name="sup_google_why">Войдите через Google, чтобы запросы и ответы сохранились после переустановки и на другом телефоне.</string>
+    <string name="sup_google_old">Для входа через Google нужен Android 14 или новее.</string>
+    <string name="sup_google_btn">Войти через Google</string>
+    <string name="sup_google_wait">Открываю вход Google…</string>
+    <string name="sup_google_done">Готово. Запросы привязаны к вашему аккаунту Google.</string>
+    <string name="sup_google_failed">Вход не удался: %1$s</string>
 </resources>

@@ -42,4 +42,12 @@
     <string name="ar_name">Automatic report</string>
     <string name="ar_switch">Send problem reports automatically</string>
     <string name="ar_switch_sub">After a crash, the app log goes to support. No contacts or location.</string>
+    <!-- HOG CarLink: вход Google (support/GoogleSignIn) -->
+    <string name="sup_google_signed">Signed in with Google: %1$s</string>
+    <string name="sup_google_why">Sign in with Google so your requests and replies stay with you after reinstalling or on another phone.</string>
+    <string name="sup_google_old">Google sign-in needs Android 14 or newer.</string>
+    <string name="sup_google_btn">Sign in with Google</string>
+    <string name="sup_google_wait">Opening Google sign-in…</string>
+    <string name="sup_google_done">Signed in. Your requests are linked to your Google account.</string>
+    <string name="sup_google_failed">Sign-in failed: %1$s</string>
 </resources>
