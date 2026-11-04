@@ -13,7 +13,6 @@ import android.os.Looper
 import android.telephony.TelephonyManager
 import com.yegorkapomidorka.headswap.AppLog
 import java.util.Locale
-import java.util.concurrent.Executors
 
 /**
  * HOG CarLink: место для расчёта намаза. Хватает приблизительного местоположения (сеть/Wi-Fi), точное не нужно.
@@ -42,13 +41,13 @@ object PrayerLocation {
             if (l == null) {
                 main.post { done(false) }
             } else {
-                Executors.newSingleThreadExecutor().execute {
+                Thread({
                     val (place, country) = describe(app, l)
                     PrayerPrefs(app).setLocation(l.latitude, l.longitude, place, country)
                     AppLog.i("намаз: место %.3f, %.3f %s %s".format(Locale.US, l.latitude, l.longitude, place, country ?: "-"))
                     PrayerAlarms.reschedule(app)
                     main.post { done(true) }
-                }
+                }, "prayer-location").start()
             }
         }
         try {

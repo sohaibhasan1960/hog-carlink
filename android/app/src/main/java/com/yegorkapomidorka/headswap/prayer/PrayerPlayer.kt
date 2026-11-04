@@ -54,13 +54,19 @@ class PrayerPlayer : Service() {
         }
         val what = intent?.getStringExtra(EXTRA_WHAT)?.let { w -> What.values().firstOrNull { it.name == w } }
         if (what == null) {
+            startForeground(NOTIF_ID, notification(getString(R.string.pr_title), ""), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+            stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return START_NOT_STICKY
         }
         val prayer = intent.getStringExtra(EXTRA_PRAYER)?.let { p -> Prayer.values().firstOrNull { it.name == p } }
         val text = intent.getStringExtra(EXTRA_TEXT)
         // азан важнее: короткий зикр во время азана/азкаров не перебивает
-        if (current != null && what == What.DHIKR) return START_NOT_STICKY
+        if (current != null && what == What.DHIKR) {
+            // вызвали startForegroundService: подтвердить foreground (повтор безвреден), иначе Android 14+ уронит процесс
+            startForeground(NOTIF_ID, notification(title, ""), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
+            return START_NOT_STICKY
+        }
         stopSound()
         current = what
         title = titleFor(what, prayer)
