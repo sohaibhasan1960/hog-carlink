@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: Коран (quran/, ui/QuranScreen), голос и записи азкаров -->
+    <string name="qr_title">القرآن الكريم</string>
+    <string name="qr_continue">متابعة: %1$s</string>
+    <string name="qr_now">%1$s · %2$s</string>
+    <string name="qr_net_error">لا يوجد إنترنت: التلاوة تُشغَّل عبر الإنترنت.</string>
+    <string name="qr_loading">جارٍ التحميل…</string>
+    <string name="pr_file_failed">تعذّر فتح التسجيل. اختر الملف من جديد.</string>
+    <string name="qr_surahs">السور</string>
+    <string name="qr_credits">التلاوة: mp3quran.net. النص: مشروع تنزيل (tanzil.net)، ترخيص CC BY 3.0.</string>
+    <string name="qr_reciter">القارئ</string>
+    <string name="qr_continuous">تلاوة متواصلة</string>
+    <string name="qr_continuous_sub">بعد انتهاء السورة تبدأ التالية</string>
+    <string name="qr_data_note">التلاوة عبر الإنترنت ولا تُخزَّن في الهاتف: نحو 60 ميغابايت لكل ساعة استماع.</string>
+    <string name="qr_makki">مكية</string>
+    <string name="qr_madani">مدنية</string>
+    <string name="qr_read">قراءة</string>
+    <string name="qr_surah_title">سورة %1$s</string>
+    <string name="qr_listen">استماع</string>
+    <string name="home_tile_quran_sub">استماع وقراءة، 114 سورة</string>
+    <string name="pr_voice">صوت القراءة</string>
+    <string name="pr_voice_default">صوت الهاتف الافتراضي</string>
+    <string name="pr_voice_n">صوت %1$s</string>
+    <string name="pr_voice_online">عبر الإنترنت</string>
+    <string name="pr_morning_audio">صوت أذكار الصباح</string>
+    <string name="pr_evening_audio">صوت أذكار المساء</string>
+    <string name="pr_audio_tts">القراءة بصوت الهاتف</string>
+    <string name="pr_audio_note">يمكنك اختيار تسجيل موجود في هاتفك (مثل أذكار بصوت الشيخ مشاري العفاسي تملك نسخة منها) بدل صوت الهاتف.</string>
+</resources>

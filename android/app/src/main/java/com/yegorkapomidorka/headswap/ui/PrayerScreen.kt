@@ -211,6 +211,10 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
             prefs.fullRepeat = it
         }.view, lp(MATCH, WRAP))
         box.addView(valueRow(c.getString(R.string.pr_dhikr_every), dhikrLabel(prefs.dhikrEvery)) { pickDhikr() })
+        box.addView(valueRow(c.getString(R.string.pr_voice), prefs.ttsVoice.ifBlank { c.getString(R.string.pr_voice_default) }.let { voiceLabel(it) }) { pickVoice() })
+        box.addView(valueRow(c.getString(R.string.pr_morning_audio), prefs.adhkarName(true).ifBlank { c.getString(R.string.pr_audio_tts) }) { pickAdhkarAudio(true) })
+        box.addView(valueRow(c.getString(R.string.pr_evening_audio), prefs.adhkarName(false).ifBlank { c.getString(R.string.pr_audio_tts) }) { pickAdhkarAudio(false) })
+        box.addView(c.text(c.getString(R.string.pr_audio_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
 
         box.addView(c.sectionTitle(c.getString(R.string.pr_sec_calc)))
         box.addView(valueRow(c.getString(R.string.pr_method), prefs.methodOverride?.let { methodName(it) } ?: c.getString(R.string.pr_method_auto, methodName(prefs.method))) { pickMethod() })
@@ -381,9 +385,95 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
 
     override fun onActivityResultDone() = buildSettings()
 
+    // ---------------- голос и свои записи азкаров ----------------
+
+    private var voiceTts: TextToSpeech? = null
+
+    /** Имя голоса Google («ar-xa-x-ard-local») -> «صوت ard»; пусто - по умолчанию. */
+    private fun voiceLabel(name: String): String =
+        if (name == ctx.getString(R.string.pr_voice_default)) name
+        else ctx.getString(R.string.pr_voice_n, name.substringAfter("-x-").substringBefore('-').ifBlank { name }) +
+            if ("network" in name) " · " + ctx.getString(R.string.pr_voice_online) else ""
+
+    /** Список арабских голосов движка; выбор сразу озвучивает образец. */
+    private fun pickVoice() {
+        val c = ctx
+        voiceTts?.shutdown()
+        val engine = try { c.packageManager.getPackageInfo("com.google.android.tts", 0); "com.google.android.tts" } catch (_: Exception) { null }
+        var tts: TextToSpeech? = null
+        tts = TextToSpeech(c, { status ->
+            val t = tts ?: return@TextToSpeech
+            if (status != TextToSpeech.SUCCESS) return@TextToSpeech
+            val voices = try {
+                t.voices?.filter { it.locale.language == "ar" && !it.isNetworkConnectionRequired }?.sortedBy { it.name }.orEmpty() +
+                    (t.voices?.filter { it.locale.language == "ar" && it.isNetworkConnectionRequired }?.sortedBy { it.name }.orEmpty())
+            } catch (_: Exception) {
+                emptyList()
+            }
+            host.runOnUiThread {
+                if (voices.isEmpty()) {
+                    PrayerPlayer.voiceMissing = true
+                    return@runOnUiThread
+                }
+                val labels = arrayOf(c.getString(R.string.pr_voice_default)) + voices.map { voiceLabel(it.name) }
+                val sel = voices.indexOfFirst { it.name == prefs.ttsVoice }.let { if (it < 0) 0 else it + 1 }
+                AlertDialog.Builder(host).setTitle(R.string.pr_voice)
+                    .setSingleChoiceItems(labels, sel) { _, i ->
+                        prefs.ttsVoice = if (i == 0) "" else voices[i - 1].name
+                        t.setLanguage(java.util.Locale("ar"))
+                        if (i > 0) t.voice = voices[i - 1]
+                        t.speak(Adhkar.SHORT[0], TextToSpeech.QUEUE_FLUSH, null, "sample")
+                    }
+                    .setPositiveButton(android.R.string.ok) { _, _ -> buildSettings() }
+                    .setOnDismissListener { t.shutdown(); voiceTts = null }
+                    .show()
+            }
+        }, engine)
+        voiceTts = tts
+    }
+
+    private fun pickAdhkarAudio(morning: Boolean) {
+        AlertDialog.Builder(host).setTitle(if (morning) R.string.pr_morning_audio else R.string.pr_evening_audio)
+            .setItems(arrayOf(ctx.getString(R.string.pr_audio_tts), ctx.getString(R.string.pr_adhan_file))) { _, i ->
+                if (i == 0) {
+                    prefs.setAdhkarFile(morning, "", "")
+                    buildSettings()
+                } else {
+                    val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("audio/*")
+                    try {
+                        host.startActivityForResult(pick, if (morning) REQ_MORNING_FILE else REQ_EVENING_FILE)
+                    } catch (e: Exception) {
+                        AppLog.i("намаз: выбор файла не открылся: ${e.message}")
+                    }
+                }
+            }.show()
+    }
+
     companion object {
         const val REQ_LOCATION = 45
         const val REQ_ADHAN_FILE = 46
+        const val REQ_MORNING_FILE = 48
+        const val REQ_EVENING_FILE = 49
+
+        /** Своя запись азкаров утра/вечера: постоянное разрешение и имя. */
+        fun onAdhkarPicked(act: Activity, morning: Boolean, resultCode: Int, data: Intent?) {
+            val uri = data?.data ?: return
+            if (resultCode != Activity.RESULT_OK) return
+            try {
+                act.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (e: Exception) {
+                AppLog.i("намаз: постоянное разрешение на файл не дано: ${e.message}")
+            }
+            val name = try {
+                act.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                    if (c.moveToFirst()) c.getString(0) else null
+                }
+            } catch (_: Exception) {
+                null
+            } ?: uri.lastPathSegment ?: ""
+            PrayerPrefs(act).setAdhkarFile(morning, uri.toString(), name)
+            AppLog.i("намаз: своя запись азкаров (${if (morning) "утро" else "вечер"}): $name")
+        }
 
         /** Результат выбора файла (MainActivity.onActivityResult): постоянное разрешение на чтение и имя. */
         fun onAdhanPicked(act: Activity, resultCode: Int, data: Intent?) {

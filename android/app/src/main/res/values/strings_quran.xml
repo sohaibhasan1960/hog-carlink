@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: Коран (quran/, ui/QuranScreen), голос и записи азкаров -->
+    <string name="qr_title">The Holy Quran</string>
+    <string name="qr_continue">Continue: %1$s</string>
+    <string name="qr_now">%1$s · %2$s</string>
+    <string name="qr_net_error">No internet: the recitation streams online.</string>
+    <string name="qr_loading">Loading…</string>
+    <string name="pr_file_failed">The recording could not be opened. Choose the file again.</string>
+    <string name="qr_surahs">Surahs</string>
+    <string name="qr_credits">Recitation: mp3quran.net. Text: Tanzil Project (tanzil.net), CC BY 3.0.</string>
+    <string name="qr_reciter">Reciter</string>
+    <string name="qr_continuous">Continuous recitation</string>
+    <string name="qr_continuous_sub">After a surah ends, the next one starts</string>
+    <string name="qr_data_note">The recitation streams over the internet and is not stored on the phone: about 60 MB per hour of listening.</string>
+    <string name="qr_makki">Makki</string>
+    <string name="qr_madani">Madani</string>
+    <string name="qr_read">Read</string>
+    <string name="qr_surah_title">Surah %1$s</string>
+    <string name="qr_listen">Listen</string>
+    <string name="home_tile_quran_sub">Listen and read, 114 surahs</string>
+    <string name="pr_voice">Reading voice</string>
+    <string name="pr_voice_default">Phone default</string>
+    <string name="pr_voice_n">Voice %1$s</string>
+    <string name="pr_voice_online">online</string>
+    <string name="pr_morning_audio">Morning adhkar audio</string>
+    <string name="pr_evening_audio">Evening adhkar audio</string>
+    <string name="pr_audio_tts">Phone voice reading</string>
+    <string name="pr_audio_note">You can choose a recording on your phone (for example, adhkar recited by Sheikh Mishary Alafasy that you own) instead of the phone voice.</string>
+</resources>

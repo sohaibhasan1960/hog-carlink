@@ -43,6 +43,7 @@ object About {
             "MIT-AdhkarDB.txt"),
         OpenSource("Beautiful adhan (Wikimedia Commons)", null, "Adam-synagda", "CC0 1.0",
             "https://commons.wikimedia.org/wiki/File:Beautiful_adhan.ogg", "CC0-Adhan.txt"),
+        OpenSource("Tanzil Quran Text (Uthmani)", "1.1", "Tanzil Project", "CC BY 3.0", "https://tanzil.net", "CC-BY-3.0-Tanzil.txt"),
         OpenSource("Okio", "3.18.2", "Square, Inc.", "Apache-2.0", "https://github.com/square/okio", APACHE),
         OpenSource("AndroidHiddenApiBypass", "6.1", "LSPosed", "Apache-2.0", "https://github.com/LSPosed/AndroidHiddenApiBypass", APACHE),
         OpenSource("Jetpack Compose, AndroidX", "1.9.4", "The Android Open Source Project", "Apache-2.0",

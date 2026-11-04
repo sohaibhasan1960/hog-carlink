@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: Коран (quran/, ui/QuranScreen), голос и записи азкаров -->
+    <string name="qr_title">Священный Коран</string>
+    <string name="qr_continue">Продолжить: %1$s</string>
+    <string name="qr_now">%1$s · %2$s</string>
+    <string name="qr_net_error">Нет интернета: чтение идёт потоком.</string>
+    <string name="qr_loading">Загрузка…</string>
+    <string name="pr_file_failed">Запись не открылась. Выберите файл заново.</string>
+    <string name="qr_surahs">Суры</string>
+    <string name="qr_credits">Чтение: mp3quran.net. Текст: Tanzil Project (tanzil.net), CC BY 3.0.</string>
+    <string name="qr_reciter">Чтец</string>
+    <string name="qr_continuous">Непрерывное чтение</string>
+    <string name="qr_continuous_sub">После суры начинается следующая</string>
+    <string name="qr_data_note">Чтение идёт через интернет и не хранится на телефоне: около 60 МБ за час.</string>
+    <string name="qr_makki">Мекканская</string>
+    <string name="qr_madani">Мединская</string>
+    <string name="qr_read">Читать</string>
+    <string name="qr_surah_title">Сура %1$s</string>
+    <string name="qr_listen">Слушать</string>
+    <string name="home_tile_quran_sub">Слушать и читать, 114 сур</string>
+    <string name="pr_voice">Голос чтения</string>
+    <string name="pr_voice_default">Как в телефоне</string>
+    <string name="pr_voice_n">Голос %1$s</string>
+    <string name="pr_voice_online">онлайн</string>
+    <string name="pr_morning_audio">Запись утренних азкаров</string>
+    <string name="pr_evening_audio">Запись вечерних азкаров</string>
+    <string name="pr_audio_tts">Голос телефона</string>
+    <string name="pr_audio_note">Можно выбрать запись на телефоне (например, азкары в чтении шейха Мишари Аль-Афаси, которые у вас есть) вместо голоса телефона.</string>
+</resources>

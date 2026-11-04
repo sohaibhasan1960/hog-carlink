@@ -31,7 +31,7 @@ import java.util.Locale
  * Азкары читает синтез речи (арабский голос телефона); нет голоса - текст остаётся в уведомлении.
  */
 class PrayerPlayer : Service() {
-    enum class What { ADHAN, IQAMA, MORNING, EVENING, DHIKR, TEST_ADHAN }
+    enum class What { ADHAN, IQAMA, MORNING, EVENING, DHIKR, TEST_ADHAN, QURAN }
 
     private val main = Handler(Looper.getMainLooper())
     private var player: MediaPlayer? = null
@@ -44,6 +44,14 @@ class PrayerPlayer : Service() {
     private var spoken = 0
     private var total = 0
     private var shortSpeech = false
+    /** Играющая сура (QURAN); позиция сохраняется каждые 10 с и при остановке - «Продолжить». */
+    private var quranSurah = 0
+    private val savePos = object : Runnable {
+        override fun run() {
+            saveQuranPos()
+            main.postDelayed(this, 10_000)
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -61,6 +69,7 @@ class PrayerPlayer : Service() {
         }
         val prayer = intent.getStringExtra(EXTRA_PRAYER)?.let { p -> Prayer.values().firstOrNull { it.name == p } }
         val text = intent.getStringExtra(EXTRA_TEXT)
+        val surah = intent.getIntExtra(EXTRA_SURAH, 0)
         // азан важнее: короткий зикр во время азана/азкаров не перебивает
         if (current != null && what == What.DHIKR) {
             // вызвали startForegroundService: подтвердить foreground (повтор безвреден), иначе Android 14+ уронит процесс
@@ -69,7 +78,7 @@ class PrayerPlayer : Service() {
         }
         stopSound()
         current = what
-        title = titleFor(what, prayer)
+        title = if (what == What.QURAN) quranTitle(surah) else titleFor(what, prayer)
         startForeground(NOTIF_ID, notification(title, text ?: ""), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         startSession()
         AppLog.i("намаз: звук $what ${prayer ?: ""}")
@@ -77,7 +86,14 @@ class PrayerPlayer : Service() {
             What.ADHAN, What.TEST_ADHAN -> playAdhan()
             What.IQAMA -> speak(listOf(title to Adhkar.IQAMA), short = true)
             What.DHIKR -> speak(listOf((text ?: "") to (text ?: "")), short = true)
+            What.QURAN -> playQuran(surah, intent.getLongExtra(EXTRA_POS, 0L))
             What.MORNING, What.EVENING -> {
+                // своя запись азкаров (файл с телефона) вместо синтеза речи
+                val file = PrayerPrefs(this).adhkarUri(what == What.MORNING)
+                if (file.isNotBlank()) {
+                    playFile(file)
+                    return START_NOT_STICKY
+                }
                 val all = try {
                     Adhkar.parse(resources.openRawResource(R.raw.adhkar_ar).use { it.readBytes().toString(Charsets.UTF_8) })
                 } catch (e: Exception) {
@@ -98,6 +114,100 @@ class PrayerPlayer : Service() {
         What.MORNING -> getString(R.string.pr_morning)
         What.EVENING -> getString(R.string.pr_evening)
         What.DHIKR -> getString(R.string.pr_dhikr)
+        What.QURAN -> quranTitle(quranSurah)
+    }
+
+    private fun quranTitle(surah: Int): String =
+        getString(R.string.qr_now, com.yegorkapomidorka.headswap.quran.Quran.name(surah.coerceIn(1, 114)), QuranPrefs(this).reciter.let { r ->
+            if (resources.configuration.locales[0].language == "ar") r.nameAr else r.nameEn
+        })
+
+    // ---------------- Коран (поток) ----------------
+
+    private fun playQuran(surah0: Int, startMs: Long) {
+        val surah = surah0.coerceIn(1, com.yegorkapomidorka.headswap.quran.Quran.SURAHS)
+        quranSurah = surah
+        if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) {
+            finish("фокус звука не дан (звонок?)")
+            return
+        }
+        val prefs = QuranPrefs(this)
+        prefs.lastSurah = surah
+        val url = prefs.reciter.url(surah)
+        val mp = MediaPlayer()
+        player = mp
+        try {
+            mp.setAudioAttributes(attrs(AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH))
+            mp.setWakeMode(this, android.os.PowerManager.PARTIAL_WAKE_LOCK)
+            mp.setDataSource(url)
+            mp.setOnPreparedListener {
+                if (player !== it) return@setOnPreparedListener
+                if (startMs > 0) it.seekTo(startMs.toInt())
+                it.start()
+                main.removeCallbacks(savePos)
+                main.postDelayed(savePos, 10_000)
+                notify(title, "")
+            }
+            mp.setOnCompletionListener {
+                prefs.lastPosMs = 0
+                val next = com.yegorkapomidorka.headswap.quran.Quran.next(surah)
+                if (next != null && prefs.continuous) {
+                    // следующая сура тем же сервисом: foreground уже есть, фокус запросится заново
+                    main.removeCallbacks(savePos)
+                    it.release()
+                    player = null
+                    title = quranTitle(next)
+                    startSession()
+                    playQuran(next, 0)
+                } else {
+                    finish("сура дочитана")
+                }
+            }
+            mp.setOnErrorListener { _, w, x ->
+                AppLog.i("Коран: ошибка потока $w/$x ($url)")
+                finish("ошибка потока")
+                notify(title, getString(R.string.qr_net_error), ongoing = false)
+                true
+            }
+            notify(title, getString(R.string.qr_loading))
+            mp.prepareAsync()
+            AppLog.i("Коран: сура $surah, ${prefs.reciter}, с ${startMs / 1000} с")
+        } catch (e: Exception) {
+            AppLog.e("Коран: поток не запустился", e)
+            finish("поток не запустился")
+        }
+    }
+
+    private fun saveQuranPos() {
+        val mp = player ?: return
+        if (current != What.QURAN) return
+        try {
+            // только пока играет: после конца суры позиция уже сброшена в 0
+            if (mp.isPlaying) QuranPrefs(this).lastPosMs = mp.currentPosition.toLong()
+        } catch (_: Exception) {
+        }
+    }
+
+    /** Своя запись (азкары утра/вечера) с телефона. */
+    private fun playFile(uri: String) {
+        if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) {
+            finish("фокус звука не дан (звонок?)")
+            return
+        }
+        val mp = MediaPlayer()
+        player = mp
+        try {
+            mp.setAudioAttributes(attrs(AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH))
+            mp.setDataSource(this, Uri.parse(uri))
+            mp.setOnCompletionListener { finish("запись доиграла") }
+            mp.setOnErrorListener { _, w, x -> AppLog.i("намаз: ошибка записи $w/$x"); finish("ошибка записи"); true }
+            mp.prepare()
+            mp.start()
+        } catch (e: Exception) {
+            AppLog.e("намаз: своя запись не открылась", e)
+            finish("своя запись не открылась")
+            notify(title, getString(R.string.pr_file_failed), ongoing = false)
+        }
     }
 
     // ---------------- азан ----------------
@@ -183,6 +293,15 @@ class PrayerPlayer : Service() {
             missingVoice()
             return
         }
+        // голос, выбранный в настройках (мужской/женский); нет его - голос по умолчанию
+        val want = PrayerPrefs(this).ttsVoice
+        if (want.isNotBlank()) {
+            try {
+                t.voices?.firstOrNull { it.name == want }?.let { t.voice = it }
+            } catch (e: Exception) {
+                AppLog.i("намаз: голос $want не выбран: ${e.message}")
+            }
+        }
         ttsReady = true
         t.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
             override fun onStart(id: String) {
@@ -260,6 +379,8 @@ class PrayerPlayer : Service() {
     private fun startSession() = PrayerSession.playing(this, title, "")
 
     private fun stopSound() {
+        saveQuranPos()
+        main.removeCallbacks(savePos)
         player?.let {
             try {
                 it.stop()
@@ -321,6 +442,8 @@ class PrayerPlayer : Service() {
         const val EXTRA_WHAT = "what"
         const val EXTRA_PRAYER = "prayer"
         const val EXTRA_TEXT = "text"
+        const val EXTRA_SURAH = "surah"
+        const val EXTRA_POS = "pos"
         const val CH_PLAY = "prayer_play"
         const val CH_INFO = "prayer_info"
         const val CH_ADHAN = "prayer_adhan"
@@ -338,6 +461,16 @@ class PrayerPlayer : Service() {
                 ctx.startForegroundService(i)
             } catch (e: Exception) {
                 AppLog.i("намаз: звук не запущен: ${e.javaClass.simpleName}: ${e.message}")
+            }
+        }
+
+        /** Сура [surah] с позиции [posMs] (0 - с начала). */
+        fun quran(ctx: Context, surah: Int, posMs: Long = 0) {
+            val i = Intent(ctx, PrayerPlayer::class.java).putExtra(EXTRA_WHAT, What.QURAN.name).putExtra(EXTRA_SURAH, surah).putExtra(EXTRA_POS, posMs)
+            try {
+                ctx.startForegroundService(i)
+            } catch (e: Exception) {
+                AppLog.i("Коран: звук не запущен: ${e.javaClass.simpleName}: ${e.message}")
             }
         }
 

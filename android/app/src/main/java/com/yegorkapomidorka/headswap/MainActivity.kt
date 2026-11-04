@@ -191,6 +191,10 @@ class MainActivity : Activity() {
             com.yegorkapomidorka.headswap.ui.PrayerScreen.onAdhanPicked(this, resultCode, data)
             current()?.onActivityResultDone()
         }
+        if (requestCode == com.yegorkapomidorka.headswap.ui.PrayerScreen.REQ_MORNING_FILE || requestCode == com.yegorkapomidorka.headswap.ui.PrayerScreen.REQ_EVENING_FILE) {
+            com.yegorkapomidorka.headswap.ui.PrayerScreen.onAdhkarPicked(this, requestCode == com.yegorkapomidorka.headswap.ui.PrayerScreen.REQ_MORNING_FILE, resultCode, data)
+            current()?.onActivityResultDone()
+        }
     }
 
     /** Отладка беспровода: системный запрос ACCESS_LOCAL_NETWORK (Android 17+). Онбординг с ним появится в Э4. */
@@ -243,6 +247,9 @@ class MainActivity : Activity() {
     /** HOG CarLink: время намаза, азан, икама, азкары. */
     fun showPrayer() = push("prayer", com.yegorkapomidorka.headswap.ui.PrayerScreen(this))
 
+    /** HOG CarLink: القرآن الكريم - слушать (поток) и читать. */
+    fun showQuran() = push("quran", com.yegorkapomidorka.headswap.ui.QuranScreen(this))
+
     /** HOG CarLink: OBD-адаптер ELM327 (KONNWEI KW906). */
     fun showObd() = push("obd", com.yegorkapomidorka.headswap.ui.ObdScreen(this))
 
@@ -271,6 +278,7 @@ class MainActivity : Activity() {
                 "about" -> showAbout()
                 "prayer" -> showPrayer()
                 "obd" -> showObd()
+                "quran" -> showQuran()
                 "onboarding" -> showOnboarding()
                 "onboarding_all" -> showOnboarding(rerun = true)
                 "checklist" -> showOnboarding(checklist = true)

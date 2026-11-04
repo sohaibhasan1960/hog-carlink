@@ -10,6 +10,7 @@ import android.media.session.PlaybackState
 import android.os.Bundle
 import android.service.media.MediaBrowserService
 import com.yegorkapomidorka.headswap.R
+import com.yegorkapomidorka.headswap.quran.Quran
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -35,7 +36,15 @@ class AdhkarMediaService : MediaBrowserService() {
             ROOT -> {
                 out.add(item(PrayerPlayer.What.MORNING.name, getString(R.string.pr_morning), null, playable = true))
                 out.add(item(PrayerPlayer.What.EVENING.name, getString(R.string.pr_evening), null, playable = true))
+                out.add(item(QURAN, getString(R.string.qr_title), QuranPrefs(this).reciter.nameAr, playable = false))
                 out.add(item(TIMES, getString(R.string.pr_car_times), PrayerPrefs(this).place.ifBlank { null }, playable = false))
+            }
+            QURAN -> {
+                val q = QuranPrefs(this)
+                if (q.lastSurah in 1..Quran.SURAHS) {
+                    out.add(item("QURAN:${q.lastSurah}:${q.lastPosMs}", getString(R.string.qr_continue, Quran.name(q.lastSurah)), null, playable = true))
+                }
+                for (n in 1..Quran.SURAHS) out.add(item("QURAN:$n:0", "$n. ${Quran.name(n)}", null, playable = true))
             }
             TIMES -> {
                 val prefs = PrayerPrefs(this)
@@ -64,6 +73,7 @@ class AdhkarMediaService : MediaBrowserService() {
     companion object {
         private const val ROOT = "root"
         private const val TIMES = "times"
+        private const val QURAN = "quran"
     }
 }
 
@@ -78,6 +88,11 @@ object PrayerSession {
         val s = MediaSession(app, "hog-prayer")
         s.setCallback(object : MediaSession.Callback() {
             override fun onPlayFromMediaId(mediaId: String, extras: Bundle?) {
+                if (mediaId.startsWith("QURAN:")) {
+                    val p = mediaId.split(':')
+                    PrayerPlayer.quran(app, p.getOrNull(1)?.toIntOrNull() ?: 1, p.getOrNull(2)?.toLongOrNull() ?: 0)
+                    return
+                }
                 val what = PrayerPlayer.What.values().firstOrNull { it.name == mediaId.substringBefore(':') } ?: return
                 val prayer = mediaId.substringAfter(':', "").let { n -> Prayer.values().firstOrNull { it.name == n } }
                 PrayerPlayer.start(app, what, prayer)
@@ -90,7 +105,16 @@ object PrayerSession {
             }
 
             /** Голосом в машине: «включи азкары вечера в HOG CarLink». */
-            override fun onPlayFromSearch(query: String?, extras: Bundle?) = PrayerPlayer.start(app, PrayerSession.whatFor(query))
+            override fun onPlayFromSearch(query: String?, extras: Bundle?) {
+                // «أذان الفجر» - азан, а не сура аль-Фаджр: ключевые слова азана/азкаров важнее названий сур
+                val kw = keyword(query)
+                val surah = if (kw == null) surahFor(query) else null
+                when {
+                    kw != null -> PrayerPlayer.start(app, kw)
+                    surah != null -> PrayerPlayer.quran(app, surah)
+                    else -> PrayerPlayer.start(app, whatFor(query))
+                }
+            }
 
             override fun onStop() = stopPlayer(app)
             override fun onPause() = stopPlayer(app)
@@ -108,15 +132,34 @@ object PrayerSession {
     }
 
     /** Что включить по голосовому запросу: азан, утренние или вечерние азкары; без уточнения - по времени суток. */
-    fun whatFor(query: String?): PrayerPlayer.What {
-        val q = query?.lowercase() ?: ""
+    fun whatFor(query: String?): PrayerPlayer.What = keyword(query)
+        ?: if (java.time.LocalTime.now().hour < 12) PrayerPlayer.What.MORNING else PrayerPlayer.What.EVENING
+
+    /** Явная просьба: азан, азкары вечера или утра; иначе null. */
+    fun keyword(query: String?): PrayerPlayer.What? {
+        val q = query?.lowercase() ?: return null
         return when {
             listOf("أذان", "اذان", "adhan", "azan", "азан").any { it in q } -> PrayerPlayer.What.TEST_ADHAN
-            listOf("مساء", "المساء", "evening", "вечер").any { it in q } -> PrayerPlayer.What.EVENING
-            listOf("صباح", "الصباح", "morning", "утр").any { it in q } -> PrayerPlayer.What.MORNING
-            java.time.LocalTime.now().hour < 12 -> PrayerPlayer.What.MORNING
-            else -> PrayerPlayer.What.EVENING
+            listOf("مساء", "evening", "вечер").any { it in q } -> PrayerPlayer.What.EVENING
+            listOf("صباح", "morning", "утр").any { it in q } -> PrayerPlayer.What.MORNING
+            else -> null
         }
+    }
+
+    /**
+     * «سورة الكهف» / «الكهف» / «كهف» в голосовом запросе -> номер суры. Сравнение целыми словами (иначе «ق» найдётся
+     * внутри любого слова), без огласовок и с одинаковыми алифами/та-марбута; длинные названия первыми.
+     */
+    fun surahFor(query: String?): Int? {
+        fun norm(x: String) = x.replace(Regex("[\u064B-\u0652\u0670\u0640]"), "")
+            .replace('ة', 'ه').replace('أ', 'ا').replace('إ', 'ا').replace('آ', 'ا').replace('ى', 'ي')
+        val words = norm(query ?: return null).split(Regex("\\s+")).filter { it.isNotBlank() }
+        if (words.isEmpty()) return null
+        fun same(q: String, n: String) = q == n || (n.startsWith("ال") && n.length > 3 && q == n.removePrefix("ال"))
+        return Quran.NAMES.withIndex().sortedByDescending { it.value.length }.firstOrNull { (_, name) ->
+            val nw = norm(name).split(' ')
+            (0..words.size - nw.size).any { s -> nw.indices.all { k -> same(words[s + k], nw[k]) } }
+        }?.index?.plus(1)
     }
 
     fun playing(ctx: Context, title: String, text: String) {

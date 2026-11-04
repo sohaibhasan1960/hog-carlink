@@ -90,6 +90,17 @@ class PrayerPrefs(ctx: Context) {
         get() = sp.getBoolean("full_repeat", false)
         set(v) = sp.edit().putBoolean("full_repeat", v).apply()
 
+    /** Голос синтеза речи (имя Voice); пусто - по умолчанию. */
+    var ttsVoice: String
+        get() = sp.getString("tts_voice", "") ?: ""
+        set(v) = sp.edit().putString("tts_voice", v).apply()
+
+    /** Своя запись азкаров утра/вечера (content://, постоянное разрешение); пусто - синтез речи. */
+    fun adhkarUri(morning: Boolean): String = sp.getString(if (morning) "morning_uri" else "evening_uri", "") ?: ""
+    fun adhkarName(morning: Boolean): String = sp.getString(if (morning) "morning_name" else "evening_name", "") ?: ""
+    fun setAdhkarFile(morning: Boolean, uri: String, name: String) =
+        sp.edit().putString(if (morning) "morning_uri" else "evening_uri", uri).putString(if (morning) "morning_name" else "evening_name", name).apply()
+
     /** Напоминание зикра каждые N минут; 0 - выключено. */
     var dhikrEvery: Int
         get() = sp.getInt("dhikr_every", 60)
