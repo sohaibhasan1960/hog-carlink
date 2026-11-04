@@ -313,4 +313,6 @@
     <string name="set_group_car">السيارة</string>
     <string name="set_group_use">الاستخدام</string>
     <string name="set_group_support">الدعم</string>
+    <string name="set_system_audio_title">أصوات النظام إلى السيارة</string>
+    <string name="set_system_audio_sub">تُشغَّل رسائل واتساب الصوتية وأصوات الهاتف الأخرى عبر سماعات السيارة عندما تكون الملاحة صامتة. فعّلها إذا كانت الرسائل الصوتية صامتة في السيارة.</string>
 </resources>

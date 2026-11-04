@@ -1300,6 +1300,7 @@ class BridgeService : Service() {
                 }
             }
             core.musicRateProvider = { aaPrefs.musicRate }
+            core.systemToCarProvider = { aaPrefs.systemToCar }
             core.mediaChunkProvider = { aaPrefs.mediaChunk }
             core.voiceChunkProvider = { aaPrefs.voiceChunk }
             core.ttsPrerollProvider = { aaPrefs.ttsPreroll }

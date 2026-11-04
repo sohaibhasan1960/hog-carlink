@@ -1346,6 +1346,10 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
             refreshEqEntry()
         }.view)
         body.addView(eqEntry(), lp(MATCH, WRAP).margins(c, 0, 6, 0, 0))
+        // HOG CarLink: голосовые сообщения WhatsApp и прочие системные звуки - в машину (выкл. по умолчанию)
+        body.addView(ToggleRow(c, c.getString(R.string.set_system_audio_title), c.getString(R.string.set_system_audio_sub), aa.systemToCar) {
+            aa.systemToCar = it
+        }.view, lp(MATCH, WRAP).margins(c, 0, 6, 0, 0))
 
         body.addView(c.sectionTitle(c.getString(R.string.set_music_rate)))
         for (r in MusicRate.values()) {

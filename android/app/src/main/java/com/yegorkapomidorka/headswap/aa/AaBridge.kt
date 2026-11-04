@@ -369,6 +369,9 @@ class AaBridgeCore(
     @Volatile var huMobisNx4c = false          // Hyundai Tucson NX4 (Mobis CCNC, channel 20022188, h242): всё как у Baidu (запись AOA, keepalive, MIC, энкодер 20 fps)
         private set
     @Volatile var musicRateProvider: () -> MusicRate = { MusicRate.DEFAULT }
+    /** HOG CarLink: пересылать SYSTEM (ch5) в TTS ГУ, когда SPEECH не звучит (AaPrefs.systemToCar). */
+    @Volatile var systemToCarProvider: () -> Boolean = { false }
+    private var speechActive = false
     private var resampler: MusicResampler? = null    // null при 48000: PCM идёт как есть
     private var mediaRateLogged = MEDIA_RATE
     @Volatile var mediaChunkProvider: () -> MediaChunk = { MediaChunk.DEFAULT }
@@ -1409,13 +1412,16 @@ class AaBridgeCore(
     private fun carlifeChannel(aaChan: Int): Int? = when (aaChan) {
         AapMessages.CH_AUDIO_MEDIA -> CarlifeAudio.CH_MEDIA
         AapMessages.CH_AUDIO_SPEECH -> CarlifeAudio.CH_TTS      // навигационные подсказки / голос
-        else -> null                                              // SYSTEM (5): сигналы AA на ГУ не шлём
+        // SYSTEM (5): по умолчанию на ГУ не шлём; HOG CarLink - по настройке, если речь навигации молчит (тот же канал TTS)
+        AapMessages.CH_AUDIO_SYSTEM -> if (!speechActive && systemToCarProvider()) CarlifeAudio.CH_TTS else null
+        else -> null
     }
 
     private fun chName(ch: Int) = if (ch == CarlifeAudio.CH_MEDIA) "MEDIA" else "TTS"
 
     @Synchronized
     override fun onAudioStart(chan: Int) {
+        if (chan == AapMessages.CH_AUDIO_SPEECH) speechActive = true
         log("BRIDGE AA audio START ch$chan (${AapMessages.channelName(chan)}) -> CarLife ${carlifeChannel(chan)?.let { chName(it) } ?: "не пересылается"}", true)
         if (carlifeChannel(chan) == CarlifeAudio.CH_MEDIA) releaseHuPause("AA MEDIA START")
         if (carlifeChannel(chan) == CarlifeAudio.CH_TTS) ttsPendingStop = false
@@ -1553,6 +1559,7 @@ class AaBridgeCore(
 
     @Synchronized
     override fun onAudioStop(chan: Int) {
+        if (chan == AapMessages.CH_AUDIO_SPEECH) speechActive = false
         val ch = carlifeChannel(chan) ?: return
         log("BRIDGE AA audio STOP ch$chan", true)
         if (ch == CarlifeAudio.CH_TTS && ttsInitTimer.pending) {

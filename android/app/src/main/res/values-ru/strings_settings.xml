@@ -314,4 +314,6 @@
     <string name="set_group_car">Машина</string>
     <string name="set_group_use">Использование</string>
     <string name="set_group_support">Поддержка</string>
+    <string name="set_system_audio_title">Системные звуки в машину</string>
+    <string name="set_system_audio_sub">Голосовые сообщения WhatsApp и другие звуки телефона идут в динамики машины, когда молчит навигация. Включите, если голосовые в машине не слышны.</string>
 </resources>

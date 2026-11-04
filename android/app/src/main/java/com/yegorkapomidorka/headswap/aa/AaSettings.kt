@@ -43,6 +43,14 @@ class AaPrefs(ctx: Context) {
         get() = sp.getString("certSet", "jvc") ?: "jvc"
         set(v) = sp.edit().putString("certSet", v).apply()
 
+    /**
+     * HOG CarLink: системные звуки AA (канал SYSTEM: голосовые сообщения WhatsApp и т.п.) -> канал TTS ГУ, пока молчит
+     * навигация. По умолчанию выкл.: в SYSTEM же щелчки интерфейса AA.
+     */
+    var systemToCar: Boolean
+        get() = sp.getBoolean("systemToCar", false)
+        set(v) = sp.edit().putBoolean("systemToCar", v).apply()
+
     /** Звук AA -> CarLife по USB; по умолчанию вкл. */
     var usbAudio: Boolean
         get() = sp.getBoolean("usbAudio", true)

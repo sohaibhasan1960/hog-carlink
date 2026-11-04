@@ -317,4 +317,6 @@
     <string name="set_group_car">Car</string>
     <string name="set_group_use">Usage</string>
     <string name="set_group_support">Support</string>
+    <string name="set_system_audio_title">System sounds to the car</string>
+    <string name="set_system_audio_sub">WhatsApp voice notes and other phone sounds play through the car speakers when navigation is quiet. Turn on if voice notes are silent in the car.</string>
 </resources>
