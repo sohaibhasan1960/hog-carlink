@@ -119,6 +119,11 @@ class AaPrefs(ctx: Context) {
         return true
     }
 
+    /** HOG CarLink: «производитель модель · канал» последней ГУ - уходит в запрос поддержки. */
+    var lastHuLabel: String
+        get() = sp.getString("lastHuLabel", "") ?: ""
+        set(v) = sp.edit().putString("lastHuLabel", v.take(120)).apply()
+
     /** Сохранить размер, запрошенный ГУ (нули и мусор не пишем). */
     fun saveHuSize(w: Int, h: Int) {
         if (w > 0 && h > 0) sp.edit().putInt("lastHuW", w).putInt("lastHuH", h).apply()

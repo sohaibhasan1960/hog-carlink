@@ -124,6 +124,12 @@
             </intent-filter>
         </service>
 
+        <!-- HOG CarLink: фоновая проверка запросов поддержки (JobScheduler) -->
+        <service
+            android:name=".support.SupportJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
         <!-- статус установки обновления (PackageInstaller) -->
         <receiver
             android:name=".update.InstallReceiver"

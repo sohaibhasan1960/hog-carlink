@@ -102,6 +102,7 @@ class MainActivity : Activity() {
             }
         }
         handleIntent(intent, "старт activity")
+        com.yegorkapomidorka.headswap.support.SupportJob.schedule(this)
         if (savedInstanceState == null && !hadCmd) {
             Thread({ AaCreds.selfTest(this) }, "aa-selftest").start()
         }
@@ -205,7 +206,11 @@ class MainActivity : Activity() {
 
     fun showSettings() = push("settings", SettingsScreen(this))
 
-    fun showSettingsSection(s: SettingsSection) = push("settings:${s.key}", SettingsSectionScreen(this, s))
+    fun showSettingsSection(s: SettingsSection) =
+        if (s == SettingsSection.SUPPORT) showSupport() else push("settings:${s.key}", SettingsSectionScreen(this, s))
+
+    /** HOG CarLink: поддержка внутри приложения (запросы клиента, входящие владельца). */
+    fun showSupport() = push("support", com.yegorkapomidorka.headswap.ui.SupportScreen(this))
 
     fun showDev() = push("dev", DevScreen(this))
 
@@ -235,6 +240,10 @@ class MainActivity : Activity() {
     // --- команды intent ---
 
     private fun handleIntent(intent: Intent?, reason: String) {
+        if (intent?.getBooleanExtra(EXTRA_OPEN_SUPPORT, false) == true) {
+            intent?.removeExtra(EXTRA_OPEN_SUPPORT)
+            showSupport()
+        }
         val cmd = intent?.getStringExtra(EXTRA_CMD)
         if (intent != null && cmd != null) {
             intent.removeExtra(EXTRA_CMD)        // не повторять команду при пересоздании activity
@@ -294,6 +303,8 @@ class MainActivity : Activity() {
 
         /** adb shell am start -n com.yegorkapomidorka.headswap/.MainActivity --es cmd aa_selftest */
         const val EXTRA_CMD = "cmd"
+        /** HOG CarLink: из уведомления поддержки - открыть экран поддержки. */
+        const val EXTRA_OPEN_SUPPORT = "openSupport"
         private const val STATE_SCREENS = "screens"
 
         /** Все поля аксессуара одной строкой. Серийник без разрешения на аксессуар бросает SecurityException. */

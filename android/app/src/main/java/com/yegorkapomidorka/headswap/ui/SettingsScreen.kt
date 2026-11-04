@@ -86,7 +86,10 @@ enum class SettingsSection(val key: String, val titleRes: Int, val iconRes: Int)
 
     /** Беспровод: только в сборке с BuildConfig.WIRELESS_BETA. */
     WIRELESS("wireless", R.string.wl_title, R.drawable.ic_wifi),
-    UPDATES("updates", R.string.upd_title, R.drawable.ic_download);
+    UPDATES("updates", R.string.upd_title, R.drawable.ic_download),
+
+    /** HOG CarLink: поддержка - свой экран (SupportScreen), не SettingsSectionScreen. */
+    SUPPORT("support", R.string.sup_title, R.drawable.ic_report);
 
     companion object {
         /** Разделы этой сборки: без беты беспровода его нет ни в меню, ни по ключу. */
@@ -401,6 +404,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
             SettingsSection.APPS -> buildApps()
             SettingsSection.UPDATES -> body.addView(updateCard(), lp(MATCH, WRAP).margins(ctx, 0, 8, 0, 0))
             SettingsSection.WIRELESS -> body.addView(wirelessCard(), lp(MATCH, WRAP).margins(ctx, 0, 8, 0, 0))
+            SettingsSection.SUPPORT -> {}      // открывается SupportScreen (MainActivity.showSettingsSection)
         }
         view = scaffold(ctx, ctx.getString(section.titleRes), { host.back() }, body)
     }

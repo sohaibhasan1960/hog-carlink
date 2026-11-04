@@ -63,6 +63,8 @@ class CarLifeSession(
     private val onVideoFallback: (VideoMode) -> Unit = {},
     /** HOG CarLink: прошивка ГУ из STATISTIC_INFO.channel - по ней приложение узнаёт машину (AaPrefs.learnCar). */
     private val onHuChannel: (String?) -> Unit = {},
+    /** HOG CarLink: «производитель модель» из HU_INFO - для запросов поддержки. */
+    private val onHuName: (String) -> Unit = {},
     private val onClosed: (String) -> Unit,
 ) : VideoSource.Listener, CarlifeLink {
 
@@ -316,6 +318,7 @@ class CarLifeSession(
                 PbReader.parse(m.body)?.let {
                     WLog.ev(WLog.HS, "HU_INFO", "manufacturer" to PbReader.str(it, 13), "model" to PbReader.str(it, 14))
                     bridge.onHuInfo(PbReader.str(it, 13), PbReader.str(it, 14), PbReader.str(it, 15))
+                    onHuName(listOfNotNull(PbReader.str(it, 13), PbReader.str(it, 14)).distinct().joinToString(" "))
                 }
                 logDesay()
                 // ответа нет: Baidu только сохраняет (CarlifeDeviceInfoManager.setCarDeviceInfo)

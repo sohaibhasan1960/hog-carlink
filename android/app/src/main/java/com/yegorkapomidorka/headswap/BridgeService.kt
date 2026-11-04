@@ -158,6 +158,9 @@ class BridgeService : Service() {
         }
     }
 
+    /** HOG CarLink: канал прошивки ГУ из STATISTIC_INFO текущей сессии (приходит раньше HU_INFO). */
+    @Volatile private var lastHuChannel: String? = null
+
     override fun onCreate() {
         super.onCreate()
         alive = true
@@ -877,8 +880,10 @@ class BridgeService : Service() {
             // HOG CarLink: ГУ не приняла пробу 1280x688 - запоминаем режим-откат, чтобы проба не повторялась каждую поездку
             onVideoFallback = { m -> aaPrefs.videoMode = m },
             onHuChannel = { ch ->
+                lastHuChannel = ch
                 if (aaPrefs.learnCar(ch)) AppLog.i("BRIDGE машина опознана: VW ID.6 (канал $ch) - её настройки применятся со следующего подключения", true)
             },
+            onHuName = { n -> aaPrefs.lastHuLabel = listOfNotNull(n.ifBlank { null }, lastHuChannel).joinToString(" · ") },
         ) { reason -> main.post { onSessionClosed(sref[0]!!, reason) } }
         sref[0] = s
         session = s

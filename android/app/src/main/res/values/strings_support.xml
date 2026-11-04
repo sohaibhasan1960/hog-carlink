@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: поддержка внутри приложения (SupportScreen, SupportJob) -->
+    <string name="sup_title">Support</string>
+    <string name="sup_new">New support request</string>
+    <string name="sup_name">Your name</string>
+    <string name="sup_phone">Phone number</string>
+    <string name="sup_problem">Describe the problem</string>
+    <string name="sup_consent">Sent with the request: your phone and car model and the app settings, to the app owner only.</string>
+    <string name="sup_send">Send request</string>
+    <string name="sup_sending">Sending…</string>
+    <string name="sup_sent">Sent. The reply appears here and as a notification.</string>
+    <string name="sup_failed">Not sent. Check the internet connection and try again.</string>
+    <string name="sup_need_text">Describe the problem first.</string>
+    <string name="sup_mine">My requests</string>
+    <string name="sup_none">No requests yet.</string>
+    <string name="sup_offline">Could not load. Check the internet connection.</string>
+    <string name="sup_inbox">Incoming requests</string>
+    <string name="sup_st_new">New</string>
+    <string name="sup_st_answered">Answered</string>
+    <string name="sup_st_closed">Closed</string>
+    <string name="sup_reply_label">Reply:</string>
+    <string name="sup_reply">Reply</string>
+    <string name="sup_report">Report</string>
+    <string name="sup_delete">Delete</string>
+    <string name="sup_reply_hint">Your reply</string>
+    <string name="sup_reply_to">Reply to %1$s</string>
+    <string name="sup_reply_send">Send</string>
+    <string name="sup_delete_confirm">Delete this request permanently?</string>
+    <string name="sup_owner_title">App owner</string>
+    <string name="sup_owner_code">Owner code</string>
+    <string name="sup_owner_ok">Owner mode on: incoming requests appear above.</string>
+    <string name="sup_owner_bad">Wrong code.</string>
+    <string name="sup_notif_new_title">New support request</string>
+    <string name="sup_notif_new_text">%1$d new · from %2$s</string>
+    <string name="sup_notif_reply_title">Reply to your support request</string>
+</resources>

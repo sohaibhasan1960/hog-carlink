@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: поддержка внутри приложения (SupportScreen, SupportJob) -->
+    <string name="sup_title">الدعم</string>
+    <string name="sup_new">طلب دعم جديد</string>
+    <string name="sup_name">اسمك</string>
+    <string name="sup_phone">رقم الهاتف</string>
+    <string name="sup_problem">صف المشكلة</string>
+    <string name="sup_consent">يُرسل مع الطلب: نوع هاتفك وسيارتك وإعدادات التطبيق، إلى صاحب التطبيق فقط.</string>
+    <string name="sup_send">إرسال الطلب</string>
+    <string name="sup_sending">جارٍ الإرسال…</string>
+    <string name="sup_sent">تم الإرسال. يظهر الرد هنا وفي إشعار.</string>
+    <string name="sup_failed">لم يُرسل. تحقق من الإنترنت وحاول مرة أخرى.</string>
+    <string name="sup_need_text">صف المشكلة أولًا.</string>
+    <string name="sup_mine">طلباتي</string>
+    <string name="sup_none">لا توجد طلبات بعد.</string>
+    <string name="sup_offline">تعذّر التحميل. تحقق من الإنترنت.</string>
+    <string name="sup_inbox">الطلبات الواردة</string>
+    <string name="sup_st_new">جديد</string>
+    <string name="sup_st_answered">تم الرد</string>
+    <string name="sup_st_closed">مغلق</string>
+    <string name="sup_reply_label">الرد:</string>
+    <string name="sup_reply">رد</string>
+    <string name="sup_report">التقرير</string>
+    <string name="sup_delete">حذف</string>
+    <string name="sup_reply_hint">ردّك</string>
+    <string name="sup_reply_to">الرد على %1$s</string>
+    <string name="sup_reply_send">إرسال</string>
+    <string name="sup_delete_confirm">حذف هذا الطلب نهائيًا؟</string>
+    <string name="sup_owner_title">صاحب التطبيق</string>
+    <string name="sup_owner_code">رمز المالك</string>
+    <string name="sup_owner_ok">وضع المالك مفعّل: الطلبات الواردة تظهر في الأعلى.</string>
+    <string name="sup_owner_bad">الرمز غير صحيح.</string>
+    <string name="sup_notif_new_title">طلب دعم جديد</string>
+    <string name="sup_notif_new_text">جديد: %1$d · من %2$s</string>
+    <string name="sup_notif_reply_title">وصلك رد على طلب الدعم</string>
+</resources>

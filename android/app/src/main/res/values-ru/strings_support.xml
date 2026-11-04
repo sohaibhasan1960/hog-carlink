@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: поддержка внутри приложения (SupportScreen, SupportJob) -->
+    <string name="sup_title">Поддержка</string>
+    <string name="sup_new">Новый запрос в поддержку</string>
+    <string name="sup_name">Ваше имя</string>
+    <string name="sup_phone">Номер телефона</string>
+    <string name="sup_problem">Опишите проблему</string>
+    <string name="sup_consent">Вместе с запросом уходят модель телефона и машины и настройки приложения, только владельцу приложения.</string>
+    <string name="sup_send">Отправить</string>
+    <string name="sup_sending">Отправляю…</string>
+    <string name="sup_sent">Отправлено. Ответ появится здесь и в уведомлении.</string>
+    <string name="sup_failed">Не отправлено. Проверьте интернет и повторите.</string>
+    <string name="sup_need_text">Сначала опишите проблему.</string>
+    <string name="sup_mine">Мои запросы</string>
+    <string name="sup_none">Запросов пока нет.</string>
+    <string name="sup_offline">Не загрузилось. Проверьте интернет.</string>
+    <string name="sup_inbox">Входящие запросы</string>
+    <string name="sup_st_new">Новый</string>
+    <string name="sup_st_answered">Отвечен</string>
+    <string name="sup_st_closed">Закрыт</string>
+    <string name="sup_reply_label">Ответ:</string>
+    <string name="sup_reply">Ответить</string>
+    <string name="sup_report">Отчёт</string>
+    <string name="sup_delete">Удалить</string>
+    <string name="sup_reply_hint">Ваш ответ</string>
+    <string name="sup_reply_to">Ответ для %1$s</string>
+    <string name="sup_reply_send">Отправить</string>
+    <string name="sup_delete_confirm">Удалить запрос навсегда?</string>
+    <string name="sup_owner_title">Владелец приложения</string>
+    <string name="sup_owner_code">Код владельца</string>
+    <string name="sup_owner_ok">Режим владельца включён: входящие запросы выше.</string>
+    <string name="sup_owner_bad">Неверный код.</string>
+    <string name="sup_notif_new_title">Новый запрос в поддержку</string>
+    <string name="sup_notif_new_text">Новых: %1$d · от %2$s</string>
+    <string name="sup_notif_reply_title">Ответ на ваш запрос</string>
+</resources>
