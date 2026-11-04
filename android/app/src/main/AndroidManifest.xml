@@ -19,6 +19,10 @@
     <!-- AA-режим: TCP на loopback к серверу ГУ Android Auto (127.0.0.1:5277) -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- HOG CarLink: азан, икама и азкары по местному времени (prayer/): будильники, звук как медиа, пересчёт после перезагрузки -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- одно из условий для foreground-сервиса connectedDevice; обычное разрешение, выдаётся при установке -->
     <uses-permission android:name="android.permission.CHANGE_NETWORK_STATE" />
@@ -203,6 +207,37 @@
         <receiver
             android:name=".apps.CarAppInstallReceiver"
             android:exported="false" />
+
+        <!-- HOG CarLink: будильники намаза и их пересчёт при смене времени/пояса, перезагрузке, обновлении -->
+        <receiver
+            android:name=".prayer.PrayerReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <!-- HOG CarLink: звук азана, икамы и азкаров -->
+        <service
+            android:name=".prayer.PrayerPlayer"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback" />
+
+        <!-- HOG CarLink: «Намаз и азкары» на экране машины (медиа-приложение Android Auto) -->
+        <service
+            android:name=".prayer.AdhkarMediaService"
+            android:exported="true"
+            android:label="@string/pr_title">
+            <intent-filter>
+                <action android:name="android.media.browse.MediaBrowserService" />
+            </intent-filter>
+        </service>
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
 
         <!-- microphone: только на время захвата микрофона телефона (fallback AA-микрофона); тип в runtime выбирает сервис -->
         <service

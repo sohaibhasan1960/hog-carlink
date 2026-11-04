@@ -73,6 +73,7 @@ class MainActivity : Activity() {
         if (AppTheme.medium) setTheme(R.style.Theme_Headswap_Medium)
         super.onCreate(savedInstanceState)
         AppLog.init(this)
+        com.yegorkapomidorka.headswap.prayer.PrayerAlarms.reschedule(this)
         com.yegorkapomidorka.headswap.link.car.CarPairing.ensureObserving(this)
         AaPrefs(this).migrateTo30()        // до экранов и первого подключения (то же в BridgeService.onCreate)
         root = FrameLayout(this)
@@ -186,6 +187,10 @@ class MainActivity : Activity() {
             CarPairing.onResult(this, resultCode, data)
             current()?.onActivityResultDone()
         }
+        if (requestCode == com.yegorkapomidorka.headswap.ui.PrayerScreen.REQ_ADHAN_FILE) {
+            com.yegorkapomidorka.headswap.ui.PrayerScreen.onAdhanPicked(this, resultCode, data)
+            current()?.onActivityResultDone()
+        }
     }
 
     /** Отладка беспровода: системный запрос ACCESS_LOCAL_NETWORK (Android 17+). Онбординг с ним появится в Э4. */
@@ -235,6 +240,9 @@ class MainActivity : Activity() {
     /** HOG CarLink: поддержка внутри приложения (запросы клиента, входящие владельца). */
     fun showSupport() = push("support", com.yegorkapomidorka.headswap.ui.SupportScreen(this))
 
+    /** HOG CarLink: время намаза, азан, икама, азкары. */
+    fun showPrayer() = push("prayer", com.yegorkapomidorka.headswap.ui.PrayerScreen(this))
+
     /** HOG CarLink: «Приложения для магнитолы» с главного экрана (там же установка AABrowser / Fermata). */
     fun showCarApps() = showSettingsSection(SettingsSection.APPS)
 
@@ -258,6 +266,7 @@ class MainActivity : Activity() {
                 "dev" -> showDev()
                 "diag" -> showDiag()
                 "about" -> showAbout()
+                "prayer" -> showPrayer()
                 "onboarding" -> showOnboarding()
                 "onboarding_all" -> showOnboarding(rerun = true)
                 "checklist" -> showOnboarding(checklist = true)
@@ -272,6 +281,10 @@ class MainActivity : Activity() {
         if (intent?.getBooleanExtra(EXTRA_OPEN_SUPPORT, false) == true) {
             intent?.removeExtra(EXTRA_OPEN_SUPPORT)
             showSupport()
+        }
+        if (intent?.getBooleanExtra(EXTRA_OPEN_PRAYER, false) == true) {
+            intent?.removeExtra(EXTRA_OPEN_PRAYER)
+            showPrayer()
         }
         val cmd = intent?.getStringExtra(EXTRA_CMD)
         if (intent != null && cmd != null) {
@@ -342,6 +355,8 @@ class MainActivity : Activity() {
         const val EXTRA_CMD = "cmd"
         /** HOG CarLink: из уведомления поддержки - открыть экран поддержки. */
         const val EXTRA_OPEN_SUPPORT = "openSupport"
+        /** HOG CarLink: открыть «Намаз и азкары» (уведомление азана/азкаров). */
+        const val EXTRA_OPEN_PRAYER = "openPrayer"
         /** Разрешения карточки «Телефон» лаунчера; тот же код, что SettingsScreen.REQ_PHONE_CARD. */
         const val REQ_PHONE_CARD = 41
         private const val STATE_SCREENS = "screens"
