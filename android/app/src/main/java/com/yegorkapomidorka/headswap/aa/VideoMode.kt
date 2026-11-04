@@ -141,7 +141,8 @@ enum class VideoMode(
     }
 
     companion object {
-        val DEFAULT = ID6_HD    // HOG CarLink: ГУ ID.6 просит 800x480 (лог 2026-10-30), пробуем 1280x688 с откатом на ID6; апстрим - R720
+        /** Общий вариант для любой машины. HOG CarLink: ID6_HD ставится сам, когда ГУ опознана как ID.6 (AaPrefs.learnCar). */
+        val DEFAULT = R720
 
         /** Режим, на который сессия откатывается, если ГУ не приняла пробу HD; null = режим не проба. */
         fun hdFallback(mode: VideoGeometry): VideoMode? = if (mode == ID6_HD) ID6 else null

@@ -61,6 +61,8 @@ class CarLifeSession(
     private val onHuSize: (Int, Int) -> Unit = { _, _ -> },
     /** HOG CarLink: ГУ не приняла пробу HD (VideoMode.ID6_HD) - сюда приходит режим-откат, чтобы его запомнить в настройках. */
     private val onVideoFallback: (VideoMode) -> Unit = {},
+    /** HOG CarLink: прошивка ГУ из STATISTIC_INFO.channel - по ней приложение узнаёт машину (AaPrefs.learnCar). */
+    private val onHuChannel: (String?) -> Unit = {},
     private val onClosed: (String) -> Unit,
 ) : VideoSource.Listener, CarlifeLink {
 
@@ -324,6 +326,7 @@ class CarLifeSession(
                 PbReader.parse(m.body)?.let {
                     WLog.ev(WLog.HS, "STATISTIC_INFO", "channel" to PbReader.str(it, 4))
                     bridge.onHuStatistic(PbReader.str(it, 4))
+                    onHuChannel(PbReader.str(it, 4))
                 }
                 logDesay()
                 for (c in Handshake.onStatisticInfo(sendFeatureConfigRequest = true)) sendCmd(c.type, c.body)

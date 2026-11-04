@@ -12,6 +12,18 @@ class AaPrefs(ctx: Context) {
     private val sp: SharedPreferences = ctx.getSharedPreferences("aa", Context.MODE_PRIVATE)
 
     init {
+        // HOG CarLink hog.14: установки до 14-й жили на значениях «по умолчанию» под ID.6 (ID6_HD, 30 кадров); теперь умолчания
+        // общие, поэтому старой установке эти значения записываются явно, раз и навсегда. Новая установка узнаёт ID.6 сама.
+        val olderInstall = sp.contains(HOG_TUNE_1)
+        if (!sp.getBoolean(HOG_TUNE_3, false)) {
+            val e = sp.edit().putBoolean(HOG_TUNE_3, true)
+            if (olderInstall) {
+                if (!sp.contains("videoMode")) e.putString("videoMode", VideoMode.ID6_HD.name)
+                if (!sp.contains("fpsSetting")) e.putString("fpsSetting", FpsSetting.FPS30.name)
+                e.putBoolean(CAR_ID6, true)
+            }
+            e.apply()
+        }
         // HOG CarLink: разовая подстройка под ID.6 при обновлении - сохранённые 15 кадров (прежнее «по умолчанию") -> 30
         if (!sp.getBoolean(HOG_TUNE_1, false)) {
             val e = sp.edit().putBoolean(HOG_TUNE_1, true)
@@ -92,6 +104,20 @@ class AaPrefs(ctx: Context) {
     var lastHuH: Int
         get() = sp.getInt("lastHuH", 0)
         set(v) = sp.edit().putInt("lastHuH", v).apply()
+
+    /**
+     * HOG CarLink: ГУ назвала свою прошивку (STATISTIC_INFO.channel). Первый раз увидели ID.6 - записываем её проверенные
+     * настройки (1280x688 с откатом, 30 кадров), если человек сам их не менял; применятся со следующего подключения AA.
+     * true = настройки записаны сейчас.
+     */
+    fun learnCar(channel: String?): Boolean {
+        if (channel != ID6_CHANNEL || sp.getBoolean(CAR_ID6, false)) return false
+        val e = sp.edit().putBoolean(CAR_ID6, true)
+        if (!sp.contains("videoMode")) e.putString("videoMode", VideoMode.ID6_HD.name)
+        if (!sp.contains("fpsSetting")) e.putString("fpsSetting", FpsSetting.FPS30.name)
+        e.apply()
+        return true
+    }
 
     /** Сохранить размер, запрошенный ГУ (нули и мусор не пишем). */
     fun saveHuSize(w: Int, h: Int) {
@@ -213,6 +239,11 @@ class AaPrefs(ctx: Context) {
         const val DEFAULT_CUSTOM_H = 720
         private const val HOG_TUNE_1 = "hogTune1"
         private const val HOG_TUNE_2 = "hogTune2"
+        private const val HOG_TUNE_3 = "hogTune3"
+        private const val CAR_ID6 = "carLearnedId6"
+
+        /** STATISTIC_INFO.channel ГУ VW ID.6 CROZZ (VW BT 5075, лог 2026-10-30). */
+        const val ID6_CHANNEL = "20082128"
     }
 }
 

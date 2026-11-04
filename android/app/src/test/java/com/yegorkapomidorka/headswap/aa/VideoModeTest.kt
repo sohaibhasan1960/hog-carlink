@@ -44,7 +44,7 @@ class VideoModeTest {
                 assertEquals(m.name, m.aaH - m.marginH, m.outH)
             }
         }
-        assertEquals(VideoMode.ID6_HD, VideoMode.DEFAULT)    // HOG CarLink: ID.6, проба 1280x688
+        assertEquals(VideoMode.R720, VideoMode.DEFAULT)      // HOG CarLink: общий вариант, ID.6 узнаётся по ГУ
         assertEquals(VideoMode.ID6, VideoMode.hdFallback(VideoMode.ID6_HD))
         assertNull(VideoMode.hdFallback(VideoMode.ID6))
         assertNull(VideoMode.hdFallback(VideoMode.R800))
@@ -87,8 +87,8 @@ class VideoModeTest {
         assertEquals(VideoMode.R1080, VideoMode.R1080.effective(transcode = false))
         assertEquals(VideoMode.R800, VideoMode.R800.effective(transcode = false))
         assertEquals(VideoMode.WIDE, VideoMode.parse("WIDE"))
-        assertEquals(VideoMode.ID6_HD, VideoMode.parse(null))
-        assertEquals(VideoMode.ID6_HD, VideoMode.parse("мусор"))
+        assertEquals(VideoMode.R720, VideoMode.parse(null))
+        assertEquals(VideoMode.R720, VideoMode.parse("мусор"))
     }
 
     @Test

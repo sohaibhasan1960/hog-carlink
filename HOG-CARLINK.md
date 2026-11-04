@@ -23,6 +23,7 @@ Changes against upstream tag `v2.6.0` (see `git log v2.6.0..`):
 - 2.6.0-hog.11: "Find nearby networks" button in the car Wi-Fi form (settings and onboarding): link/car/WifiScan lists Wi-Fi networks in range by signal and fills the SSID; needs ACCESS_FINE_LOCATION (manifest maxSdkVersion removed) and Location on; the password stays manual because saved networks are hidden from apps
 - 2.6.0-hog.12: ID6 / ID6_HD Android Auto density 224 -> 240 (larger icons and text on the ID.6 screen, ~853 dp wide)
 - 2.6.0-hog.13: head-unit banner redesigned (dark HOG panel + title and step lines, RTL-aware; strings_banner.xml lines split by \n); VoIP counts as a call only while some app records the mic (WhatsApp voice notes no longer throttle video); hot phone at connect (thermal >= MODERATE) starts the session in ID6 800x480 instead of ID6_HD; ID6 density 240 -> 232; Share button on home (latest GitHub release link); server-stopped notification says what to tap
+- 2.6.0-hog.14: car recognition - defaults back to generic (R720, 15 fps) for any CarLife car; when the head unit reports STATISTIC_INFO channel 20082128 (VW ID.6 CROZZ) AaPrefs.learnCar writes ID6_HD + 30 fps once (unless the user chose otherwise), applied from the next AA connection; older installs get those values written explicitly (hogTune3) so nothing changes for them
 
 Build: `cd android && ./gradlew assembleRelease`. Needs JDK 17+, Android SDK platform 37,
 `~/.android-keys/carlink-release.properties`, and the AA head unit certs in

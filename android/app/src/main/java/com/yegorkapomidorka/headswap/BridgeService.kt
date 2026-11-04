@@ -876,6 +876,9 @@ class BridgeService : Service() {
             transport, cfg, h.core, thermalNow, onHuSize = { w, hh -> aaPrefs.saveHuSize(w, hh) },
             // HOG CarLink: ГУ не приняла пробу 1280x688 - запоминаем режим-откат, чтобы проба не повторялась каждую поездку
             onVideoFallback = { m -> aaPrefs.videoMode = m },
+            onHuChannel = { ch ->
+                if (aaPrefs.learnCar(ch)) AppLog.i("BRIDGE машина опознана: VW ID.6 (канал $ch) - её настройки применятся со следующего подключения", true)
+            },
         ) { reason -> main.post { onSessionClosed(sref[0]!!, reason) } }
         sref[0] = s
         session = s
