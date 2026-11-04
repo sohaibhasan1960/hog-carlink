@@ -53,7 +53,10 @@ object Msg {
     const val MODULE_STATUS = 0x00010026
     const val STATISTIC_INFO = 0x00018027
     const val MODULE_CONTROL = 0x00018028
-    const val GEAR_INFO = 0x00010029
+    /** HOG CarLink: было 0x00010029 (неверный id); в SDK Baidu MSG_CMD_CAR_GEAR = 0x00018029. */
+    const val GEAR_INFO = 0x00018029
+    /** Телефон просит ГУ вывести CarLife на экран (Baidu CarlifeUtil.sendGotoCarlife на стороне ГУ). */
+    const val REQUEST_GO_TO_FOREGROUND = 0x00010038
     const val NAVI_NEXT_TURN_INFO = 0x00010030
     const val MEDIA_INFO = 0x00010035
     const val MEDIA_PROGRESS_BAR = 0x00010036
@@ -153,7 +156,7 @@ object Msg {
         MEDIA_INFO to "MEDIA_INFO",
         MEDIA_PROGRESS_BAR to "MEDIA_PROGRESS_BAR",
         CONNECT_EXCEPTION to "CONNECT_EXCEPTION",
-        0x00010038 to "REQUEST_GO_TO_FOREGROUND",
+        REQUEST_GO_TO_FOREGROUND to "REQUEST_GO_TO_FOREGROUND",
         0x00010039 to "UI_ACTION_SOUND",
         0x00010040 to "BT_HFP_REQUEST",
         0x00018041 to "BT_HFP_INDICATION",

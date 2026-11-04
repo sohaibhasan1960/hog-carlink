@@ -172,6 +172,11 @@ class AaBridgeCore(
     private var vrReply = false                // поток ответа ассистента открыт в канале VR (VR_INIT ушёл)
     @Volatile var huVw20082120 = false        // VW (STATISTIC_INFO channel 20082120 h93, 20082122 h222): без heartbeat рвёт USB через 3,7-5,6 с PAUSE
         private set
+    /**
+     * HOG CarLink: VW ID.6 CROZZ (channel 20082128, любое BT-имя). Апстрим (dd02247, «VW BT 9491») видел на ней обрывы USB
+     * от IDR > ~600 КиБ. У нас воздух и IDR 120-190 КБ, поэтому без стартового потолка 2 Мбит/с - только страховка по размеру IDR.
+     */
+    @Volatile var huId6IdrGuard = false
     @Volatile var huVw20082138 = false         // VW ID (channel 20082138, "VW BT 1538", h196): IDR > ~600 КиБ рвёт USB EIO
         private set
     @Volatile var huHyundaiCn7 = false         // ГУ Hyundai CN7 (product wp_cn7cpe_cn, h218): в режиме «Авто» музыка 32 кГц с ресэмплом 48→32
@@ -367,6 +372,7 @@ class AaBridgeCore(
         huHonda = false                        // STATISTIC_INFO придёт заново в этой сессии
         huVwBt1420 = false                     // HU_INFO придёт заново в этой сессии
         huVw20082138 = false                   // HU_INFO / STATISTIC_INFO придут заново в этой сессии
+        huId6IdrGuard = false
         vwIdName = false
         vwIdChannel = false
         huHyundaiCn7 = false                   // HU_INFO придёт заново в этой сессии
@@ -637,6 +643,10 @@ class AaBridgeCore(
             log("BRIDGE ГУ Honda (channel $channel): roadName под приборку, стрелки после SUBSCRIBE_START, перевзвод NAVI 0->1", true)
         }
         vwIdChannel = channel == VW_20082138_CHANNEL
+        if (channel == ID6_CHANNEL && !huId6IdrGuard) {
+            huId6IdrGuard = true
+            log("BRIDGE ГУ VW ID.6 ($channel): страховка по размеру IDR > 450 КБ", true)
+        }
         updateVwId()
     }
 
@@ -1594,7 +1604,7 @@ class AaBridgeCore(
                 log("BRIDGE IDR энкодера -> CarLife ${payload.size} Б nal=${AnnexB.nalTypes(payload)}", true)
             }
             AaState.status = "мост: AA -> CarLife (перекодирование)"
-            if (huVw20082138) link.onEncodedKeyFrame(payload.size)
+            if (huVw20082138 || huId6IdrGuard) link.onEncodedKeyFrame(payload.size)
             return
         }
         if (!link.sendVideo(data)) {
@@ -1607,7 +1617,7 @@ class AaBridgeCore(
         sent++
         if (idr) idrSent++
         AaState.bridgeSent = sent
-        if (idr && huVw20082138) link.onEncodedKeyFrame(data.size)
+        if (idr && (huVw20082138 || huId6IdrGuard)) link.onEncodedKeyFrame(data.size)
     }
 
     /**
@@ -1846,6 +1856,7 @@ class AaBridgeCore(
         const val VW_CNS3_20082122_CHANNEL = "20082122"   // VW CNS3 (Tharu и др.): рвёт USB через ~5,6 с PAUSE без heartbeat (h222)
         const val VW_CNS3_20082134_CHANNEL = "20082134"   // VW CNS3 Tiguan L Pro: рвёт CarLife по Wi-Fi через ~5,1-5,7 с PAUSE (h224)
         const val VW_CNS2_20082114_CHANNEL = "20082114"   // VW CNS2 Delphi (Tharu 2020): рвёт USB через 6-8 с PAUSE (h425)
+        const val ID6_CHANNEL = "20082128"                // HOG CarLink: VW ID.6 CROZZ
         const val VW_20082138_CHANNEL = "20082138"        // VW ID (h196): HU_INFO manufacturer=model="VW BT 1538"
         const val VW_BT_1420_MANUFACTURER = "VW BT 1420"
         const val VW_BT_5075_MANUFACTURER = "VW BT 5075"  // HOG CarLink: VW ID.6 CROZZ, HU_INFO manufacturer=model, канал 20082128  // VW (Павел): HU_INFO manufacturer=model, канал 20082138

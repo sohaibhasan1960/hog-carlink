@@ -531,6 +531,11 @@ class CarLifeSession(
             sched.schedule({
                 if (!closed.get() && !carlifeStarted) {
                     AppLog.i("== START не пришёл за ${Handshake.START_FALLBACK_MS} мс после INIT_DONE: стартую видео сам")
+                    // HOG CarLink: ГУ подключилась, но CarLife на экран не вывела - просим её показать (один раз за сессию;
+                    // по START ГУ уже показывает CarLife, поэтому в обычном случае ничего не шлём и выбор человека не перебиваем)
+                    AppLog.i("== прошу ГУ показать CarLife (REQUEST_GO_TO_FOREGROUND)")
+                    WLog.ev(WLog.HS, "go-foreground", "why" to "no-start")
+                    sendCmd(Msg.REQUEST_GO_TO_FOREGROUND, null)
                     onVideoStart()
                 }
             }, Handshake.START_FALLBACK_MS, TimeUnit.MILLISECONDS)
@@ -809,7 +814,7 @@ class CarLifeSession(
         val old = bitratePolicy.current
         if (!bitratePolicy.lowerCeiling(maxOf(VW_20082138_MIN_BPS, (bitratePolicy.ceilingBps * 0.75).toInt()))) return
         vwIdrCutMs = now
-        AppLog.i("VW 20082138: IDR $size Б > $VW_20082138_IDR_LIMIT, потолок битрейта -> ${bitratePolicy.ceilingBps}")
+        AppLog.i("VW ${if (bridge.huVw20082138) "20082138" else "ID.6"}: IDR $size Б > $VW_20082138_IDR_LIMIT, потолок битрейта -> ${bitratePolicy.ceilingBps}")
         if (bitratePolicy.current != old) bridge.setEncoderBitrate(bitratePolicy.current)
     }
 
