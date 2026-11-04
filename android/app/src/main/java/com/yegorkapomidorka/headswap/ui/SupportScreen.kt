@@ -12,6 +12,7 @@ import android.widget.LinearLayout
 import com.yegorkapomidorka.headswap.AppLog
 import com.yegorkapomidorka.headswap.MainActivity
 import com.yegorkapomidorka.headswap.R
+import com.yegorkapomidorka.headswap.support.AutoReport
 import com.yegorkapomidorka.headswap.support.SupportCloud
 import com.yegorkapomidorka.headswap.support.SupportJob
 
@@ -30,6 +31,7 @@ class SupportScreen(host: MainActivity) : Screen(host) {
     private lateinit var name: EditText
     private lateinit var phone: EditText
     private lateinit var problem: EditText
+    private val autoRow: ToggleRow
 
     init {
         val c = ctx
@@ -52,6 +54,11 @@ class SupportScreen(host: MainActivity) : Screen(host) {
         form.addView(formBox, lp(MATCH, WRAP))
         body.addView(form, lp(MATCH, WRAP))
 
+        // HOG CarLink: автоотчёты о падениях (support/AutoReport); до первого падения - «спросить»
+        autoRow = ToggleRow(c, c.getString(R.string.ar_switch), c.getString(R.string.ar_switch_sub),
+            AutoReport.consent(c) == AutoReport.Consent.YES) { AutoReport.setConsent(c, it) }
+        body.addView(autoRow.view, lp(MATCH, WRAP))
+
         body.addView(c.sectionTitle(c.getString(R.string.sup_mine)))
         mineBox = c.vbox(10)
         body.addView(mineBox, lp(MATCH, WRAP))
@@ -72,6 +79,7 @@ class SupportScreen(host: MainActivity) : Screen(host) {
     }
 
     override fun onShow() {
+        autoRow.setChecked(AutoReport.consent(ctx) == AutoReport.Consent.YES)
         refresh()
     }
 

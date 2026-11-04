@@ -34,4 +34,12 @@
     <string name="sup_notif_new_title">Новый запрос в поддержку</string>
     <string name="sup_notif_new_text">Новых: %1$d · от %2$s</string>
     <string name="sup_notif_reply_title">Ответ на ваш запрос</string>
+    <!-- HOG CarLink: автоотчёты о сбоях (support/AutoReport) -->
+    <string name="ar_title">Отправлять отчёты о сбоях автоматически?</string>
+    <string name="ar_text">В прошлый раз HOG CarLink неожиданно остановился. Отчёт может уходить в поддержку сам при каждом таком сбое: журнал приложения (имя сети машины, адрес Bluetooth, модель телефона и настройки), без контактов и геопозиции. Изменить можно в «Поддержке».</string>
+    <string name="ar_yes">Отправлять</string>
+    <string name="ar_no">Не отправлять</string>
+    <string name="ar_name">Автоотчёт</string>
+    <string name="ar_switch">Отправлять отчёты о сбоях автоматически</string>
+    <string name="ar_switch_sub">После сбоя журнал приложения уходит в поддержку. Без контактов и геопозиции.</string>
 </resources>

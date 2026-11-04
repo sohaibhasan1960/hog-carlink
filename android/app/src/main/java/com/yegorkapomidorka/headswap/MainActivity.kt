@@ -140,6 +140,7 @@ class MainActivity : Activity() {
         current()?.onShow()
         handler.post(refresh)
         Updater.maybeCheck(this)
+        com.yegorkapomidorka.headswap.support.AutoReport.onAppVisible(this)
     }
 
     override fun onPause() {

@@ -34,4 +34,12 @@
     <string name="sup_notif_new_title">طلب دعم جديد</string>
     <string name="sup_notif_new_text">جديد: %1$d · من %2$s</string>
     <string name="sup_notif_reply_title">وصلك رد على طلب الدعم</string>
+    <!-- HOG CarLink: автоотчёты о сбоях (support/AutoReport) -->
+    <string name="ar_title">إرسال تقارير الأعطال تلقائيًا؟</string>
+    <string name="ar_text">توقف HOG CarLink بشكل غير متوقع في المرة السابقة. يمكن أن يُرسل تقرير إلى الدعم تلقائيًا كلما حدث ذلك: سجل التطبيق (اسم شبكة السيارة، وعنوان البلوتوث، وطراز الهاتف والإعدادات)، دون جهات الاتصال أو الموقع. يمكنك تغيير ذلك من «الدعم».</string>
+    <string name="ar_yes">إرسال</string>
+    <string name="ar_no">عدم الإرسال</string>
+    <string name="ar_name">تقرير تلقائي</string>
+    <string name="ar_switch">إرسال تقارير الأعطال تلقائيًا</string>
+    <string name="ar_switch_sub">بعد أي عطل يُرسل سجل التطبيق إلى الدعم، دون جهات الاتصال أو الموقع.</string>
 </resources>

@@ -34,4 +34,12 @@
     <string name="sup_notif_new_title">New support request</string>
     <string name="sup_notif_new_text">%1$d new · from %2$s</string>
     <string name="sup_notif_reply_title">Reply to your support request</string>
+    <!-- HOG CarLink: автоотчёты о сбоях (support/AutoReport) -->
+    <string name="ar_title">Send problem reports automatically?</string>
+    <string name="ar_text">HOG CarLink stopped unexpectedly last time. A report can go to support automatically each time this happens: the app log (car Wi-Fi name, Bluetooth address, phone model and settings), with no contacts or location. You can change this in Support.</string>
+    <string name="ar_yes">Send</string>
+    <string name="ar_no">Don\'t send</string>
+    <string name="ar_name">Automatic report</string>
+    <string name="ar_switch">Send problem reports automatically</string>
+    <string name="ar_switch_sub">After a crash, the app log goes to support. No contacts or location.</string>
 </resources>

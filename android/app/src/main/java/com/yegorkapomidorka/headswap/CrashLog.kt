@@ -34,6 +34,7 @@ object CrashLog {
                 e.printStackTrace(PrintWriter(sw))
                 AppLog.e("CRASH !!!!!! необработанное исключение в потоке '${t.name}'", e)
                 AppLog.detail(sw.toString().prependIndent("    "))
+                com.yegorkapomidorka.headswap.support.AutoReport.markPending(ctx, "CRASH ${e.javaClass.name}: ${e.message} (поток ${t.name})", AppLog.file)
             } catch (_: Throwable) {
             }
             prev?.uncaughtException(t, e)
@@ -69,6 +70,10 @@ object CrashLog {
                 "status=${x.status} pid=${x.pid} процесс=${x.processName} важность=${x.importance} " +
                 "pss=${x.pss / 1024} МБ rss=${x.rss / 1024} МБ описание=${x.description}"
             if (bad) AppLog.e("$line !!!!!!") else AppLog.i(line)
+            // HOG CarLink: в автоотчёт - только настоящие сбои; Java-краш уже помечен перехватчиком
+            if (x.reason in REPORT_REASONS) {
+                com.yegorkapomidorka.headswap.support.AutoReport.markPending(ctx, "EXIT ${reasonName(x.reason)} ${fmt.format(Date(x.timestamp))}: ${x.description}", previousLog(ctx))
+            }
             if (x.reason == ApplicationExitInfo.REASON_ANR || x.reason == ApplicationExitInfo.REASON_CRASH_NATIVE) {
                 dumpTrace(x)
             }
@@ -105,6 +110,14 @@ object CrashLog {
         AppLog.i("EXIT трейс (${bytes.size} Б${if (bytes.size >= TRACE_MAX) ", обрезан" else ""}):")
         AppLog.detail(text.prependIndent("    "))
     }
+
+    private val REPORT_REASONS = setOf(
+        ApplicationExitInfo.REASON_CRASH_NATIVE, ApplicationExitInfo.REASON_ANR, ApplicationExitInfo.REASON_INITIALIZATION_FAILURE,
+    )
+
+    /** Журнал прошлого запуска: второй по новизне (первый - только что открытый). */
+    private fun previousLog(ctx: Context): java.io.File? =
+        com.yegorkapomidorka.headswap.ui.LogShare.logFiles(ctx).firstOrNull { it != AppLog.file }
 
     private fun printableStrings(b: ByteArray): List<String> {
         val out = ArrayList<String>()
