@@ -94,7 +94,7 @@
     <string name="home_stage_wait_car">في انتظار السيارة</string>
     <!-- HOG CarLink: кнопка «Поделиться» на главном -->
     <string name="home_share">مشاركة التطبيق</string>
-    <string name="home_share_text">HOG CarLink: تطبيق Android Auto للسيارات ذات شاشة CarLife. للتحميل:</string>
+    <string name="home_share_text">HOG CarLink: تطبيق Android Auto للسيارات ذات شاشة CarLife (السيارات الصينية التي لا تدعم Android Auto). اضغط الرابط ثم «تثبيت»:</string>
     <!-- HOG CarLink: نصوص 4.0 من المشروع الأصلي -->
     <string name="home_title_unknown">تحقق من خادم شاشة السيارة</string>
     <string name="home_title_checking">جارٍ فحص خادم شاشة السيارة</string>

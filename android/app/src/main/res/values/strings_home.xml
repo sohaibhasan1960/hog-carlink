@@ -116,7 +116,7 @@
     <string name="home_stage_wait_car">Waiting for the car</string>
     <!-- HOG CarLink: кнопка «Поделиться» на главном -->
     <string name="home_share">Share HOG CarLink</string>
-    <string name="home_share_text">HOG CarLink: Android Auto on cars with a CarLife screen. Download:</string>
+    <string name="home_share_text">HOG CarLink: Android Auto on cars with a CarLife screen (Chinese cars without built-in Android Auto). Tap the link, then Install:</string>
     <!-- HOG CarLink: новая главная (дизайн PhoneHome.dc.html) -->
     <string name="home_connected_to">Connected · %1$s</string>
     <string name="home_stat_picture">Picture</string>

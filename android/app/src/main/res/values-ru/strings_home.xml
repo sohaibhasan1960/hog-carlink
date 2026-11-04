@@ -111,7 +111,7 @@
     <string name="home_wireless">По воздуху: %1$s</string>
     <!-- HOG CarLink: кнопка «Поделиться» на главном -->
     <string name="home_share">Поделиться HOG CarLink</string>
-    <string name="home_share_text">HOG CarLink: Android Auto на машинах с экраном CarLife. Скачать:</string>
+    <string name="home_share_text">HOG CarLink: Android Auto на машинах с экраном CarLife (китайские машины без встроенного Android Auto). Нажмите ссылку, затем «Установить»:</string>
     <!-- HOG CarLink: новая главная (дизайн PhoneHome.dc.html) -->
     <string name="home_connected_to">Подключено · %1$s</string>
     <string name="home_stat_picture">Картинка</string>

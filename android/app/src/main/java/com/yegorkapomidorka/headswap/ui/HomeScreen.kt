@@ -544,6 +544,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
     }
 
     private companion object {
-        const val SHARE_URL = "https://github.com/sohaibhasan1960/hog-carlink/releases/latest"
+        /** Прямая ссылка на APK последнего релиза (файл с постоянным именем): нажал - скачалось - «Установить», без страницы GitHub. */
+        const val SHARE_URL = "https://github.com/sohaibhasan1960/hog-carlink/releases/latest/download/HOG-CarLink.apk"
     }
 }

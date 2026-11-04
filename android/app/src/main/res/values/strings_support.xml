@@ -50,4 +50,6 @@
     <string name="sup_google_wait">Opening Google sign-in…</string>
     <string name="sup_google_done">Signed in. Your requests are linked to your Google account.</string>
     <string name="sup_google_failed">Sign-in failed: %1$s</string>
+    <string name="sup_google_no_account">No Google account found on this phone. Add one in Settings > Accounts, then try again.</string>
+    <string name="sup_google_no_provider">The phone sign-in service is not ready. In phone Settings, search for “Passwords” or “Credential manager” and choose Google, then try again.</string>
 </resources>

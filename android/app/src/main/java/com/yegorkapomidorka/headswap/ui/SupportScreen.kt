@@ -103,23 +103,35 @@ class SupportScreen(host: MainActivity) : Screen(host) {
             googleBox.addView(c.text(c.getString(R.string.sup_google_old), 13f, 400, c.clr(R.color.warn)))
             return
         }
+        // результат входа - прямо под кнопкой (раньше уходил в строку статуса формы ниже и был не виден)
+        val result = c.text("", 14f, 500, c.clr(R.color.on2)).apply { visibility = View.GONE }
+        fun say(text: String, color: Int) {
+            result.text = text
+            result.setTextColor(c.clr(color))
+            result.visibility = if (text.isEmpty()) View.GONE else View.VISIBLE
+        }
         googleBox.addView(c.containerButton(c.getString(R.string.sup_google_btn)).apply {
             setOnClickListener {
-                show(c.getString(R.string.sup_google_wait), R.color.on2)
+                say(c.getString(R.string.sup_google_wait), R.color.on2)
                 com.yegorkapomidorka.headswap.support.GoogleSignIn.start(host) { r ->
                     when (r) {
                         is com.yegorkapomidorka.headswap.support.GoogleSignIn.Result.Ok -> {
-                            show(c.getString(R.string.sup_google_done), R.color.ok)
+                            android.widget.Toast.makeText(c, c.getString(R.string.sup_google_done), android.widget.Toast.LENGTH_LONG).show()
                             SupportJob.schedule(c)
                             refreshGoogle()
                             refresh()
                         }
-                        is com.yegorkapomidorka.headswap.support.GoogleSignIn.Result.Cancelled -> show("", R.color.on2)
-                        is com.yegorkapomidorka.headswap.support.GoogleSignIn.Result.Failed -> show(c.getString(R.string.sup_google_failed, r.why), R.color.warn)
+                        is com.yegorkapomidorka.headswap.support.GoogleSignIn.Result.Cancelled -> say("", R.color.on2)
+                        is com.yegorkapomidorka.headswap.support.GoogleSignIn.Result.Failed -> say(when {
+                            "NoCredential" in r.why -> c.getString(R.string.sup_google_no_account)
+                            "ProviderConfiguration" in r.why || "Unsupported" in r.why -> c.getString(R.string.sup_google_no_provider)
+                            else -> c.getString(R.string.sup_google_failed, r.why)
+                        }, R.color.warn)
                     }
                 }
             }
         })
+        googleBox.addView(result, lp(MATCH, WRAP))
     }
 
     private fun field(hint: String, multi: Boolean): EditText = EditText(ctx).apply {

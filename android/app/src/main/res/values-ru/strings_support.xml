@@ -50,4 +50,6 @@
     <string name="sup_google_wait">Открываю вход Google…</string>
     <string name="sup_google_done">Готово. Запросы привязаны к вашему аккаунту Google.</string>
     <string name="sup_google_failed">Вход не удался: %1$s</string>
+    <string name="sup_google_no_account">На телефоне нет аккаунта Google. Добавьте его в Настройки > Аккаунты и повторите.</string>
+    <string name="sup_google_no_provider">Служба входа телефона не готова. В настройках найдите «Пароли» или «Диспетчер учётных данных», выберите Google и повторите.</string>
 </resources>

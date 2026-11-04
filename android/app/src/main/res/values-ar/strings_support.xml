@@ -50,4 +50,6 @@
     <string name="sup_google_wait">جارٍ فتح تسجيل الدخول…</string>
     <string name="sup_google_done">تم. طلباتك مرتبطة بحسابك في Google.</string>
     <string name="sup_google_failed">تعذّر تسجيل الدخول: %1$s</string>
+    <string name="sup_google_no_account">لا يوجد حساب Google في هذا الهاتف. أضِفه من الإعدادات ← الحسابات، ثم حاول مرة أخرى.</string>
+    <string name="sup_google_no_provider">خدمة تسجيل الدخول في الهاتف غير جاهزة. ابحث في إعدادات الهاتف عن «كلمات المرور» أو «مدير بيانات الاعتماد» واختر Google، ثم حاول مرة أخرى.</string>
 </resources>

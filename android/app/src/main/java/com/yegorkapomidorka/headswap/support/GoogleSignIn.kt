@@ -71,7 +71,8 @@ object GoogleSignIn {
                 override fun onError(e: GetCredentialException) {
                     io.shutdown()
                     AppLog.i("поддержка: окно входа Google: ${e.javaClass.simpleName}: ${e.message}", true)
-                    act.runOnUiThread { done(if (e is GetCredentialCancellationException) Result.Cancelled else Result.Failed(e.message ?: e.type)) }
+                    // тип ошибки в начале: экран поддержки по нему подсказывает, что делать
+                    act.runOnUiThread { done(if (e is GetCredentialCancellationException) Result.Cancelled else Result.Failed("${e.javaClass.simpleName}: ${e.message ?: e.type}")) }
                 }
             })
     }
