@@ -49,15 +49,20 @@ class SupportJob : JobService() {
         fun schedule(ctx: Context) {
             val c = SupportCloud(ctx)
             if (!c.isOwner && !c.hasSent) return
-            val js = ctx.getSystemService(JobScheduler::class.java) ?: return
-            if (js.getPendingJob(JOB_ID) != null) return
-            js.schedule(
-                JobInfo.Builder(JOB_ID, ComponentName(ctx, SupportJob::class.java))
-                    .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
-                    .setPeriodic(PERIOD_MS)
-                    .setPersisted(false)
-                    .build(),
-            )
+            // планирование не должно ронять приложение (hog.15 падал на старте без ACCESS_NETWORK_STATE)
+            try {
+                val js = ctx.getSystemService(JobScheduler::class.java) ?: return
+                if (js.getPendingJob(JOB_ID) != null) return
+                js.schedule(
+                    JobInfo.Builder(JOB_ID, ComponentName(ctx, SupportJob::class.java))
+                        .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
+                        .setPeriodic(PERIOD_MS)
+                        .setPersisted(false)
+                        .build(),
+                )
+            } catch (e: Exception) {
+                AppLog.i("поддержка: фоновая проверка не запланирована: ${e.javaClass.simpleName}: ${e.message}", true)
+            }
         }
 
         /** Одна проверка (блокирующая): новые запросы для владельца, новые ответы для клиента. */

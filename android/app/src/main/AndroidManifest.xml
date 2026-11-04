@@ -13,6 +13,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <!-- AA-режим: TCP на loopback к серверу ГУ Android Auto (127.0.0.1:5277) -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- HOG CarLink: JobScheduler с сетевым условием (SupportJob) без него бросает SecurityException на Android 14+ -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <!-- одно из условий для foreground-сервиса connectedDevice; обычное разрешение, выдаётся при установке -->
