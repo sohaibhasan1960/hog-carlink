@@ -88,7 +88,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         } catch (_: Exception) {
             ""
         }
-        body.addView(c.text(c.getString(R.string.home_version, "⁦$ver⁩"), 12f, 400, c.clr(R.color.on2)).apply {
+        body.addView(c.text(c.getString(R.string.home_version, "\u2066$ver\u2069"), 12f, 400, c.clr(R.color.on2)).apply {
             gravity = Gravity.CENTER
             pad(c, 0, 8, 0, 4)
         }, lp(MATCH, WRAP))
