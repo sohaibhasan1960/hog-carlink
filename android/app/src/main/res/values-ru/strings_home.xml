@@ -128,4 +128,7 @@
     <string name="home_tile_support_sub">Вопросы и отчёты</string>
     <string name="home_tile_share_sub">Отправить ссылку на загрузку</string>
     <string name="home_quick">Быстрый доступ</string>
+    <!-- HOG CarLink: недостающие переводы -->
+    <string name="home_sub_ready_auto">Заведите машину: телефон подключится к её Wi-Fi, и Android Auto откроется сам.</string>
+    <string name="home_stage_wait_car">Жду машину</string>
 </resources>

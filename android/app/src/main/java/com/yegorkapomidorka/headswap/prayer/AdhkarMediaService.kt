@@ -89,6 +89,9 @@ object PrayerSession {
                 PrayerPlayer.start(app, if (morning) PrayerPlayer.What.MORNING else PrayerPlayer.What.EVENING)
             }
 
+            /** Голосом в машине: «включи азкары вечера в HOG CarLink». */
+            override fun onPlayFromSearch(query: String?, extras: Bundle?) = PrayerPlayer.start(app, PrayerSession.whatFor(query))
+
             override fun onStop() = stopPlayer(app)
             override fun onPause() = stopPlayer(app)
         })
@@ -101,6 +104,18 @@ object PrayerSession {
         try {
             ctx.startService(Intent(ctx, PrayerPlayer::class.java).setAction(PrayerPlayer.ACTION_STOP))
         } catch (_: Exception) {
+        }
+    }
+
+    /** Что включить по голосовому запросу: азан, утренние или вечерние азкары; без уточнения - по времени суток. */
+    fun whatFor(query: String?): PrayerPlayer.What {
+        val q = query?.lowercase() ?: ""
+        return when {
+            listOf("أذان", "اذان", "adhan", "azan", "азан").any { it in q } -> PrayerPlayer.What.TEST_ADHAN
+            listOf("مساء", "المساء", "evening", "вечер").any { it in q } -> PrayerPlayer.What.EVENING
+            listOf("صباح", "الصباح", "morning", "утр").any { it in q } -> PrayerPlayer.What.MORNING
+            java.time.LocalTime.now().hour < 12 -> PrayerPlayer.What.MORNING
+            else -> PrayerPlayer.What.EVENING
         }
     }
 
@@ -119,7 +134,7 @@ object PrayerSession {
 
     fun stopped(s: MediaSession) {
         s.setPlaybackState(PlaybackState.Builder()
-            .setActions(PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PLAY_FROM_MEDIA_ID)
+            .setActions(PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PLAY_FROM_MEDIA_ID or PlaybackState.ACTION_PLAY_FROM_SEARCH)
             .setState(PlaybackState.STATE_STOPPED, 0, 0f)
             .build())
     }

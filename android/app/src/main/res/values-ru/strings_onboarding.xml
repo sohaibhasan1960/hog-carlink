@@ -141,4 +141,16 @@
     </string-array>
     <string name="step_activate_hint">После перезагрузки телефона активация слетает. Headswap сам попросит повторить, это полминуты.</string>
     <string name="step_activate_short">Активация Headswap</string>
+    <!-- HOG CarLink: недостающие переводы -->
+    <string name="step_background_extra_honor">Настройки запуска приложений</string>
+    <string name="step_car_wifi_title">Добавьте Wi-Fi машины</string>
+    <string name="step_car_wifi_body">Введите имя и пароль Wi-Fi с экрана машины. Телефон сам подключается к ней при каждом запуске машины, а интернет остаётся мобильным.</string>
+    <string name="step_car_wifi_hint">Если Android попросит разрешить подключение, нажмите «Подключить». Он спросит только один раз.</string>
+    <string name="step_car_wifi_primary">Сохранить и проверить</string>
+    <string name="step_car_wifi_short">Wi-Fi машины</string>
+    <string name="step_car_wifi_fail">Сохранено. Wi-Fi машины сейчас не в зоне: это нормально, если машина выключена, телефон подключится в машине.</string>
+    <string name="step_car_pick_title">Выберите машину</string>
+    <string name="step_car_pick_hint">Когда телефон подключается к машине по Bluetooth, HOG CarLink запускается сам: ничего нажимать не нужно.</string>
+    <string name="step_car_pick_primary">Выбрать машину</string>
+    <string name="step_car_pick_short">Ваша машина</string>
 </resources>

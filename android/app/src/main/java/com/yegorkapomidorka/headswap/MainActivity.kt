@@ -286,6 +286,13 @@ class MainActivity : Activity() {
             intent?.removeExtra(EXTRA_OPEN_SUPPORT)
             showSupport()
         }
+        // HOG CarLink: голосовой поиск медиа («включи азкары утра»): сразу звук, экран - намаз
+        if (intent?.action == android.provider.MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH) {
+            val q = intent.getStringExtra(android.app.SearchManager.QUERY)
+            intent.action = null
+            com.yegorkapomidorka.headswap.prayer.PrayerPlayer.start(this, com.yegorkapomidorka.headswap.prayer.PrayerSession.whatFor(q))
+            showPrayer()
+        }
         if (intent?.getBooleanExtra(EXTRA_OPEN_PRAYER, false) == true) {
             intent?.removeExtra(EXTRA_OPEN_PRAYER)
             showPrayer()

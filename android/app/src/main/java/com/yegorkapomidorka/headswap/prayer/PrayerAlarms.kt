@@ -52,7 +52,7 @@ object PrayerAlarms {
         }
         PrayerPlan.nextDhikr(now, today, tomorrow, cfg)?.let { e ->
             try {
-                if (am.canScheduleExactAlarms()) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, e.at, pending(app, REQ_DHIKR, e))
+                if (android.os.Build.VERSION.SDK_INT < 31 || am.canScheduleExactAlarms()) am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, e.at, pending(app, REQ_DHIKR, e))
                 else am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, e.at, pending(app, REQ_DHIKR, e))
             } catch (x: SecurityException) {
                 AppLog.i("намаз: напоминание зикра не поставлено: ${x.message}")

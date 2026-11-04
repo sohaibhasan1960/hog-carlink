@@ -14,6 +14,9 @@ import com.yegorkapomidorka.headswap.link.diag.WLog
  * API 36+: [onDevicePresenceEvent] (ObservingDevicePresenceRequest by association id); 33-35: onDeviceAppeared(AssociationInfo);
  * 31-32: onDeviceAppeared(String). Events for another association are ignored.
  */
+// система вызывает метод своего уровня API: onDevicePresenceEvent - 36+, onDeviceAppeared(AssociationInfo) - 33-35,
+// onDeviceAppeared(String) - 31-32; ниже 31 сервис не привязывается вовсе
+@android.annotation.SuppressLint("NewApi")
 class CarPresenceService : CompanionDeviceService() {
     override fun onCreate() {
         super.onCreate()

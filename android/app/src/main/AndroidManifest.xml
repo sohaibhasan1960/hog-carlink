@@ -143,6 +143,11 @@
             <intent-filter>
                 <action android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED" />
             </intent-filter>
+            <!-- HOG CarLink: голосовой поиск медиа в Android Auto («включи азкары утра») -->
+            <intent-filter>
+                <action android:name="android.media.action.MEDIA_PLAY_FROM_SEARCH" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
             <meta-data
                 android:name="android.hardware.usb.action.USB_ACCESSORY_ATTACHED"
                 android:resource="@xml/accessory_filter" />
