@@ -102,7 +102,7 @@ class SupportCloud(ctx: Context) {
         val r = try {
             http("POST", "$SIGN_IN_IDP?key=$API_KEY", body(link = true), null)
         } catch (e: HttpError) {
-            if (!e.body.contains("FEDERATED_USER_ID_ALREADY_LINKED") && !e.body.contains("CREDENTIAL_TOO_OLD")) throw e
+            if (!e.body.contains("FEDERATED_USER_ID_ALREADY_LINKED")) throw e
             AppLog.i("поддержка: этот Google уже у другого аккаунта, вхожу в него", true)
             val other = http("POST", "$SIGN_IN_IDP?key=$API_KEY", body(link = false), null)
             isOwner = false

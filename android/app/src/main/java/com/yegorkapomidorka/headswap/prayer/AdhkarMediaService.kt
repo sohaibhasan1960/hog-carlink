@@ -137,6 +137,8 @@ object PrayerSession {
             .setActions(PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PLAY_FROM_MEDIA_ID or PlaybackState.ACTION_PLAY_FROM_SEARCH)
             .setState(PlaybackState.STATE_STOPPED, 0, 0f)
             .build())
+        // неактивна, пока молчит: кнопка «Играть» на руле достаётся музыкальному приложению
+        s.isActive = false
     }
 
     fun stopped(ctx: Context) = stopped(get(ctx))

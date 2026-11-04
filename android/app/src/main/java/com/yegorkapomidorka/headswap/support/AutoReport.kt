@@ -73,6 +73,7 @@ object AutoReport {
                     .setMessage(act.getString(R.string.ar_text))
                     .setPositiveButton(R.string.ar_yes) { _, _ -> setConsent(act, true); sendInBackground(act.applicationContext) }
                     .setNegativeButton(R.string.ar_no) { _, _ -> setConsent(act, false) }
+                    .setCancelable(false)       // ответ нужен один раз: «назад» не откладывает вопрос до следующего входа
                     .setOnDismissListener { asking = false }
                     .show()
                 AppLog.i("автоотчёт: спрашиваю согласие, причина: ${reason.lineSequence().first()}")

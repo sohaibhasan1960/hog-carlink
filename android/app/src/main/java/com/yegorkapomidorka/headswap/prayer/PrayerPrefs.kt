@@ -100,6 +100,15 @@ class PrayerPrefs(ctx: Context) {
         get() = sp.getInt("dhikr_index", 0)
         set(v) = sp.edit().putInt("dhikr_index", v).apply()
 
+    /** Ключи сработавших событий (PrayerPlan.Event.key) за последние дни. */
+    val fired: Set<String> get() = sp.getStringSet("fired", emptySet()) ?: emptySet()
+
+    fun markFired(key: String, today: LocalDate) {
+        val keep = fired.filter { k -> k.substringBefore(':').let { d -> d >= today.minusDays(1).toString() } }.toMutableSet()
+        keep.add(key)
+        sp.edit().putStringSet("fired", keep).apply()
+    }
+
     fun config() = PrayerPlan.Config(
         adhan = PrayerPlan.FARD.filter { adhanOn(it) }.toSet(),
         iqama = iqamaOn,
@@ -114,7 +123,7 @@ class PrayerPrefs(ctx: Context) {
     /** Времена на дату по сохранённому месту; null - места ещё нет. */
     fun day(date: LocalDate, zone: ZoneId = ZoneId.systemDefault()): DayTimes? {
         if (!hasLocation) return null
-        return PrayerCalc.day(date, lat, lon, zone, method, madhab, IntArray(6) { adjust(Prayer.values()[it]) })
+        return PrayerCalc.day(date, lat, lon, method, madhab, IntArray(6) { adjust(Prayer.values()[it]) })
     }
 
     companion object {

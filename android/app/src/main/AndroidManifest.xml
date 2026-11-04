@@ -225,6 +225,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- HOG CarLink: срабатывание будильников намаза (только свои PendingIntent) -->
+        <receiver
+            android:name=".prayer.PrayerAlarmReceiver"
+            android:exported="false" />
+
         <!-- HOG CarLink: звук азана, икамы и азкаров -->
         <service
             android:name=".prayer.PrayerPlayer"

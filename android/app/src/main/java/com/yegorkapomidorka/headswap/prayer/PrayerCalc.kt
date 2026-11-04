@@ -1,7 +1,7 @@
 package com.yegorkapomidorka.headswap.prayer
 
 import java.time.LocalDate
-import java.time.ZoneId
+import java.time.ZoneOffset
 import java.time.chrono.HijrahDate
 import java.time.temporal.ChronoField
 import kotlin.math.abs
@@ -104,11 +104,10 @@ object PrayerCalc {
         date: LocalDate,
         lat: Double,
         lon: Double,
-        zone: ZoneId,
         method: CalcMethod,
         madhab: Madhab = Madhab.SHAFI,
         adjust: IntArray = IntArray(6),
-    ): DayTimes {
+    ): DayTimes? {
         val jd = julian(date.year, date.monthValue, date.dayOfMonth) - lon / (15.0 * 24.0)
         // начальные приближения в часах (как praytimes), две итерации уточнения
         var t = doubleArrayOf(5.0, 6.0, 12.0, 13.0, 18.0, 18.0, 18.0)   // fajr, sunrise, dhuhr, asr, sunset, maghrib, isha
@@ -126,6 +125,8 @@ object PrayerCalc {
         }
         val sunset = t[4]
         val sunrise = t[1]
+        // полярный день/ночь: восхода или заката нет - времени намаза по этой формуле нет (будильники не ставим)
+        if (sunrise.isNaN() || sunset.isNaN()) return null
         var fajr = t[0]
         var isha = t[6]
         val maghrib = if (method.maghribAngle != null) t[5] else sunset + method.maghribMinutes / 60.0
@@ -142,11 +143,12 @@ object PrayerCalc {
             if (isha.isNaN() || isha - sunset > ishaMax) isha = sunset + ishaMax
         }
         val hours = doubleArrayOf(fajr, sunrise, t[2], t[3], maghrib, isha)
-        val midnight = date.atStartOfDay(zone)
-        val offsetH = zone.rules.getOffset(midnight.plusHours(12).toInstant()).totalSeconds / 3600.0
+        // часы - местное солнечное время; минус долгота/15 = UTC от полуночи UTC этой даты. Пояс не нужен:
+        // смена летнего времени днём не сдвигает моменты (раньше смещение бралось на полдень - в день перехода ±1 ч)
+        val utcMidnight = date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
         val ms = LongArray(6) { i ->
-            val local = hours[i] + offsetH - lon / 15.0 + (method.offsets[i] + adjust.getOrElse(i) { 0 }) / 60.0
-            val raw = midnight.toInstant().toEpochMilli() + (local * 3_600_000.0).toLong()
+            val utc = hours[i] - lon / 15.0 + (method.offsets[i] + adjust.getOrElse(i) { 0 }) / 60.0
+            val raw = utcMidnight + (utc * 3_600_000.0).toLong()
             // ровно в минуту: +30 с и вниз
             (raw + 30_000) / 60_000 * 60_000
         }

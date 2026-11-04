@@ -14,7 +14,7 @@ class PrayerCalcTest {
 
     private fun check(date: String, lat: Double, lon: Double, tz: String, m: CalcMethod, madhab: Madhab, expected: List<String>) {
         val zone = ZoneId.of(tz)
-        val d = PrayerCalc.day(LocalDate.parse(date), lat, lon, zone, m, madhab)
+        val d = PrayerCalc.day(LocalDate.parse(date), lat, lon, m, madhab)!!
         for (p in Prayer.values()) {
             val got = Instant.ofEpochMilli(d[p]).atZone(zone).toLocalTime()
             val want = java.time.LocalTime.parse(expected[p.ordinal])
@@ -46,17 +46,35 @@ class PrayerCalcTest {
 
     @Test fun adjustmentAndCountry() {
         val zone = ZoneId.of("Asia/Amman")
-        val base = PrayerCalc.day(LocalDate.parse("2026-11-04"), 31.95, 35.91, zone, CalcMethod.JORDAN)
-        val adj = PrayerCalc.day(LocalDate.parse("2026-11-04"), 31.95, 35.91, zone, CalcMethod.JORDAN, adjust = intArrayOf(0, 0, 3, 0, 0, 0))
+        val base = PrayerCalc.day(LocalDate.parse("2026-11-04"), 31.95, 35.91, CalcMethod.JORDAN)!!
+        val adj = PrayerCalc.day(LocalDate.parse("2026-11-04"), 31.95, 35.91, CalcMethod.JORDAN, adjust = intArrayOf(0, 0, 3, 0, 0, 0))!!
         assertEquals(3 * 60_000L, adj[Prayer.DHUHR] - base[Prayer.DHUHR])
         assertEquals(CalcMethod.JORDAN, CalcMethod.forCountry("jo"))
         assertEquals(CalcMethod.MWL, CalcMethod.forCountry(null))
         assertEquals(Madhab.HANAFI, Madhab.forCountry("PK"))
     }
 
+    /** День перехода на летнее время (Каир, последняя пятница апреля 2026 = 24.04, 00:00 -> 01:00): Фаджр не сдвинут на час. */
+    @Test fun dstDayCairo() {
+        val zone = ZoneId.of("Africa/Cairo")
+        val before = PrayerCalc.day(LocalDate.parse("2026-04-23"), 30.0444, 31.2357, CalcMethod.EGYPT)!!
+        val dst = PrayerCalc.day(LocalDate.parse("2026-04-24"), 30.0444, 31.2357, CalcMethod.EGYPT)!!
+        val f0 = Instant.ofEpochMilli(before[Prayer.FAJR]).atZone(zone).toLocalTime()
+        val f1 = Instant.ofEpochMilli(dst[Prayer.FAJR]).atZone(zone).toLocalTime()
+        // за сутки Фаджр сдвигается на минуту-две, а часы переведены на +1: местное время больше на ~59 мин
+        val diff = java.time.Duration.between(f0, f1).toMinutes()
+        assertTrue("Фаджр $f0 -> $f1", diff in 55..62)
+        // между днями (в UTC) - почти ровно сутки
+        assertTrue(Math.abs(dst[Prayer.FAJR] - before[Prayer.FAJR] - 86_400_000L) < 5 * 60_000L)
+    }
+
+    @Test fun polarNightHasNoTimes() {
+        assertEquals(null, PrayerCalc.day(LocalDate.parse("2026-12-21"), 78.22, 15.65, CalcMethod.MWL))
+    }
+
     @Test fun highLatitudeHasAllTimes() {
         val zone = ZoneId.of("Europe/Oslo")
-        val d = PrayerCalc.day(LocalDate.parse("2026-06-21"), 59.91, 10.75, zone, CalcMethod.MWL)
+        val d = PrayerCalc.day(LocalDate.parse("2026-06-21"), 59.91, 10.75, CalcMethod.MWL)!!
         for (i in 1 until 6) assertTrue(d.millis[i] > d.millis[i - 1])
     }
 }

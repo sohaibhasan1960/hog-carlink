@@ -33,7 +33,9 @@ class ObdLink(private val ctx: Context) {
 
     val connected: Boolean get() = socket?.isConnected == true
 
-    fun granted(): Boolean = ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+    /** BLUETOOTH_CONNECT - с Android 12; раньше сопряжённые устройства видны без запроса. */
+    fun granted(): Boolean = android.os.Build.VERSION.SDK_INT < 31 ||
+        ctx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
 
     /** Сопряжённые устройства, похожие на OBD-адаптеры, - первыми. */
     @SuppressLint("MissingPermission")
@@ -52,7 +54,15 @@ class ObdLink(private val ctx: Context) {
             throw IllegalStateException("RFCOMM: ${e.message}")
         }
         ctx.getSystemService(BluetoothManager::class.java)?.adapter?.cancelDiscovery()
-        s.connect()
+        try {
+            s.connect()
+        } catch (e: Exception) {
+            try {
+                s.close()
+            } catch (_: Exception) {
+            }
+            throw e
+        }
         socket = s
         input = s.inputStream
         output = s.outputStream

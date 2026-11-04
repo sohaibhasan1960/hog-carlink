@@ -11,7 +11,10 @@ object PrayerPlan {
     /** Пять намазов (восход - не намаз, азана нет). */
     val FARD = listOf(Prayer.FAJR, Prayer.DHUHR, Prayer.ASR, Prayer.MAGHRIB, Prayer.ISHA)
 
-    data class Event(val kind: Kind, val at: Long, val prayer: Prayer? = null)
+    data class Event(val kind: Kind, val at: Long, val prayer: Prayer? = null, val date: java.time.LocalDate? = null) {
+        /** Что это за событие независимо от точного времени: дата + вид + намаз. Сработавшие не повторяются. */
+        val key: String get() = "$date:$kind:${prayer ?: ""}"
+    }
 
     /** Настройки, которые нужны для расписания (из PrayerPrefs). */
     data class Config(
@@ -35,18 +38,25 @@ object PrayerPlan {
     fun events(day: DayTimes, cfg: Config): List<Event> {
         val out = ArrayList<Event>()
         for (p in FARD) {
-            if (p in cfg.adhan) out.add(Event(Kind.ADHAN, day[p], p))
-            if (cfg.iqama) out.add(Event(Kind.IQAMA, day[p] + (cfg.iqamaMinutes[p] ?: 0) * MIN, p))
+            if (p in cfg.adhan) out.add(Event(Kind.ADHAN, day[p], p, day.date))
+            if (cfg.iqama) out.add(Event(Kind.IQAMA, day[p] + (cfg.iqamaMinutes[p] ?: 0) * MIN, p, day.date))
         }
-        if (cfg.morning) out.add(Event(Kind.MORNING, day[Prayer.FAJR] + cfg.morningAfterFajr * MIN))
-        if (cfg.evening) out.add(Event(Kind.EVENING, day[Prayer.ASR] + cfg.eveningAfterAsr * MIN))
-        out.sortBy { it.at }
+        if (cfg.morning) out.add(Event(Kind.MORNING, day[Prayer.FAJR] + cfg.morningAfterFajr * MIN, null, day.date))
+        if (cfg.evening) out.add(Event(Kind.EVENING, day[Prayer.ASR] + cfg.eveningAfterAsr * MIN, null, day.date))
+        out.sortWith(compareBy({ it.at }, { it.kind.ordinal }))
         return out
     }
 
-    /** Ближайшее событие намаза после [now] (сегодня или завтра). */
-    fun next(now: Long, today: DayTimes, tomorrow: DayTimes, cfg: Config): Event? =
-        (events(today, cfg) + events(tomorrow, cfg)).firstOrNull { it.at > now }
+    /**
+     * Ближайшее ещё не сработавшее событие: позже [now] или в ту же минуту, что только что сработавшее ([fired] - ключи
+     * сработавших). Время могло сдвинуться (новое место) - сработавший азан не повторится; два события в одну минуту
+     * сработают оба.
+     */
+    fun next(now: Long, today: DayTimes, tomorrow: DayTimes, cfg: Config, fired: Set<String> = emptySet()): Event? =
+        (events(today, cfg) + events(tomorrow, cfg)).firstOrNull { it.key !in fired && it.at > now - SAME_MINUTE }
+
+    /** Окно «то же событие только что»: будильник в прошлом сработает сразу. */
+    const val SAME_MINUTE = 2 * 60_000L
 
     /**
      * Ближайшее напоминание зикра: на сетке каждые [Config.dhikrEvery] минут от восхода, не ближе 10 минут к азану

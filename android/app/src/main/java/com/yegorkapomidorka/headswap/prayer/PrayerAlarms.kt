@@ -24,6 +24,7 @@ object PrayerAlarms {
     const val EXTRA_KIND = "kind"
     const val EXTRA_PRAYER = "prayer"
     const val EXTRA_AT = "at"
+    const val EXTRA_KEY = "key"
 
     /** Пересчитать и поставить оба будильника (или снять, если выключено). */
     fun reschedule(ctx: Context) {
@@ -40,7 +41,7 @@ object PrayerAlarms {
         val tomorrow = prefs.day(LocalDate.now().plusDays(1)) ?: return
         val cfg = prefs.config()
         val fmt = SimpleDateFormat("dd.MM HH:mm", Locale.US)
-        PrayerPlan.next(now, today, tomorrow, cfg)?.let { e ->
+        PrayerPlan.next(now, today, tomorrow, cfg, prefs.fired)?.let { e ->
             val show = PendingIntent.getActivity(app, REQ_MAIN, Intent(app, MainActivity::class.java)
                 .putExtra(MainActivity.EXTRA_OPEN_PRAYER, true), PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
             try {
@@ -61,8 +62,8 @@ object PrayerAlarms {
     }
 
     private fun pending(ctx: Context, req: Int, e: PrayerPlan.Event?): PendingIntent {
-        val i = Intent(ctx, PrayerReceiver::class.java).setAction(ACTION_ALARM)
-        if (e != null) i.putExtra(EXTRA_KIND, e.kind.name).putExtra(EXTRA_PRAYER, e.prayer?.name).putExtra(EXTRA_AT, e.at)
+        val i = Intent(ctx, PrayerAlarmReceiver::class.java).setAction(ACTION_ALARM)
+        if (e != null) i.putExtra(EXTRA_KIND, e.kind.name).putExtra(EXTRA_PRAYER, e.prayer?.name).putExtra(EXTRA_AT, e.at).putExtra(EXTRA_KEY, e.key)
         return PendingIntent.getBroadcast(ctx, req, i, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT)
     }
 
@@ -70,20 +71,26 @@ object PrayerAlarms {
     fun inCar(): Boolean = CarLifeState.running || CarLifeState.carAuto
 }
 
-/** Срабатывание будильника и события системы (перезагрузка, смена времени/пояса, обновление приложения). */
+/** События системы (перезагрузка, смена времени/пояса, обновление приложения): пересчёт будильников. Экспортирован ради них. */
 class PrayerReceiver : BroadcastReceiver() {
     override fun onReceive(ctx: Context, intent: Intent) {
-        if (intent.action != PrayerAlarms.ACTION_ALARM) {
-            AppLog.init(ctx)
-            AppLog.i("намаз: ${intent.action} - пересчёт будильников")
-            PrayerAlarms.reschedule(ctx)
-            return
-        }
+        AppLog.init(ctx)
+        AppLog.i("намаз: ${intent.action} - пересчёт будильников")
+        PrayerAlarms.reschedule(ctx)
+    }
+}
+
+/** Срабатывание будильника. Не экспортирован: чужое приложение не может включить азан. */
+class PrayerAlarmReceiver : BroadcastReceiver() {
+    override fun onReceive(ctx: Context, intent: Intent) {
+        if (intent.action != PrayerAlarms.ACTION_ALARM) return
         AppLog.init(ctx)
         val kind = intent.getStringExtra(PrayerAlarms.EXTRA_KIND)?.let { k -> PrayerPlan.Kind.values().firstOrNull { it.name == k } }
         val prayer = intent.getStringExtra(PrayerAlarms.EXTRA_PRAYER)?.let { p -> Prayer.values().firstOrNull { it.name == p } }
         val at = intent.getLongExtra(PrayerAlarms.EXTRA_AT, 0)
         val now = System.currentTimeMillis()
+        // отметить до звука: даже опоздавшее событие не планируем повторно
+        intent.getStringExtra(PrayerAlarms.EXTRA_KEY)?.let { PrayerPrefs(ctx).markFired(it, LocalDate.now()) }
         if (kind != null && !PrayerPlan.stale(at, now)) PrayerEvents.fire(ctx, kind, prayer)
         else AppLog.i("намаз: событие $kind опоздало или пустое, пропускаю")
         PrayerAlarms.reschedule(ctx)

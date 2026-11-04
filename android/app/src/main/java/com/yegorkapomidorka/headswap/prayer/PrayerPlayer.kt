@@ -104,7 +104,10 @@ class PrayerPlayer : Service() {
 
     private fun playAdhan() {
         if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_MUSIC)) {
-            AppLog.i("намаз: фокус звука не дан, азан всё равно играю")
+            // идёт звонок: азан не играем поверх разговора, остаётся уведомление
+            finish("фокус звука не дан (звонок?)")
+            notify(title, getString(R.string.pr_adhan_now), ongoing = false)
+            return
         }
         val prefs = PrayerPrefs(this)
         val mp = MediaPlayer()
@@ -149,8 +152,11 @@ class PrayerPlayer : Service() {
             return
         }
         val usage = if (short) AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE else AudioAttributes.USAGE_MEDIA
-        requestFocus(if (short) AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK else AudioManager.AUDIOFOCUS_GAIN_TRANSIENT,
-            usage, AudioAttributes.CONTENT_TYPE_SPEECH)
+        if (!requestFocus(if (short) AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK else AudioManager.AUDIOFOCUS_GAIN_TRANSIENT,
+                usage, AudioAttributes.CONTENT_TYPE_SPEECH)) {
+            finish("фокус звука не дан (звонок?)")
+            return
+        }
         if (ttsReady) say(lines) else {
             pendingSpeech = lines
             if (tts == null) tts = TextToSpeech(applicationContext, { status -> main.post { onTtsInit(status) } }, preferredEngine())
@@ -243,7 +249,8 @@ class PrayerPlayer : Service() {
             .setAudioAttributes(attrs(usage, content))
             .setOnAudioFocusChangeListener { change ->
                 // долгая потеря (звонок, другой плеер по просьбе водителя) - замолкаем
-                if (change == AudioManager.AUDIOFOCUS_LOSS) main.post { finish("фокус звука потерян") }
+                // потеря (другой плеер по просьбе водителя) или временная (звонок) - замолкаем
+                if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) main.post { finish("фокус звука потерян ($change)") }
             }
             .build()
         focus = req
@@ -261,6 +268,7 @@ class PrayerPlayer : Service() {
             it.release()
         }
         player = null
+        pendingSpeech = null
         tts?.stop()
         getSystemService(AudioManager::class.java)?.let { am -> focus?.let { am.abandonAudioFocusRequest(it) } }
         focus = null
