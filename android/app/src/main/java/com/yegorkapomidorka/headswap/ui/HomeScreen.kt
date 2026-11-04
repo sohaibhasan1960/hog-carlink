@@ -218,6 +218,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
             footer.addView(c.outlineButton(c.getString(R.string.home_btn_open_aa), R.drawable.ic_open).apply { setOnClickListener { Actions.openAaSettings(c) } })
         }
         // HOG CarLink: поддержка и «поделиться» (ссылка на последний релиз, оттуда же обновляется приложение)
+        footer.addView(c.linkButton(c.getString(R.string.set_sec_apps)).apply { setOnClickListener { host.showCarApps() } })
         footer.addView(c.linkButton(c.getString(R.string.sup_title)).apply { setOnClickListener { host.showSupport() } })
         footer.addView(c.linkButton(c.getString(R.string.home_share)).apply { setOnClickListener { shareApp() } })
         if (st.phase == Phase.RECONNECTING) updateGrace(st)

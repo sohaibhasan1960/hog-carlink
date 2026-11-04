@@ -187,6 +187,11 @@
             android:name=".update.InstallReceiver"
             android:exported="false" />
 
+        <!-- HOG CarLink: статус установки приложений для машины (AABrowser, Fermata) -->
+        <receiver
+            android:name=".apps.CarAppInstallReceiver"
+            android:exported="false" />
+
         <!-- microphone: только на время захвата микрофона телефона (fallback AA-микрофона); тип в runtime выбирает сервис -->
         <service
             android:name=".BridgeService"

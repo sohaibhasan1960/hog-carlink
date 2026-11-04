@@ -297,4 +297,12 @@
     <string name="about_author_ildar">Ildar Sadykov</string>
     <string name="about_open_project">Project page</string>
     <string name="about_license_unavailable">License text is not available. See the project page.</string>
+    <!-- HOG CarLink: установка AABrowser / Fermata из официального релиза (apps/CarAppInstaller) -->
+    <string name="capp_install">Install</string>
+    <string name="capp_update">Update</string>
+    <string name="capp_verified">Downloads from the author\'s official page; HOG CarLink checks the author\'s signature before installing.</string>
+    <string name="capp_checking">Checking the latest version…</string>
+    <string name="capp_downloading">Downloading… %1$d%%</string>
+    <string name="capp_installing">Confirm the installation</string>
+    <string name="capp_failed">Not installed. Check the internet connection and try again.</string>
 </resources>

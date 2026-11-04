@@ -294,4 +294,12 @@
     <string name="about_author_ildar">Ильдар Садыков</string>
     <string name="about_open_project">Страница проекта</string>
     <string name="about_license_unavailable">Текст лицензии недоступен. Смотрите страницу проекта.</string>
+    <!-- HOG CarLink: установка AABrowser / Fermata из официального релиза (apps/CarAppInstaller) -->
+    <string name="capp_install">Установить</string>
+    <string name="capp_update">Обновить</string>
+    <string name="capp_verified">Скачивается с официальной страницы автора; перед установкой HOG CarLink проверяет подпись автора.</string>
+    <string name="capp_checking">Проверяю последнюю версию…</string>
+    <string name="capp_downloading">Скачиваю… %1$d%%</string>
+    <string name="capp_installing">Подтвердите установку</string>
+    <string name="capp_failed">Не установлено. Проверьте интернет и повторите.</string>
 </resources>

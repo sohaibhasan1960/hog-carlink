@@ -293,4 +293,12 @@
     <string name="about_author_ildar">Ildar Sadykov</string>
     <string name="about_open_project">صفحة المشروع</string>
     <string name="about_license_unavailable">نص الترخيص غير متاح. راجع صفحة المشروع.</string>
+    <!-- HOG CarLink: установка AABrowser / Fermata из официального релиза (apps/CarAppInstaller) -->
+    <string name="capp_install">تثبيت</string>
+    <string name="capp_update">تحديث</string>
+    <string name="capp_verified">يُنزَّل من الصفحة الرسمية للمطوّر، ويتحقق HOG CarLink من توقيع المطوّر قبل التثبيت.</string>
+    <string name="capp_checking">جارٍ التحقق من آخر إصدار…</string>
+    <string name="capp_downloading">جارٍ التنزيل… %1$d%%</string>
+    <string name="capp_installing">أكّد التثبيت</string>
+    <string name="capp_failed">لم يُثبَّت. تحقق من الإنترنت وحاول مرة أخرى.</string>
 </resources>

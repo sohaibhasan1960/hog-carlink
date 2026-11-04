@@ -234,6 +234,9 @@ class MainActivity : Activity() {
     /** HOG CarLink: поддержка внутри приложения (запросы клиента, входящие владельца). */
     fun showSupport() = push("support", com.yegorkapomidorka.headswap.ui.SupportScreen(this))
 
+    /** HOG CarLink: «Приложения для магнитолы» с главного экрана (там же установка AABrowser / Fermata). */
+    fun showCarApps() = showSettingsSection(SettingsSection.APPS)
+
     fun showDev() = push("dev", DevScreen(this))
 
     fun showDiag() = push("diag", DiagScreen(this))

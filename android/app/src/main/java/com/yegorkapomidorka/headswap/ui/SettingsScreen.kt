@@ -471,7 +471,11 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         refreshApps()
         refreshUpdate()
         refreshWireless()
-        if (section == SettingsSection.APPS) maybeShowAppsWarning()
+        if (section == SettingsSection.APPS) {
+            maybeShowAppsWarning()
+            // HOG CarLink: последняя версия AABrowser / Fermata - для кнопки «Обновить»
+            for (app in com.yegorkapomidorka.headswap.apps.CarApp.values()) com.yegorkapomidorka.headswap.apps.CarAppInstaller.refreshLatest(ctx, app)
+        }
     }
 
     override fun onHide() {
@@ -480,6 +484,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
 
     override fun tick() {
         if (section == SettingsSection.MODE) refreshMode()
+        if (section == SettingsSection.APPS && carAppsKey() != lastCarAppsKey) refreshApps()
         refreshUpdate()
         refreshWireless()
     }
@@ -1607,8 +1612,51 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
                     addView(c.text(c.getString(R.string.apps_unsupported), 13f, 400, c.clr(R.color.warn)))
                 }
             }, lp(0, WRAP, 1f))
-            if (canOpen) addView(appButton(c.getString(R.string.apps_open)) { HuApps.open(c, pkg) }, c.lpDp(WRAP, 44))
+            val carApp = com.yegorkapomidorka.headswap.apps.CarApp.forPkg(pkg)
+            if (carApp != null && carAppBusy(carApp)) {
+                addView(c.text(carAppProgress(carApp), 14f, 500, c.clr(R.color.on2)))
+            } else {
+                if (carApp != null && carAppUpdate(carApp) != null) {
+                    addView(appButton(c.getString(R.string.capp_update)) { startCarApp(carApp) }, c.lpDp(WRAP, 44))
+                }
+                if (canOpen) addView(appButton(c.getString(R.string.apps_open)) { HuApps.open(c, pkg) }, c.lpDp(WRAP, 44))
+            }
         }
+    }
+
+    // --- HOG CarLink: установка AABrowser / Fermata из официального релиза с проверкой подписи (apps/CarAppInstaller) ---
+
+    private var lastCarAppsKey = ""
+
+    /** Снимок состояния установок: экран перерисовывается в tick, только когда он меняется. */
+    private fun carAppsKey(): String = com.yegorkapomidorka.headswap.apps.CarApp.values().joinToString("|") { a ->
+        val st = com.yegorkapomidorka.headswap.apps.CarAppInstaller.status(a)
+        "${st.step}:${st.progress}:${st.error}:${st.latest?.version}:${HuApps.isInstalled(ctx, a.pkg)}"
+    }
+
+    private fun carAppBusy(a: com.yegorkapomidorka.headswap.apps.CarApp) =
+        com.yegorkapomidorka.headswap.apps.CarAppInstaller.status(a).step != com.yegorkapomidorka.headswap.apps.CarAppInstaller.Step.IDLE
+
+    private fun carAppProgress(a: com.yegorkapomidorka.headswap.apps.CarApp): String {
+        val st = com.yegorkapomidorka.headswap.apps.CarAppInstaller.status(a)
+        return when (st.step) {
+            com.yegorkapomidorka.headswap.apps.CarAppInstaller.Step.CHECKING -> ctx.getString(R.string.capp_checking)
+            com.yegorkapomidorka.headswap.apps.CarAppInstaller.Step.DOWNLOADING -> ctx.getString(R.string.capp_downloading, st.progress)
+            else -> ctx.getString(R.string.capp_installing)
+        }
+    }
+
+    /** Версия новее установленной или null. */
+    private fun carAppUpdate(a: com.yegorkapomidorka.headswap.apps.CarApp): String? {
+        val latest = com.yegorkapomidorka.headswap.apps.CarAppInstaller.status(a).latest?.version
+        val installed = com.yegorkapomidorka.headswap.apps.CarAppInstaller.installedVersion(ctx, a)
+        return latest?.takeIf { com.yegorkapomidorka.headswap.apps.CarAppsLogic.hasUpdate(installed, it) }
+    }
+
+    private fun startCarApp(a: com.yegorkapomidorka.headswap.apps.CarApp) {
+        if (!com.yegorkapomidorka.headswap.apps.CarAppInstaller.ensureCanInstall(ctx)) return      // вернётся из настроек и нажмёт ещё раз
+        com.yegorkapomidorka.headswap.apps.CarAppInstaller.install(ctx, a)
+        refreshApps()
     }
 
     /** Запись каталога, которой на телефоне нет: описание, требование, «Скачать». */
@@ -1620,8 +1668,24 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
             addView(c.text(app.name, 17f, 500))
             addView(c.text(c.getString(app.descRes), 14f, 400, c.clr(R.color.on2)))
             app.reqRes?.let { addView(c.text(c.getString(it), 13f, 400, c.clr(R.color.on2))) }
+            val carApp = com.yegorkapomidorka.headswap.apps.CarApp.forPkg(app.pkg)
             if (unsupported) {
                 addView(c.text(c.getString(R.string.apps_unsupported), 13f, 400, c.clr(R.color.warn)))
+            } else if (carApp != null) {
+                // HOG CarLink: ставим сами из официального релиза, с проверкой подписи автора
+                val st = com.yegorkapomidorka.headswap.apps.CarAppInstaller.status(carApp)
+                addView(c.text(c.getString(R.string.capp_verified), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(18) })
+                if (st.error != null && !carAppBusy(carApp)) addView(c.text(c.getString(R.string.capp_failed), 13f, 500, c.clr(R.color.warn)))
+                if (carAppBusy(carApp)) {
+                    addView(c.text(carAppProgress(carApp), 14f, 500, c.clr(R.color.on2)))
+                } else {
+                    val size = st.latest?.asset?.size?.let { com.yegorkapomidorka.headswap.apps.CarAppsLogic.sizeMb(it) }.orEmpty()
+                    val label = c.getString(R.string.capp_install) + if (size.isEmpty()) "" else " · $size"
+                    addView(c.hbox(4).apply {
+                        gravity = Gravity.END or Gravity.CENTER_VERTICAL
+                        addView(appButton(label) { startCarApp(carApp) }, c.lpDp(WRAP, 44))
+                    }, lp(MATCH, WRAP))
+                }
             } else {
                 addView(c.hbox(4).apply {
                     gravity = Gravity.END or Gravity.CENTER_VERTICAL
@@ -1637,6 +1701,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         val c = ctx
         val pm = c.packageManager
         val sel = HuApps.detect(c)
+        lastCarAppsKey = carAppsKey()
         host.removeAllViews()
 
         host.addView(c.sectionTitle(c.getString(R.string.apps_installed_title)))
