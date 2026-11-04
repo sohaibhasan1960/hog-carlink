@@ -22,4 +22,12 @@
     <color name="errc">#6E1912</color>
     <color name="onerr">#690003</color>
     <color name="ripple">#33FFFFFF</color>
+    <!-- HOG CarLink: карточка «подключено» в тёмной теме -->
+    <color name="hero">#123524</color>
+    <color name="onhero">#FFFFFF</color>
+    <color name="onhero2">#CFE3D6</color>
+    <color name="herotile">#1C4A33</color>
+    <color name="herolabel">#A9CDB8</color>
+    <color name="herodot">#6FD59A</color>
+    <color name="herowarn">#F2C36B</color>
 </resources>

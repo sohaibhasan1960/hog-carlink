@@ -183,12 +183,31 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
         val c = ctx
         val body = c.vbox(12).apply { pad(c, 16, 4, 16, 16) }
 
-        val sections = c.card()
-        for ((i, s) in SettingsSection.menu().withIndex()) {
-            if (i > 0) sections.addView(c.divider())
-            sections.addView(sectionRow(s))
+        // HOG CarLink: разделы по группам «Машина / Использование / Поддержка» (дизайн PhoneSettings.dc.html)
+        val menu = SettingsSection.menu()
+        val groups = listOf(
+            R.string.set_group_car to listOf(SettingsSection.MODE, SettingsSection.HEADUNIT, SettingsSection.VIDEO, SettingsSection.WIRELESS),
+            R.string.set_group_use to listOf(SettingsSection.SOUND, SettingsSection.APPS, SettingsSection.APPEARANCE),
+            R.string.set_group_support to listOf(SettingsSection.UPDATES, SettingsSection.SUPPORT),
+        )
+        val grouped = groups.flatMap { it.second }.toSet()
+        for ((g, group) in groups.withIndex()) {
+            val (titleRes, list) = group
+            // разделы, которых нет в группах (новые из апстрима), - в конец первой группы, чтобы не потерялись
+            val rows = list.filter { it in menu } + if (g == 0) menu.filter { it !in grouped } else emptyList()
+            if (rows.isEmpty()) continue
+            body.addView(c.sectionTitle(c.getString(titleRes)))
+            val card = c.card()
+            for ((i, s) in rows.withIndex()) {
+                if (i > 0) card.addView(c.divider())
+                card.addView(sectionRow(s))
+            }
+            if (titleRes == R.string.set_group_use) {
+                card.addView(c.divider())
+                card.addView(link(R.drawable.ic_moon, c.getString(R.string.pr_title), c.getString(R.string.pr_enable), false) { host.showPrayer() })
+            }
+            body.addView(card, lp(MATCH, WRAP))
         }
-        body.addView(sections, lp(MATCH, WRAP))
 
         body.addView(c.sectionTitle(c.getString(R.string.set_help)))
         val links = c.card().apply {

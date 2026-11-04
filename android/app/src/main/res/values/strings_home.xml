@@ -117,4 +117,20 @@
     <!-- HOG CarLink: кнопка «Поделиться» на главном -->
     <string name="home_share">Share HOG CarLink</string>
     <string name="home_share_text">HOG CarLink: Android Auto on cars with a CarLife screen. Download:</string>
+    <!-- HOG CarLink: новая главная (дизайн PhoneHome.dc.html) -->
+    <string name="home_connected_to">Connected · %1$s</string>
+    <string name="home_stat_picture">Picture</string>
+    <string name="home_stat_motion">Motion</string>
+    <string name="home_stat_heat">Heat</string>
+    <string name="home_fps_value">%1$d fps</string>
+    <string name="home_fps_auto">Auto</string>
+    <string name="home_heat_ok">Normal</string>
+    <string name="home_heat_warm">Warm</string>
+    <string name="home_heat_hot">Hot</string>
+    <string name="home_version">Version %1$s · based on Headswap (GPL-3.0)</string>
+    <string name="home_tile_prayer_next">Next: %1$s %2$s</string>
+    <string name="home_tile_apps_sub">Browser, video, media</string>
+    <string name="home_tile_support_sub">Questions and reports</string>
+    <string name="home_tile_share_sub">Send the download link</string>
+    <string name="home_quick">Quick access</string>
 </resources>

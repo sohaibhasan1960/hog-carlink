@@ -111,4 +111,20 @@
     <string name="mock_about_title">حول الهاتف</string>
     <string name="mock_about_build">رقم الإصدار</string>
     <string name="mock_about_build_sub">في Xiaomi: «إصدار النظام»</string>
+    <!-- HOG CarLink: новая главная (дизайн PhoneHome.dc.html) -->
+    <string name="home_connected_to">متصل · %1$s</string>
+    <string name="home_stat_picture">الصورة</string>
+    <string name="home_stat_motion">الحركة</string>
+    <string name="home_stat_heat">الحرارة</string>
+    <string name="home_fps_value">%1$d إطارًا</string>
+    <string name="home_fps_auto">تلقائي</string>
+    <string name="home_heat_ok">طبيعية</string>
+    <string name="home_heat_warm">دافئة</string>
+    <string name="home_heat_hot">مرتفعة</string>
+    <string name="home_version">الإصدار %1$s · مبني على Headswap (GPL-3.0)</string>
+    <string name="home_tile_prayer_next">التالية: %1$s %2$s</string>
+    <string name="home_tile_apps_sub">المتصفح والفيديو والوسائط</string>
+    <string name="home_tile_support_sub">الأسئلة والتقارير</string>
+    <string name="home_tile_share_sub">أرسل رابط التحميل</string>
+    <string name="home_quick">وصول سريع</string>
 </resources>

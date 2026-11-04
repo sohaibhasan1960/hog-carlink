@@ -112,4 +112,20 @@
     <!-- HOG CarLink: кнопка «Поделиться» на главном -->
     <string name="home_share">Поделиться HOG CarLink</string>
     <string name="home_share_text">HOG CarLink: Android Auto на машинах с экраном CarLife. Скачать:</string>
+    <!-- HOG CarLink: новая главная (дизайн PhoneHome.dc.html) -->
+    <string name="home_connected_to">Подключено · %1$s</string>
+    <string name="home_stat_picture">Картинка</string>
+    <string name="home_stat_motion">Движение</string>
+    <string name="home_stat_heat">Нагрев</string>
+    <string name="home_fps_value">%1$d кадров</string>
+    <string name="home_fps_auto">Авто</string>
+    <string name="home_heat_ok">Норма</string>
+    <string name="home_heat_warm">Тёплый</string>
+    <string name="home_heat_hot">Горячий</string>
+    <string name="home_version">Версия %1$s · на основе Headswap (GPL-3.0)</string>
+    <string name="home_tile_prayer_next">Следующий: %1$s %2$s</string>
+    <string name="home_tile_apps_sub">Браузер, видео, медиа</string>
+    <string name="home_tile_support_sub">Вопросы и отчёты</string>
+    <string name="home_tile_share_sub">Отправить ссылку на загрузку</string>
+    <string name="home_quick">Быстрый доступ</string>
 </resources>

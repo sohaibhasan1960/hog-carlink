@@ -23,4 +23,12 @@
     <color name="errc">#FFDAD4</color>
     <color name="onerr">#FFFFFF</color>
     <color name="ripple">#1F000000</color>
+    <!-- HOG CarLink: тёмно-зелёная карточка «подключено» (дизайн PhoneHome.dc.html) -->
+    <color name="hero">#003B1F</color>
+    <color name="onhero">#FFFFFF</color>
+    <color name="onhero2">#CFE3D6</color>
+    <color name="herotile">#0B4A2B</color>
+    <color name="herolabel">#9FC2AD</color>
+    <color name="herodot">#6FD59A</color>
+    <color name="herowarn">#F2C36B</color>
 </resources>

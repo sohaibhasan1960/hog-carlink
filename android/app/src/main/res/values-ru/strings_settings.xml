@@ -310,4 +310,8 @@
     <string name="wl_cw_qr_not_wifi">Это не код Wi-Fi. В нём: %1$s</string>
     <string name="wl_cw_qr_no_camera">Камера недоступна: %1$s</string>
     <string name="wl_cw_qr_permission">Разрешите доступ к камере, чтобы считать код; камера нужна только на время сканирования.</string>
+    <!-- HOG CarLink: группы главного экрана настроек -->
+    <string name="set_group_car">Машина</string>
+    <string name="set_group_use">Использование</string>
+    <string name="set_group_support">Поддержка</string>
 </resources>

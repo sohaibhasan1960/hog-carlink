@@ -309,4 +309,8 @@
     <string name="wl_cw_qr_not_wifi">هذا ليس رمز Wi-Fi. محتواه: %1$s</string>
     <string name="wl_cw_qr_no_camera">الكاميرا غير متاحة: %1$s</string>
     <string name="wl_cw_qr_permission">اسمح بالوصول إلى الكاميرا لقراءة الرمز؛ تُستخدم الكاميرا أثناء المسح فقط.</string>
+    <!-- HOG CarLink: группы главного экрана настроек -->
+    <string name="set_group_car">السيارة</string>
+    <string name="set_group_use">الاستخدام</string>
+    <string name="set_group_support">الدعم</string>
 </resources>

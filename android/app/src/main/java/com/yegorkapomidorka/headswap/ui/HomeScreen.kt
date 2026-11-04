@@ -54,6 +54,9 @@ class HomeScreen(host: MainActivity) : Screen(host) {
     private var graceLeftText: TextView? = null
     private var graceFill: View? = null
     private var graceRest: View? = null
+    /** HOG CarLink: подпись плитки намаза (следующая молитва), обновляется раз в минуту. */
+    private val prayerSub: TextView = ctx.text("", 13f, 400, ctx.clr(R.color.on2))
+    private var prayerSubMinute = -1L
 
     init {
         val c = ctx
@@ -77,6 +80,18 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         body.addView(updBox, lp(MATCH, WRAP))
         body.addView(heroBox, lp(MATCH, WRAP))
         body.addView(c.card(24).apply { pad(c, 0, 6, 0, 6); addView(stagesBox, lp(MATCH, WRAP)) }, lp(MATCH, WRAP))
+        // HOG CarLink: быстрый доступ плитками 2x2 (дизайн PhoneHome.dc.html) вместо столбика текстовых ссылок
+        body.addView(c.sectionTitle(c.getString(R.string.home_quick)).apply { pad(c, 4, 8, 4, 0) })
+        body.addView(quickGrid(), lp(MATCH, WRAP))
+        val ver = try {
+            c.packageManager.getPackageInfo(c.packageName, 0).versionName ?: ""
+        } catch (_: Exception) {
+            ""
+        }
+        body.addView(c.text(c.getString(R.string.home_version, ver), 12f, 400, c.clr(R.color.on2)).apply {
+            gravity = Gravity.CENTER
+            pad(c, 0, 8, 0, 4)
+        }, lp(MATCH, WRAP))
         root.addView(ScrollView(c).apply {
             isFillViewport = true
             overScrollMode = View.OVER_SCROLL_NEVER
@@ -122,6 +137,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
 
     override fun tick() {
         refreshUpdate()
+        refreshPrayerSub()
         val wasDesktop = desktopMode
         syncMode()
         if (desktopMode != wasDesktop) { lastState = null; lastDesk = null }
@@ -195,7 +211,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
     private fun render(st: HomeState) {
         val c = ctx
         onHide()
-        renderHero(st.tone, st.icon, st.title.get(c), st.sub.get(c), lastWireless)
+        renderHero(st.tone, st.icon, st.title.get(c), st.sub.get(c), lastWireless, connected = st.phase == Phase.CONNECTED)
         if (st.showChain) heroBox.addView(chain(), lp(MATCH, WRAP))
         if (st.phase == Phase.RECONNECTING) heroBox.addView(graceBlock(st), lp(MATCH, WRAP))
 
@@ -217,11 +233,6 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         if (st.primary == null && st.outline != OutlineAction.OPEN_AA) {
             footer.addView(c.outlineButton(c.getString(R.string.home_btn_open_aa), R.drawable.ic_open).apply { setOnClickListener { Actions.openAaSettings(c) } })
         }
-        // HOG CarLink: поддержка и «поделиться» (ссылка на последний релиз, оттуда же обновляется приложение)
-        footer.addView(c.linkButton(c.getString(R.string.pr_title)).apply { setOnClickListener { host.showPrayer() } })
-        footer.addView(c.linkButton(c.getString(R.string.set_sec_apps)).apply { setOnClickListener { host.showCarApps() } })
-        footer.addView(c.linkButton(c.getString(R.string.sup_title)).apply { setOnClickListener { host.showSupport() } })
-        footer.addView(c.linkButton(c.getString(R.string.home_share)).apply { setOnClickListener { shareApp() } })
         if (st.phase == Phase.RECONNECTING) updateGrace(st)
     }
 
@@ -257,8 +268,12 @@ class HomeScreen(host: MainActivity) : Screen(host) {
     }
 
     /** Герой-карточка: тон, значок в кружке, заголовок в одну строку, подзаголовок и необязательная строка [note]. */
-    private fun renderHero(tone: Tone, icon: HeroIcon, title: String, sub: String, note: String?) {
+    private fun renderHero(tone: Tone, icon: HeroIcon, title: String, sub: String, note: String?, connected: Boolean = false) {
         val c = ctx
+        if (connected) {
+            renderConnectedHero(title, sub, note)
+            return
+        }
         val night = c.isNight
         val (bgRes, fgRes, onFgRes, textRes) = when (tone) {
             Tone.PRI -> listOf(R.color.pric, R.color.pri, R.color.onpri, if (night) R.color.on else R.color.acc)
@@ -288,7 +303,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
             addView(c.text(title, 20f, 600, c.clr(textRes)).apply {
                 letterSpacing = -0.015f
                 lineHeight = c.dp(26)
-                maxLines = 1
+                maxLines = 2
                 ellipsize = TextUtils.TruncateAt.END
             }, lp(0, WRAP, 1f))
         }, lp(MATCH, WRAP))
@@ -296,6 +311,107 @@ class HomeScreen(host: MainActivity) : Screen(host) {
             addView(c.text(sub, 16f, 400).apply { lineHeight = c.dp(22) })
             note?.let { addView(c.text(it, 14f, 400, c.clr(R.color.on2))) }
         }, lp(MATCH, WRAP))
+    }
+
+    /**
+     * HOG CarLink: «подключено» - тёмно-зелёная карточка (PhoneHome.dc.html): точка и имя машины, крупный заголовок,
+     * подзаголовок и три плитки - картинка (кадр на ГУ), движение (кадры) и нагрев телефона.
+     */
+    private fun renderConnectedHero(title: String, sub: String, note: String?) {
+        val c = ctx
+        heroBox.removeAllViews()
+        heroBox.background = c.shape(c.clr(R.color.hero), 24)
+        heroBox.pad(c, 20, 22, 20, 22)
+        val car = AaPrefs(c).lastHuLabel.ifBlank { CarLifeState.huName ?: "" }
+        if (car.isNotBlank()) heroBox.addView(c.hbox(10).apply {
+            gravity = Gravity.CENTER_VERTICAL
+            addView(View(c).apply { background = c.oval(c.clr(R.color.herodot)) }, lp(c.dp(12), c.dp(12)))
+            addView(c.text(c.getString(R.string.home_connected_to, car), 15f, 600, c.clr(R.color.onhero2))
+                .apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END }, lp(0, WRAP, 1f))
+        }, lp(MATCH, WRAP))
+        heroBox.addView(c.text(title, 26f, 700, c.clr(R.color.onhero)).apply { lineHeight = c.dp(34) }, lp(MATCH, WRAP))
+        heroBox.addView(c.text(sub, 15f, 400, c.clr(R.color.onhero2)).apply { lineHeight = c.dp(23) }, lp(MATCH, WRAP))
+        note?.let { heroBox.addView(c.text(it, 14f, 400, c.clr(R.color.onhero2)), lp(MATCH, WRAP)) }
+        val g = CarLifeState.videoMode
+        val picture = if (g != null) "${g.outW}×${g.outH}" else "—"
+        val fps = AaPrefs(c).fpsSetting.fixed?.let { c.getString(R.string.home_fps_value, it) } ?: c.getString(R.string.home_fps_auto)
+        val thermal = try {
+            c.getSystemService(android.os.PowerManager::class.java)?.currentThermalStatus ?: 0
+        } catch (_: Exception) {
+            0
+        }
+        val (heat, hot) = when {
+            thermal >= android.os.PowerManager.THERMAL_STATUS_MODERATE -> c.getString(R.string.home_heat_hot) to true
+            thermal >= android.os.PowerManager.THERMAL_STATUS_LIGHT -> c.getString(R.string.home_heat_warm) to true
+            else -> c.getString(R.string.home_heat_ok) to false
+        }
+        heroBox.addView(c.hbox(8).apply {
+            addView(statTile(c.getString(R.string.home_stat_picture), picture, false), lp(0, WRAP, 1f))
+            addView(statTile(c.getString(R.string.home_stat_motion), fps, false), lp(0, WRAP, 1f))
+            addView(statTile(c.getString(R.string.home_stat_heat), heat, hot), lp(0, WRAP, 1f))
+        }, lp(MATCH, WRAP))
+    }
+
+    private fun statTile(label: String, value: String, warn: Boolean): View {
+        val c = ctx
+        return c.vbox(2).apply {
+            background = c.shape(c.clr(R.color.herotile), 14)
+            pad(c, 10, 10, 10, 10)
+            addView(c.text(label, 12f, 400, c.clr(R.color.herolabel)))
+            addView(c.text(value, 16f, 700, c.clr(if (warn) R.color.herowarn else R.color.onhero)).apply { maxLines = 1 })
+        }
+    }
+
+    private fun quickGrid(): View {
+        val c = ctx
+        val grid = c.vbox(10)
+        fun tile(icon: Int, title: String, sub: TextView, onClick: () -> Unit): View = c.vbox(6).apply {
+            background = c.rippleBg(c.shape(c.clr(R.color.surf), 20), 20)
+            pad(c, 16, 14, 16, 14)
+            minimumHeight = c.dp(104)
+            isClickable = true
+            isFocusable = true
+            contentDescription = title
+            setOnClickListener { onClick() }
+            addView(FrameLayout(c).apply {
+                background = c.shape(c.clr(R.color.okc), 12)
+                addView(c.icon(icon, 22, c.clr(R.color.ok)), FrameLayout.LayoutParams(c.dp(22), c.dp(22), Gravity.CENTER))
+            }, lp(c.dp(40), c.dp(40)))
+            addView(c.text(title, 16f, 600).apply { maxLines = 2 })
+            addView(sub)
+        }
+        fun sub(res: Int) = c.text(c.getString(res), 13f, 400, c.clr(R.color.on2)).apply { maxLines = 2 }
+        refreshPrayerSub()
+        grid.addView(c.hbox(10).apply {
+            addView(tile(R.drawable.ic_moon, c.getString(R.string.pr_title), prayerSub) { host.showPrayer() }, lp(0, MATCH, 1f))
+            addView(tile(R.drawable.ic_video, c.getString(R.string.set_sec_apps), sub(R.string.home_tile_apps_sub)) { host.showCarApps() }, lp(0, MATCH, 1f))
+        }, lp(MATCH, WRAP))
+        grid.addView(c.hbox(10).apply {
+            addView(tile(R.drawable.ic_report, c.getString(R.string.sup_title), sub(R.string.home_tile_support_sub)) { host.showSupport() }, lp(0, MATCH, 1f))
+            addView(tile(R.drawable.ic_share, c.getString(R.string.home_share), sub(R.string.home_tile_share_sub)) { shareApp() }, lp(0, MATCH, 1f))
+        }, lp(MATCH, WRAP))
+        return grid
+    }
+
+    /** Подпись плитки намаза: следующая молитва и её время; места нет - «Азан и напоминания». */
+    private fun refreshPrayerSub() {
+        val m = System.currentTimeMillis() / 60_000
+        if (m == prayerSubMinute) return
+        prayerSubMinute = m
+        val c = ctx
+        val p = com.yegorkapomidorka.headswap.prayer.PrayerPrefs(c)
+        val zone = java.time.ZoneId.systemDefault()
+        val today = p.day(java.time.LocalDate.now(zone), zone)
+        val tomorrow = p.day(java.time.LocalDate.now(zone).plusDays(1), zone)
+        if (today == null || tomorrow == null) {
+            prayerSub.text = c.getString(R.string.pr_enable)
+            return
+        }
+        val now = System.currentTimeMillis()
+        val next = com.yegorkapomidorka.headswap.prayer.PrayerPlan.FARD.map { it to today[it] }.firstOrNull { it.second > now }
+            ?: (com.yegorkapomidorka.headswap.prayer.Prayer.FAJR to tomorrow[com.yegorkapomidorka.headswap.prayer.Prayer.FAJR])
+        val t = java.time.format.DateTimeFormatter.ofPattern("HH:mm").format(java.time.Instant.ofEpochMilli(next.second).atZone(zone))
+        prayerSub.text = c.getString(R.string.home_tile_prayer_next, com.yegorkapomidorka.headswap.prayer.PrayerPlayer.prayerName(c, next.first), t)
     }
 
     private fun renderStages(stages: List<Pair<UiText, Pair<StageState, UiText>>>) {
