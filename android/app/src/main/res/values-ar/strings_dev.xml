@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="dev_title">للمطورين</string>
+
+    <string name="dev_section_mic">ميكروفون شاشة السيارة</string>
+    <string name="dev_mic_vr_sub">إرسال VR 1/0 مع MIC_RECORD_* (مثل Baidu)</string>
+
+    <string name="dev_section_meta">البيانات الوصفية على شاشة السيارة (تُطبَّق بعد إعادة توصيل USB)</string>
+    <string name="dev_meta_music_title">الموسيقى</string>
+    <string name="dev_meta_music_sub">المقطع والغلاف والتقدّم: MEDIA_INFO / MEDIA_PROGRESS_BAR</string>
+    <string name="dev_meta_navi_title">الملاحة</string>
+    <string name="dev_meta_navi_sub">المنعطفات والمسافة: NAVI_NEXT_TURN_INFO عندما تشترك شاشة السيارة</string>
+    <string name="dev_meta_icon_title">الحقل 6: أيقونة</string>
+    <string name="dev_meta_icon_sub">bytes turnIconData، سهم PNG (مثل Baidu 8.6.7)</string>
+    <string name="dev_meta_time_title">الحقل 6: الوقت</string>
+    <string name="dev_meta_time_sub">int32 الوقت حتى المناورة، s (مثل apollo-DuerOS)</string>
+    <string name="dev_meta_progress_title">التقدّم بالثواني</string>
+    <string name="dev_meta_progress_sub">MEDIA_PROGRESS_BAR بالثواني بدل ms (إذا عرضت شاشة السيارة قيمة أكبر بـ 1000×)</string>
+
+    <string name="dev_section_music_chunk">حجم حزمة الموسيقى (تجريبي)</string>
+    <string name="dev_music_chunk_note">الأصغر يعني مخزنًا مؤقتًا أصغر على شاشة السيارة لكن حزمًا أكثر عبر USB. إذا تقطّع الصوت، فارجع إلى «كما يرسلها Android Auto»</string>
+    <string name="dev_section_voice_chunk">حجم حزمة الصوت البشري (تجريبي)</string>
+    <string name="dev_voice_chunk_note">ردود المساعد وإرشادات الملاحة. تلقائي: 1024 B على VW CNS2 Delphi، وإلا كما يرسلها AA</string>
+    <string name="dev_section_tts_preroll">صمت قبل الإرشاد (تجريبي)</string>
+    <string name="dev_tts_preroll_note">أصفار بعد بدء الإرشاد كي تفتح شاشة السيارة مسار الصوت. تلقائي: 400 ms على VW</string>
+    <string name="dev_section_touch_decimation">تقليل أحداث اللمس (تجريبي)</string>
+    <string name="dev_touch_decimation_note">تخطّي كل MOVE ثانٍ: ترسل شاشة السيارة حتى ~70 حدثًا في الثانية، والفيديو حتى 30 fps. لا تضيع أبدًا آخر نقطة قبل رفع الإصبع.</string>
+
+
+    <string name="dev_section_video">الفيديو (يُطبَّق عند إعادة الاتصال)</string>
+    <string name="dev_own_idr_title">إطار مفتاحي خاص في التمرير المباشر</string>
+    <string name="dev_own_idr_sub">كل 2 s يرسل الهاتف إلى شاشة السيارة إطارًا مفتاحيًا خاصًا: تعود الصورة بعد كاميرا الرجوع وقائمة السيارة. أوقفه إذا كانت شاشة السيارة تتعافى وحدها (مثل VW): حركة بيانات وحِمل أقل على الهاتف</string>
+    <string name="dev_custom_res_title">دقة مخصصة</string>
+    <string name="dev_custom_res_sub">بدل الوضع المحدد في إعدادات الفيديو</string>
+    <string name="dev_custom_w">العرض</string>
+    <string name="dev_custom_h">الارتفاع</string>
+    <string name="dev_custom_hint">العرض 640–2240، الارتفاع 640–1080 (للعمودي: بالعكس)، أرقام زوجية</string>
+    <string name="dev_custom_from_hu">كما تطلب شاشة السيارة · %1$d×%2$d</string>
+    <string name="dev_custom_k_plate">لوحة AA</string>
+    <string name="dev_custom_k_margins">الهوامش</string>
+    <string name="dev_custom_k_scale">التحجيم</string>
+    <string name="dev_custom_k_bitrate">معدل البت</string>
+    <string name="dev_custom_v_size">%1$d×%2$d</string>
+    <string name="dev_custom_v_scale_one">1:1</string>
+    <string name="dev_custom_v_scale">×%1$.2f</string>
+    <string name="dev_custom_v_bitrate">حتى %1$.1f Mbit/s</string>
+    <string name="dev_custom_err_width">العرض خارج النطاق</string>
+    <string name="dev_custom_err_height">الارتفاع خارج النطاق</string>
+    <string name="dev_custom_err_odd">يجب أن تكون القيم زوجية</string>
+    <string name="dev_custom_err_encoder">لا يستطيع الهاتف ترميز هذا الحجم</string>
+    <string name="dev_custom_err_fmt">%1$s. لم يُحفظ</string>
+    <string name="dev_custom_warn_16">ليس من مضاعفات 16: قد يرفض المرمّز في بعض الهواتف هذا الحجم</string>
+    <string name="dev_custom_warn_scale">تمديد أكبر من 1.3: ستكون الصورة ضبابية</string>
+    <string name="dev_custom_warn_transcode">إعادة الترميز متوقفة: ستكون الدقة 1280×720</string>
+    <string name="dev_custom_note">يعمل فقط مع إعادة الترميز.</string>
+
+    <string name="dev_section_actions">الإجراءات</string>
+    <string name="dev_action_scan">فحص</string>
+    <string name="dev_action_stop_bridge">إيقاف الجسر</string>
+    <string name="dev_action_aa_settings">إعدادات Android Auto</string>
+    <string name="dev_action_check_server">فحص خادم الوحدة الرئيسية</string>
+    <string name="dev_check_server_alive">خادم الوحدة الرئيسية يستجيب</string>
+    <string name="dev_check_server_refused">خادم الوحدة الرئيسية يرفض الاتصال</string>
+    <string name="dev_check_server_hung">خادم الوحدة الرئيسية لا يرد على المصافحة</string>
+    <string name="dev_check_server_error">خطأ: %1$s</string>
+    <string name="dev_check_server_bridge">الجسر يعمل: سيقطع الفحص الجلسة الحالية. أوقف الجسر أولًا.</string>
+    <string name="dev_check_server_usb">ملحق USB (السيارة) متصل: سيقطع الفحص الاتصال. افصل الكابل.</string>
+    <string name="dev_check_server_running">هناك فحص قيد التشغيل بالفعل</string>
+
+    <string name="dev_section_status">الحالة</string>
+    <string name="dev_section_log">السجل</string>
+    <plurals name="dev_log_lines">
+        <item quantity="zero">%d سطر</item>
+        <item quantity="one">%d سطر</item>
+        <item quantity="two">%d سطران</item>
+        <item quantity="few">%d أسطر</item>
+        <item quantity="many">%d سطرًا</item>
+        <item quantity="other">%d سطر</item>
+    </plurals>
+    <string name="dev_log_meta">%1$s · %2$s</string>
+
+    <string name="dev_log_share">مشاركة السجل</string>
+    <string name="dev_log_save_zip">حفظ ‎.zip</string>
+    <string name="dev_log_clear">مسح</string>
+    <string name="dev_log_archive_note">يحتوي الأرشيف على: السجل، وطراز الهاتف وإصدار Android، وإعدادات الجسر، وبيانات شاشة السيارة. بلا جهات اتصال أو موقع.</string>
+
+    <string name="dev_section_notes">ملاحظات</string>
+    <string name="dev_notes_adb">لاستخدام adb على HyperOS، فعّل «Install via USB» و«USB debugging (Security settings)» في «خيارات المطوّرين». الجسر لا يحتاج إليهما.</string>
+    <string name="dev_open_dev_settings">فتح «خيارات المطوّرين»</string>
+    <string name="dev_open_failed">تعذّر الفتح: %1$s</string>
+
+    <string name="dev_clear_title">مسح السجل؟</string>
+    <string name="dev_clear_message">ستُمسح الأسطر من الشاشة وستُحذف ملفات headswap-*.log القديمة. يبقى الملف الحالي.</string>
+    <string name="dev_clear_confirm">مسح</string>
+    <string name="dev_clear_cancel">إلغاء</string>
+    <plurals name="dev_deleted_old_files">
+        <item quantity="zero">حُذف %d ملف قديم</item>
+        <item quantity="one">حُذف %d ملف قديم</item>
+        <item quantity="two">حُذف %d ملفان قديمان</item>
+        <item quantity="few">حُذفت %d ملفات قديمة</item>
+        <item quantity="many">حُذف %d ملفًا قديمًا</item>
+        <item quantity="other">حُذف %d ملف قديم</item>
+    </plurals>
+</resources>
