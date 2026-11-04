@@ -63,10 +63,10 @@
     <string name="notif_video_usb">Видео · звук по USB</string>
     <string name="notif_video_wifi">Видео · звук по Wi-Fi</string>
     <string name="notif_video">Видео</string>
-    <string name="notif_server_off">Сервер ГУ не запущен</string>
+    <string name="notif_server_off">Нажмите сюда → ⋮ → «Запустить сервер головного устройства»</string>
     <string name="notif_cable_waiting">Кабель подключён · жду Android Auto</string>
     <string name="notif_parked">Сервер ГУ работает в фоне</string>
-    <string name="notif_server_down">Android закрыл сервер ГУ · включите его снова</string>
+    <string name="notif_server_down">Android его остановил · нажмите сюда → ⋮ → «Запустить сервер головного устройства»</string>
     <string name="notif_server_started">Сервер ГУ запущен</string>
 
     <!-- Иллюстрации онбординга (нарисованные макеты системного UI) -->
@@ -95,4 +95,7 @@
     <string name="mock_ok">ОК</string>
 
     <string name="home_wireless">По воздуху: %1$s</string>
+    <!-- HOG CarLink: кнопка «Поделиться» на главном -->
+    <string name="home_share">Поделиться HOG CarLink</string>
+    <string name="home_share_text">HOG CarLink: Android Auto на машинах с экраном CarLife. Скачать:</string>
 </resources>

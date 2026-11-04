@@ -3,7 +3,7 @@
 <resources>
     <string name="home_title_server_down">سيرفر الشاشة لا يستجيب</string>
     <string name="home_sub_server_down">أغلق أندرويد سيرفر الشاشة. شغّله مجددًا: Android Auto ← ⋮ ← «Start head unit server».</string>
-    <string name="notif_server_off">سيرفر الشاشة غير مشغّل</string>
-    <string name="notif_server_down">أغلق أندرويد سيرفر الشاشة · شغّله مجددًا من Android Auto</string>
+    <string name="notif_server_off">اضغط هنا ← ⋮ ← «بدء خادم الوحدة الرئيسية»</string>
+    <string name="notif_server_down">أوقفه أندرويد · اضغط هنا ← ⋮ ← «بدء خادم الوحدة الرئيسية»</string>
     <string name="action_open_aa">افتح Android Auto</string>
 </resources>

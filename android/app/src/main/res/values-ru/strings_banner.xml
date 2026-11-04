@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- HOG CarLink: тексты заглушки на экране ГУ (AaBridgeCore.TEXT_*) -->
-    <string name="banner_connecting">Подключаю Android Auto...</string>
-    <string name="banner_start_server">Запустите сервер ГУ в Android Auto</string>
-    <string name="banner_wait_frame">Android Auto: жду кадр...</string>
-    <string name="banner_aa_lost">Android Auto отключился, переподключаю...</string>
+    <!-- HOG CarLink: тексты заглушки на экране ГУ (AaBridgeCore.TEXT_*): первая строка - заголовок, дальше \n - пояснение/шаги -->
+    <string name="banner_connecting">Запускаю Android Auto\nТелефон трогать не нужно. Карта появится через несколько секунд.</string>
+    <string name="banner_start_server">Запустите сервер ГУ в Android Auto\n1. Нажмите уведомление HOG CarLink на телефоне\n2. Нажмите ⋮ вверху экрана\n3. Выберите «Запустить сервер головного устройства»</string>
+    <string name="banner_wait_frame">Android Auto подключён\nЖду картинку…</string>
+    <string name="banner_aa_lost">Android Auto отключился\nПереподключаюсь сам…</string>
 </resources>

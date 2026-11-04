@@ -93,4 +93,7 @@
     <string name="home_wireless">الاتصال اللاسلكي: %1$s</string>
     <string name="home_sub_ready_auto">شغّل السيارة: ينضم الهاتف إلى شبكتها ويفتح Android Auto وحده.</string>
     <string name="home_stage_wait_car">في انتظار السيارة</string>
+    <!-- HOG CarLink: кнопка «Поделиться» на главном -->
+    <string name="home_share">مشاركة التطبيق</string>
+    <string name="home_share_text">HOG CarLink: تطبيق Android Auto للسيارات ذات شاشة CarLife. للتحميل:</string>
 </resources>

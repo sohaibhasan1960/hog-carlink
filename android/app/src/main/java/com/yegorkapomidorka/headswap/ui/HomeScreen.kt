@@ -214,7 +214,20 @@ class HomeScreen(host: MainActivity) : Screen(host) {
             // «Отправить лог» живёт внутри самодиагностики: на главном одна понятная вторая кнопка
             footer.addView(c.tonalButton(c.getString(R.string.diag_home_btn)).apply { setOnClickListener { host.showDiag() } })
         }
+        // HOG CarLink: поделиться ссылкой на последний релиз (оттуда же обновляется само приложение)
+        footer.addView(c.linkButton(c.getString(R.string.home_share)).apply { setOnClickListener { shareApp() } })
         if (st.phase == Phase.RECONNECTING) updateGrace(st)
+    }
+
+    private fun shareApp() {
+        val c = ctx
+        val text = c.getString(R.string.home_share_text) + " " + SHARE_URL
+        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+            .putExtra(android.content.Intent.EXTRA_TEXT, text)
+        try {
+            c.startActivity(android.content.Intent.createChooser(send, c.getString(R.string.home_share)))
+        } catch (_: Exception) {
+        }
     }
 
     /** Как запустить сервер ГУ: три пронумерованных пункта на плашке surf (Main.dc.html, isOff). */
@@ -323,5 +336,9 @@ class HomeScreen(host: MainActivity) : Screen(host) {
             }
         }
         return box
+    }
+
+    private companion object {
+        const val SHARE_URL = "https://github.com/sohaibhasan1960/hog-carlink/releases/latest"
     }
 }

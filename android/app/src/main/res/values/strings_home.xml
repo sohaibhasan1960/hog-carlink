@@ -64,10 +64,10 @@
     <string name="notif_video_usb">Video · audio over USB</string>
     <string name="notif_video_wifi">Video · audio over Wi-Fi</string>
     <string name="notif_video">Video</string>
-    <string name="notif_server_off">Head unit server not started</string>
+    <string name="notif_server_off">Tap here → ⋮ → \u201cStart head unit server\u201d</string>
     <string name="notif_cable_waiting">USB cable connected · waiting for Android Auto</string>
     <string name="notif_parked">Head unit server keeps running in the background</string>
-    <string name="notif_server_down">Android closed the head unit server · turn it on again</string>
+    <string name="notif_server_down">Android stopped it · tap here → ⋮ → \u201cStart head unit server\u201d</string>
     <string name="notif_server_started">Head unit server started</string>
 
     <!-- Onboarding mock screens (drawn illustrations of system UI) -->
@@ -100,4 +100,7 @@
     <string name="home_wireless">Wireless: %1$s</string>
     <string name="home_sub_ready_auto">Start the car: the phone joins its Wi-Fi and Android Auto opens by itself.</string>
     <string name="home_stage_wait_car">Waiting for the car</string>
+    <!-- HOG CarLink: кнопка «Поделиться» на главном -->
+    <string name="home_share">Share HOG CarLink</string>
+    <string name="home_share_text">HOG CarLink: Android Auto on cars with a CarLife screen. Download:</string>
 </resources>

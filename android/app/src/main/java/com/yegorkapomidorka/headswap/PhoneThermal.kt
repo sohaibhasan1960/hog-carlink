@@ -11,10 +11,15 @@ class PhoneThermal(ctx: Context) : ThermalSource {
     private val pm = ctx.getSystemService(PowerManager::class.java)
     private val am = ctx.getSystemService(AudioManager::class.java)
 
-    /** Звонок: режим аудио IN_CALL (GSM/VoLTE) или IN_COMMUNICATION (VoIP: WhatsApp и т.п.). */
+    /**
+     * Звонок: режим аудио IN_CALL (GSM/VoLTE) или IN_COMMUNICATION с идущей записью микрофона (VoIP: WhatsApp и т.п.).
+     * HOG CarLink: голосовое сообщение WhatsApp тоже включает IN_COMMUNICATION, но микрофон не пишет - это не звонок
+     * (лог 2026-11-03: «звонки» по 6-722 с без SCO, видео зря падало до 15 fps). Записи других приложений видны без разрешений.
+     */
     override fun inCall(): Boolean = try {
         val m = am?.mode ?: AudioManager.MODE_NORMAL
-        m == AudioManager.MODE_IN_CALL || m == AudioManager.MODE_IN_COMMUNICATION
+        m == AudioManager.MODE_IN_CALL ||
+            (m == AudioManager.MODE_IN_COMMUNICATION && am?.activeRecordingConfigurations?.isNotEmpty() == true)
     } catch (_: Exception) {
         false
     }

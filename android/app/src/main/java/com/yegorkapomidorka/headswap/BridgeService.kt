@@ -859,8 +859,21 @@ class BridgeService : Service() {
         stopRequested = false
 
         val sref = arrayOfNulls<CarLifeSession>(1)
+        // HOG CarLink: телефон уже горячий при подключении машины - эта сессия на 800x480 (ID6, та же раскладка AA),
+        // остывший - снова 1280x688. Только когда выбран ID6_HD и AA на нём или на ID6 (одинаковый SDR, AA не трогаем).
+        val thermalNow = PhoneThermal(this)
+        if (aaPrefs.videoGeometry.effective(aaPrefs.transcode) == com.yegorkapomidorka.headswap.aa.VideoMode.ID6_HD &&
+            (h.core.videoMode == com.yegorkapomidorka.headswap.aa.VideoMode.ID6_HD || h.core.videoMode == com.yegorkapomidorka.headswap.aa.VideoMode.ID6)
+        ) {
+            val hot = thermalNow.status() >= com.yegorkapomidorka.headswap.aa.ThermalThrottle.STATUS_MODERATE
+            val want = if (hot) com.yegorkapomidorka.headswap.aa.VideoMode.ID6 else com.yegorkapomidorka.headswap.aa.VideoMode.ID6_HD
+            if (h.core.videoMode != want) {
+                AppLog.i("BRIDGE нагрев при подключении (статус ${thermalNow.status()}): видео-режим ${h.core.videoMode.label} -> ${want.label}", true)
+                h.core.videoMode = want
+            }
+        }
         val s = CarLifeSession(
-            transport, cfg, h.core, PhoneThermal(this), onHuSize = { w, hh -> aaPrefs.saveHuSize(w, hh) },
+            transport, cfg, h.core, thermalNow, onHuSize = { w, hh -> aaPrefs.saveHuSize(w, hh) },
             // HOG CarLink: ГУ не приняла пробу 1280x688 - запоминаем режим-откат, чтобы проба не повторялась каждую поездку
             onVideoFallback = { m -> aaPrefs.videoMode = m },
         ) { reason -> main.post { onSessionClosed(sref[0]!!, reason) } }

@@ -206,38 +206,67 @@ class VideoSource(
 
     private fun drawBanner(c: Canvas, msg: String) = drawBanner(c, width, height, msg, framesRendered, text, fill)
 
+    /**
+     * HOG CarLink: заглушка как в макете (canvas «تصميم الشاشات»): слева тёмная панель со знаком HOG и CarLink,
+     * справа заголовок крупно и строки пояснения/шагов. [msg]: первая строка - заголовок, остальные (через \n) - тело.
+     * Арабский текст выравнивается по правому краю, латиница/кириллица - по левому. Плоские цвета: CBR даёт полосы на градиентах.
+     */
     private fun drawBanner(c: Canvas, width: Int, height: Int, msg: String, n: Long, text: Paint, fill: Paint) {
         val w = width.toFloat()
         val h = height.toFloat()
-        // плоские цвета: на CBR 4 Мбит/с градиенты слабого энкодера идут полосами
         c.drawColor(HOG_GREEN)
-        drawHog(c, w / 2, h * 0.36f, minOf(h * 0.3f, w * 0.2f), fill)
-
-        // словесный знак под логотипом HOG: CarLink белым
-        text.textAlign = Paint.Align.LEFT
+        val panelW = w * 0.33f
+        fill.style = Paint.Style.FILL
+        fill.color = HOG_PANEL
+        c.drawRect(0f, 0f, panelW, h, fill)
+        drawHog(c, panelW / 2, h * 0.43f, minOf(h * 0.24f, panelW * 0.45f), fill)
         text.typeface = WORDMARK
-        text.textSize = h * 0.075f
-        val head = "CarLink"
-        val swap = ""
-        val wHead = text.measureText(head)
-        var x = w / 2 - (wHead + text.measureText(swap)) / 2
-        val yWord = h * 0.66f
-        text.color = Color.WHITE
-        c.drawText(head, x, yWord, text)
-        x += wHead
-        text.color = AMBER
-        c.drawText(swap, x, yWord, text)
-
-        // статус моста: по нему видно, чего ждём (сервер ГУ, разблокировка, кадр)
-        text.typeface = Typeface.DEFAULT_BOLD
         text.textAlign = Paint.Align.CENTER
-        text.color = STATUS
-        text.textSize = h * 0.065f
-        val lh = text.textSize * 1.25f
-        var y = h * 0.81f
-        for (l in wrapBalanced(msg, w * 0.88f, text)) {
-            c.drawText(l, w / 2, y, text)
-            y += lh
+        text.color = Color.WHITE
+        text.textSize = h * 0.06f
+        c.drawText("CarLink", panelW / 2, h * 0.43f + h * 0.24f * 0.75f, text)
+
+        val parts = msg.split('\n').map { it.trim() }.filter { it.isNotEmpty() }
+        if (parts.isEmpty()) return
+        val rtl = parts.any { line -> line.any { it in '\u0600'..'\u06FF' } }
+        val pad = w * 0.05f
+        val left = panelW + pad
+        val right = w - pad
+        val maxW = right - left
+        text.textAlign = if (rtl) Paint.Align.RIGHT else Paint.Align.LEFT
+        val x = if (rtl) right else left
+
+        // разметка: подпись, заголовок (до 2 строк), тело
+        text.typeface = Typeface.DEFAULT_BOLD
+        val kicker = h * 0.04f
+        val titleSize = h * 0.08f
+        val bodySize = h * 0.046f
+        text.textSize = titleSize
+        val titleLines = wrapBalanced(parts[0], maxW, text).take(2)
+        text.textSize = bodySize
+        val bodyLines = parts.drop(1).flatMap { wrapBalanced(it, maxW, text) }
+        val total = kicker * 1.8f + titleLines.size * titleSize * 1.25f + (if (bodyLines.isEmpty()) 0f else bodySize * 0.6f) +
+            bodyLines.size * bodySize * 1.55f
+        var y = (h - total) / 2 + kicker
+
+        text.textSize = kicker
+        text.color = HOG_GOLD
+        c.drawText("HOG CarLink", x, y, text)
+        y += kicker * 0.8f
+
+        text.textSize = titleSize
+        text.color = Color.WHITE
+        for (l in titleLines) {
+            y += titleSize * 1.25f
+            c.drawText(l, x, y, text)
+        }
+        if (bodyLines.isNotEmpty()) y += bodySize * 0.6f
+        text.typeface = Typeface.DEFAULT
+        text.textSize = bodySize
+        text.color = BODY
+        for (l in bodyLines) {
+            y += bodySize * 1.55f
+            c.drawText(l, x, y, text)
         }
     }
 
@@ -374,6 +403,8 @@ class VideoSource(
         private val BG = Color.rgb(0x0E, 0x14, 0x1A) // фон иконки
         private val HOG_GREEN = Color.rgb(0x00, 0x3B, 0x1F)
         private val HOG_GOLD = Color.rgb(0xBB, 0x90, 0x32)
+        private val HOG_PANEL = Color.rgb(0x00, 0x30, 0x1A)
+        private val BODY = Color.rgb(0xCF, 0xE3, 0xD6)
         private val AMBER = Color.rgb(0xF2, 0xB3, 0x3D)
         private val STATUS = Color.rgb(0xB8, 0xC4, 0xCC)
         private val WORDMARK: Typeface = Typeface.create("sans-serif-black", Typeface.NORMAL)

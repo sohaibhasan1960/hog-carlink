@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- HOG CarLink: тексты заглушки на экране ГУ (AaBridgeCore.TEXT_*) -->
-    <string name="banner_connecting">جارٍ الاتصال بـ Android Auto…</string>
-    <string name="banner_start_server">شغّل خادم الوحدة الرئيسية في Android Auto</string>
-    <string name="banner_wait_frame">Android Auto: في انتظار الصورة…</string>
-    <string name="banner_aa_lost">انقطع Android Auto، أعيد الاتصال…</string>
+    <!-- HOG CarLink: тексты заглушки на экране ГУ (AaBridgeCore.TEXT_*): первая строка - заголовок, дальше \n - пояснение/шаги -->
+    <string name="banner_connecting">جارٍ تشغيل Android Auto\nلا تحتاج إلى لمس الهاتف. تظهر الخرائط خلال ثوانٍ.</string>
+    <string name="banner_start_server">شغّل خادم Android Auto على الهاتف\n1. اضغط إشعار HOG CarLink على الهاتف\n2. اضغط ⋮ أعلى الشاشة\n3. اختر «بدء خادم الوحدة الرئيسية»</string>
+    <string name="banner_wait_frame">Android Auto متصل\nفي انتظار الصورة…</string>
+    <string name="banner_aa_lost">انقطع Android Auto\nأعيد الاتصال تلقائيًا…</string>
 </resources>

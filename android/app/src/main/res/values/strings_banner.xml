@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- HOG CarLink: тексты заглушки на экране ГУ (AaBridgeCore.TEXT_*) -->
-    <string name="banner_connecting">Connecting Android Auto…</string>
-    <string name="banner_start_server">Start the head unit server in Android Auto</string>
-    <string name="banner_wait_frame">Android Auto: waiting for a frame…</string>
-    <string name="banner_aa_lost">Android Auto disconnected, reconnecting…</string>
+    <!-- HOG CarLink: тексты заглушки на экране ГУ (AaBridgeCore.TEXT_*): первая строка - заголовок, дальше \n - пояснение/шаги -->
+    <string name="banner_connecting">Starting Android Auto\nNo need to touch the phone. The map appears in a few seconds.</string>
+    <string name="banner_start_server">Start the Android Auto server on the phone\n1. Tap the HOG CarLink notification on the phone\n2. Tap ⋮ at the top of the screen\n3. Choose \u201cStart head unit server\u201d</string>
+    <string name="banner_wait_frame">Android Auto connected\nWaiting for the picture…</string>
+    <string name="banner_aa_lost">Android Auto disconnected\nReconnecting automatically…</string>
 </resources>
