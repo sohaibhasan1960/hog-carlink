@@ -82,4 +82,7 @@
     <string name="pr_m_tehran">Тегеран</string>
     <string name="pr_times">%1$d раз</string>
     <string name="pr_car_times">Время намаза сегодня</string>
+    <string name="pr_city">Ввести город</string>
+    <string name="pr_city_hint">например, Амман</string>
+    <string name="pr_city_failed">Город не найден. Проверьте название и интернет.</string>
 </resources>

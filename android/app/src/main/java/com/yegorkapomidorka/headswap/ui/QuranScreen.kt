@@ -117,24 +117,34 @@ class QuranScreen(host: MainActivity) : Screen(host) {
     private fun read(n: Int) {
         val c = ctx
         Thread({
+            var fatiha1 = ""
             val ayat = try {
-                c.resources.openRawResource(R.raw.quran_uthmani).bufferedReader(Charsets.UTF_8).useLines { Quran.ayat(it, n) }
+                c.resources.openRawResource(R.raw.quran_uthmani).bufferedReader(Charsets.UTF_8).useLines { seq ->
+                    // одним проходом: 1:1 (образец басмалы) и аяты суры
+                    val wanted = "$n|"
+                    val lines = seq.filter { it.startsWith("1|1|") || it.startsWith(wanted) }.toList()
+                    fatiha1 = lines.firstOrNull { it.startsWith("1|1|") }?.substringAfter("1|1|") ?: ""
+                    Quran.ayat(lines.asSequence(), n)
+                }
             } catch (e: Exception) {
                 AppLog.e("Коран: текст не прочитан", e)
                 emptyList()
             }
-            val text = ayat.withIndex().joinToString(" ") { (i, a) -> "$a ﴿${arabicDigits(i + 1)}﴾" }
+            val (basmala, rest) = Quran.splitBasmala(n, ayat, fatiha1)
+            val body = rest.withIndex().joinToString(" ") { (i, a) -> "$a ﴿${arabicDigits(i + 1)}﴾" }
+            val text = if (basmala != null) "$basmala\n\n$body" else body
             main.post {
+                val builder = AlertDialog.Builder(host)
                 val tv = TextView(c).apply {
                     setText(text)
                     textSize = 22f
                     setLineSpacing(0f, 1.6f)
-                    setTextColor(c.clr(R.color.on))
+                    setTextColor(c.dialogTextColor(builder.context))
                     textDirection = View.TEXT_DIRECTION_RTL
                     setTextIsSelectable(true)
                     pad(c, 20, 12, 20, 12)
                 }
-                AlertDialog.Builder(host).setTitle(c.getString(R.string.qr_surah_title, Quran.name(n)))
+                builder.setTitle(c.getString(R.string.qr_surah_title, Quran.name(n)))
                     .setView(ScrollView(c).apply { addView(tv) })
                     .setPositiveButton(R.string.qr_listen) { _, _ -> PrayerPlayer.quran(c, n) }
                     .setNegativeButton(android.R.string.ok, null)

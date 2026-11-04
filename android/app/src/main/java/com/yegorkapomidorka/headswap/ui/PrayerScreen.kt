@@ -58,6 +58,7 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
         tbox.addView(nextText)
         tbox.addView(timesBox, lp(MATCH, WRAP))
         tbox.addView(c.tonalButton(c.getString(R.string.pr_locate)).apply { setOnClickListener { locate() } }, lp(MATCH, c.dp(48)))
+        tbox.addView(c.linkButton(c.getString(R.string.pr_city)).apply { setOnClickListener { askCity() } }, lp(MATCH, c.dp(44)))
         today.addView(tbox, lp(MATCH, WRAP))
         body.addView(today, lp(MATCH, WRAP))
 
@@ -153,14 +154,37 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
     private fun locate() {
         if (!PrayerLocation.granted(ctx)) {
             awaitingLocation = true
-            host.requestPermissions(arrayOf(PrayerLocation.PERMISSION), REQ_LOCATION)
+            // точное - по желанию (спутники, если нет сети); приблизительного хватает
+            host.requestPermissions(arrayOf(PrayerLocation.PERMISSION, android.Manifest.permission.ACCESS_FINE_LOCATION), REQ_LOCATION)
             return
         }
         placeText.text = ctx.getString(R.string.pr_locating)
         PrayerLocation.refresh(ctx) { ok ->
-            if (!ok) placeText.text = ctx.getString(R.string.pr_locate_failed)
             refresh()
+            // после refresh: иначе «место не задано» затирает причину
+            if (!ok) placeText.text = ctx.getString(R.string.pr_locate_failed)
         }
+    }
+
+    /** Город вручную: если геолокации нет (выключена, нет сети и спутников). */
+    private fun askCity() {
+        val c = ctx
+        val input = android.widget.EditText(c).apply {
+            hint = c.getString(R.string.pr_city_hint)
+            isSingleLine = true
+            pad(c, 20, 12, 20, 12)
+        }
+        AlertDialog.Builder(host).setTitle(R.string.pr_city).setView(input)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                val name = input.text.toString().trim()
+                if (name.isEmpty()) return@setPositiveButton
+                placeText.text = c.getString(R.string.pr_locating)
+                PrayerLocation.byName(c, name) { ok ->
+                    refresh()
+                    if (!ok) placeText.text = c.getString(R.string.pr_city_failed)
+                }
+            }
+            .setNegativeButton(android.R.string.cancel, null).show()
     }
 
     // ---------------- настройки ----------------
@@ -339,13 +363,14 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
             item.text + (if (item.count > 1) "  (" + ctx.getString(R.string.pr_times, item.count) + ")" else "")
         }
         val text = if (morningNow) block(ctx.getString(R.string.pr_morning), Adhkar.morning(all)) else block(ctx.getString(R.string.pr_evening), Adhkar.evening(all))
-        val tv = ctx.text(text, 19f, 400).apply {
+        val builder = AlertDialog.Builder(host)
+        val tv = ctx.text(text, 19f, 400, ctx.dialogTextColor(builder.context)).apply {
             pad(ctx, 20, 12, 20, 12)
             setLineSpacing(0f, 1.35f)
             textDirection = View.TEXT_DIRECTION_RTL
             setTextIsSelectable(true)
         }
-        AlertDialog.Builder(host)
+        builder
             .setView(android.widget.ScrollView(ctx).apply { addView(tv) })
             .setPositiveButton(android.R.string.ok, null)
             .show()
@@ -389,11 +414,17 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
 
     private var voiceTts: TextToSpeech? = null
 
-    /** Имя голоса Google («ar-xa-x-ard-local») -> «صوت ard»; пусто - по умолчанию. */
-    private fun voiceLabel(name: String): String =
-        if (name == ctx.getString(R.string.pr_voice_default)) name
-        else ctx.getString(R.string.pr_voice_n, name.substringAfter("-x-").substringBefore('-').ifBlank { name }) +
-            if ("network" in name) " · " + ctx.getString(R.string.pr_voice_online) else ""
+    /** Имя голоса Google -> «رجالي (ard)» / «نسائي (arc)»; пусто - мужской по умолчанию. */
+    private fun voiceLabel(name: String): String {
+        if (name == ctx.getString(R.string.pr_voice_default)) return name
+        val code = name.substringAfter("-x-").substringBefore('-').ifBlank { name }
+        val kind = when (com.yegorkapomidorka.headswap.prayer.TtsVoices.male(name)) {
+            true -> ctx.getString(R.string.pr_voice_male)
+            false -> ctx.getString(R.string.pr_voice_female)
+            null -> ctx.getString(R.string.pr_voice_n, "")
+        }
+        return "$kind ($code)" + if ("network" in name) " · " + ctx.getString(R.string.pr_voice_online) else ""
+    }
 
     /** Список арабских голосов движка; выбор сразу озвучивает образец. */
     private fun pickVoice() {
@@ -421,7 +452,9 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
                     .setSingleChoiceItems(labels, sel) { _, i ->
                         prefs.ttsVoice = if (i == 0) "" else voices[i - 1].name
                         t.setLanguage(java.util.Locale("ar"))
-                        if (i > 0) t.voice = voices[i - 1]
+                        val v = if (i > 0) voices[i - 1]
+                            else com.yegorkapomidorka.headswap.prayer.TtsVoices.preferredMale(voices.map { it.name })?.let { n -> voices.first { it.name == n } }
+                        if (v != null) t.voice = v
                         t.speak(Adhkar.SHORT[0], TextToSpeech.QUEUE_FLUSH, null, "sample")
                     }
                     .setPositiveButton(android.R.string.ok) { _, _ -> buildSettings() }

@@ -82,4 +82,7 @@
     <string name="pr_m_tehran">Tehran</string>
     <string name="pr_times">%1$d times</string>
     <string name="pr_car_times">Today\'s prayer times</string>
+    <string name="pr_city">Enter city name</string>
+    <string name="pr_city_hint">e.g. Amman</string>
+    <string name="pr_city_failed">City not found. Check the name and the internet connection.</string>
 </resources>

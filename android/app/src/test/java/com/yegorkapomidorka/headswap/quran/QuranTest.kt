@@ -23,6 +23,24 @@ class QuranTest {
     }
 
     @Test
+    fun basmalaShownSeparately() {
+        val f11 = Quran.ayat(lines(), 1)[0]
+        // аль-Фатиха: басмала - первый аят, остаётся аятом
+        assertEquals(null, Quran.splitBasmala(1, Quran.ayat(lines(), 1), f11).first)
+        // ат-Тауба без басмалы
+        assertEquals(null, Quran.splitBasmala(9, Quran.ayat(lines(), 9), f11).first)
+        // все остальные 112 сур (в т.ч. 95 и 97 с шаддой): отделяется, первый аят без неё, число аятов то же
+        for (n in (2..114) - 9) {
+            val ay = Quran.ayat(lines(), n)
+            val (b, rest) = Quran.splitBasmala(n, ay, f11)
+            assertTrue("сура $n", b != null && b.endsWith(f11.takeLast(8)))
+            assertEquals(ay.size, rest.size)
+            assertTrue("сура $n: ${rest[0]}", rest[0].isNotBlank() && !rest[0].contains(f11.takeLast(8)))
+        }
+        assertEquals(Quran.ayat(lines(), 2)[0].substring(f11.length).trim(), Quran.splitBasmala(2, Quran.ayat(lines(), 2), f11).second[0])
+    }
+
+        @Test
     fun namesAndUrls() {
         assertEquals(114, Quran.NAMES.size)
         assertEquals("الفاتحة", Quran.name(1))

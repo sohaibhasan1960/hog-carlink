@@ -152,6 +152,19 @@ object Quran {
             .map { it.substringAfter('|').substringAfter('|') }.toList()
     }
 
+    /**
+     * В тексте Tanzil басмала стоит в начале первого аята каждой суры (кроме ат-Тауба). Аятом она является только в
+     * аль-Фатихе: для показа отделяем её отдельной строкой (сам файл не меняется - условие лицензии).
+     * Варианты написания: «بِسْمِ» и «بِّسْمِ» (95, 97).
+     */
+    fun splitBasmala(surah: Int, ayat: List<String>, fatiha1: String): Pair<String?, List<String>> {
+        if (surah == 1 || ayat.isEmpty() || fatiha1.isBlank()) return null to ayat
+        // в 95 и 97 после «ب» ещё шадда
+        val forms = listOf(fatiha1, fatiha1.take(1) + "\u0651" + fatiha1.drop(1))
+        val b = forms.firstOrNull { ayat[0].startsWith("$it ") } ?: return null to ayat
+        return b to (listOf(ayat[0].substring(b.length).trim()) + ayat.drop(1))
+    }
+
     /** Следующая сура для непрерывного чтения; после ан-Наса - конец. */
     fun next(surah: Int): Int? = if (surah < SURAHS) surah + 1 else null
 }

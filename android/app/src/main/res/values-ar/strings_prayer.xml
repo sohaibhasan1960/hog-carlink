@@ -82,4 +82,7 @@
     <string name="pr_m_tehran">طهران</string>
     <string name="pr_times">التكرار: %1$d</string>
     <string name="pr_car_times">مواقيت الصلاة اليوم</string>
+    <string name="pr_city">إدخال المدينة يدويًا</string>
+    <string name="pr_city_hint">مثال: عمّان</string>
+    <string name="pr_city_failed">لم تُعثر على المدينة. تحقق من الاسم والاتصال بالإنترنت.</string>
 </resources>

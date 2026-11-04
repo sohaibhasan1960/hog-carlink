@@ -293,14 +293,15 @@ class PrayerPlayer : Service() {
             missingVoice()
             return
         }
-        // голос, выбранный в настройках (мужской/женский); нет его - голос по умолчанию
-        val want = PrayerPrefs(this).ttsVoice
-        if (want.isNotBlank()) {
-            try {
-                t.voices?.firstOrNull { it.name == want }?.let { t.voice = it }
-            } catch (e: Exception) {
-                AppLog.i("намаз: голос $want не выбран: ${e.message}")
-            }
+        // голос из настроек; не выбран - мужской (голос телефона по умолчанию у Google - женский)
+        try {
+            val want = PrayerPrefs(this).ttsVoice
+            val voices = t.voices.orEmpty()
+            val v = voices.firstOrNull { it.name == want } ?: TtsVoices.preferredMale(voices.map { it.name })?.let { n -> voices.first { it.name == n } }
+            if (v != null) t.voice = v
+            AppLog.i("намаз: голос ${v?.name ?: "по умолчанию"}")
+        } catch (e: Exception) {
+            AppLog.i("намаз: голос не выбран: ${e.message}")
         }
         ttsReady = true
         t.setOnUtteranceProgressListener(object : UtteranceProgressListener() {

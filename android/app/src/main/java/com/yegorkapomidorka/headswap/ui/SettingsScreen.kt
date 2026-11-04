@@ -204,11 +204,13 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
             }
             if (titleRes == R.string.set_group_car) {
                 card.addView(c.divider())
-                card.addView(link(R.drawable.ic_car, c.getString(R.string.obd_title), c.getString(R.string.obd_sub), false) { host.showObd() })
+                card.addView(navRow(R.drawable.ic_car, c.getString(R.string.obd_title), c.getString(R.string.obd_sub)) { host.showObd() })
             }
             if (titleRes == R.string.set_group_use) {
                 card.addView(c.divider())
-                card.addView(link(R.drawable.ic_moon, c.getString(R.string.pr_title), c.getString(R.string.pr_enable), false) { host.showPrayer() })
+                card.addView(navRow(R.drawable.ic_moon, c.getString(R.string.pr_title), c.getString(R.string.pr_enable)) { host.showPrayer() })
+                card.addView(c.divider())
+                card.addView(navRow(R.drawable.ic_book, c.getString(R.string.qr_title), c.getString(R.string.home_tile_quran_sub)) { host.showQuran() })
             }
             body.addView(card, lp(MATCH, WRAP))
         }
@@ -247,6 +249,27 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
     override fun tick() = refreshSummaries()
 
     override fun onPermissionResult() = refreshSummaries()
+
+    /** HOG CarLink: строка в стиле разделов (значок на плашке, подпись, стрелка) для своих экранов. */
+    private fun navRow(icon: Int, title: String, sub: String, onClick: () -> Unit): View {
+        val c = ctx
+        return c.hbox(14).apply {
+            pad(c, 14, 12, 12, 12)
+            minimumHeight = c.dp(76)
+            background = c.rippleBg(null, 0)
+            isClickable = true
+            setOnClickListener { onClick() }
+            addView(FrameLayout(c).apply {
+                background = c.shape(c.clr(R.color.pric), 14)
+                addView(c.icon(icon, 22, c.clr(R.color.acc)), FrameLayout.LayoutParams(c.dp(22), c.dp(22), Gravity.CENTER))
+            }, c.lpDp(c.dp(44), 44))
+            addView(c.vbox(2).apply {
+                addView(c.text(title, 17f, 500))
+                addView(c.text(sub, 14f, 400, c.clr(R.color.on2)).apply { maxLines = 1; ellipsize = TextUtils.TruncateAt.END })
+            }, lp(0, WRAP, 1f))
+            addView(c.icon(R.drawable.ic_chevron, 20, c.clr(R.color.on2)))
+        }
+    }
 
     private fun sectionRow(s: SettingsSection): View {
         val c = ctx

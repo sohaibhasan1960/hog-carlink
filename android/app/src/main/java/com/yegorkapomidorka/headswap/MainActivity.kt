@@ -326,6 +326,7 @@ class MainActivity : Activity() {
                 "car_auto_off" -> startForegroundService(Intent(this, BridgeService::class.java).setAction(BridgeService.ACTION_WIFI_B_AUTO_OFF))
                 "mic_test" -> Actions.micTest(this)
                 "transcode_test" -> Actions.transcodeTest(this, intent.getStringExtra("opts") ?: "")
+                "tts_voices" -> com.yegorkapomidorka.headswap.prayer.TtsProbe.dump(this)
                 "screen_main" -> toHome()
                 "screen_settings" -> {                         // --es section appearance|video|sound|headunit|apps|updates
                     toHome()

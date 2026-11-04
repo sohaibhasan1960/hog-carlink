@@ -101,11 +101,14 @@ fun lp(w: Int, h: Int, weight: Float = 0f) = LinearLayout.LayoutParams(w, h, wei
 
 fun Context.lpDp(w: Int, hDp: Number, weight: Float = 0f) = LinearLayout.LayoutParams(w, dp(hDp), weight)
 
+/** Отступы: l/r - начало/конец строки (HOG CarLink: в арабском интерфейсе зеркалятся вместе с разметкой). */
 fun View.pad(ctx: Context, l: Number = 0, t: Number = 0, r: Number = 0, b: Number = 0) =
-    setPadding(ctx.dp(l), ctx.dp(t), ctx.dp(r), ctx.dp(b))
+    setPaddingRelative(ctx.dp(l), ctx.dp(t), ctx.dp(r), ctx.dp(b))
 
 fun LinearLayout.LayoutParams.margins(ctx: Context, l: Number = 0, t: Number = 0, r: Number = 0, b: Number = 0) = apply {
     setMargins(ctx.dp(l), ctx.dp(t), ctx.dp(r), ctx.dp(b))
+    marginStart = ctx.dp(l)
+    marginEnd = ctx.dp(r)
 }
 
 fun Context.divider(): View = View(this).apply {
@@ -116,6 +119,14 @@ fun Context.divider(): View = View(this).apply {
 /** Заголовок группы настроек (14sp, акцентный). */
 fun Context.sectionTitle(s: String): TextView = text(s, 14f, 600, clr(R.color.acc)).apply {
     layoutParams = LinearLayout.LayoutParams(WRAP, WRAP).margins(this@sectionTitle, 8, 12, 8, 4)
+}
+
+/** Основной цвет текста темы окна (AlertDialog может быть тёмным при светлом приложении). */
+fun Context.dialogTextColor(dialogCtx: Context): Int {
+    val a = dialogCtx.obtainStyledAttributes(intArrayOf(android.R.attr.textColorPrimary))
+    val c = a.getColor(0, clr(R.color.on))
+    a.recycle()
+    return c
 }
 
 /** Белая карточка со скруглением. */

@@ -88,7 +88,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         } catch (_: Exception) {
             ""
         }
-        body.addView(c.text(c.getString(R.string.home_version, ver), 12f, 400, c.clr(R.color.on2)).apply {
+        body.addView(c.text(c.getString(R.string.home_version, "⁦$ver⁩"), 12f, 400, c.clr(R.color.on2)).apply {
             gravity = Gravity.CENTER
             pad(c, 0, 8, 0, 4)
         }, lp(MATCH, WRAP))
@@ -391,7 +391,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
             addView(tile(R.drawable.ic_share, c.getString(R.string.home_share), sub(R.string.home_tile_share_sub)) { shareApp() }, lp(0, MATCH, 1f))
         }, lp(MATCH, WRAP))
         grid.addView(c.hbox(10).apply {
-            addView(tile(R.drawable.ic_moon, c.getString(R.string.qr_title), sub(R.string.home_tile_quran_sub)) { host.showQuran() }, lp(0, MATCH, 1f))
+            addView(tile(R.drawable.ic_book, c.getString(R.string.qr_title), sub(R.string.home_tile_quran_sub)) { host.showQuran() }, lp(0, MATCH, 1f))
             addView(tile(R.drawable.ic_car, c.getString(R.string.obd_title), sub(R.string.obd_sub)) { host.showObd() }, lp(0, MATCH, 1f))
         }, lp(MATCH, WRAP))
         return grid

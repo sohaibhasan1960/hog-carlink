@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HOG CarLink: «Священный Коран» - раскрытая книга (контур, как остальные значки) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:pathData="M12,6.5C10.2,5 7.5,4.5 3.5,4.8V18.3C7.5,18 10.2,18.5 12,20C13.8,18.5 16.5,18 20.5,18.3V4.8C16.5,4.5 13.8,5 12,6.5Z" />
+    <path
+        android:fillColor="#00000000"
+        android:strokeColor="#FF000000"
+        android:strokeWidth="2"
+        android:strokeLineCap="round"
+        android:pathData="M12,6.5V20" />
+</vector>
