@@ -2,6 +2,7 @@ import java.util.Properties
 
 plugins {
     id("com.android.application")
+    id("org.jetbrains.kotlin.plugin.compose")
 }
 
 // HOG CarLink: own release key outside the project: %USERPROFILE%\.android-keys\carlink-release.properties
@@ -18,14 +19,16 @@ android {
         applicationId = "com.hog.carlink"
         minSdk = 29
         targetSdk = 37
-        versionCode = 79
-        versionName = "2.6.0-hog.17"
+        versionCode = 80
+        versionName = "4.0.0-hog.18"
         // «По воздуху» (беспровод): с 2.0.0 включён во всех сборках; выключить для проверки: gradlew assembleRelease -Pwlbeta=false
         buildConfigField("boolean", "WIRELESS_BETA", (project.findProperty("wlbeta") != "false").toString())
     }
 
     buildFeatures {
         buildConfig = true
+        aidl = true
+        compose = true
     }
 
     signingConfigs {
@@ -49,11 +52,31 @@ android {
             isMinifyEnabled = false
             signingConfig = signingConfigs.findByName("release")
         }
+        // smoke-тест перед релизом: debug-сборка с другим applicationId, ставится на телефон рядом с release (настройки release не трогаем)
+        create("smoke") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".smoke"
+            versionNameSuffix = "-smoke"
+            matchingFallbacks += listOf("debug")
+        }
+    }
+
+    sourceSets {
+        // debug-транспорт для эмулятора ГУ (DebugTransport) и exported BridgeService; в smoke берём debug-набор целиком
+        getByName("smoke") {
+            kotlin.srcDir("src/debug/java")
+            manifest.srcFile("src/debug/AndroidManifest.xml")
+        }
     }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    packaging {
+        // Bouncy Castle из Kadb кладёт одинаковые уведомления в несколько модулей; сохраняем их, а не падаем на дубликатах.
+        resources.merges += setOf("META-INF/LICENSE.md", "META-INF/NOTICE.md")
     }
 
     testOptions {
@@ -90,6 +113,17 @@ androidComponents {
 }
 
 dependencies {
+    implementation("androidx.annotation:annotation:1.8.1")
+    // активация Headswap Desktop с самого телефона: пейринг и подключение к своему adbd по беспроводной отладке
+    implementation("com.flyfishxu:kadb:2.1.5")
+    // Kadb.pair - suspend; зовём из рабочего потока через runBlocking
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.11.0")
+    // лаунчер Headswap Desktop: без material3 и иконок, свой дизайн на foundation
+    implementation(platform("androidx.compose:compose-bom:2025.10.01"))
+    implementation("androidx.compose.ui:ui")
+    implementation("androidx.compose.foundation:foundation")
+    implementation("androidx.compose.runtime:runtime")
+    implementation("androidx.activity:activity-compose:1.11.0")
     testImplementation("junit:junit:4.13.2")
     // В unit-тестах android.jar — заглушки (isReturnDefaultValues), настоящий org.json нужен LogDiag
     testImplementation("org.json:json:20240303")

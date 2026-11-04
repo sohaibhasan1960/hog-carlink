@@ -43,9 +43,13 @@ object Msg {
     const val VIDEO_ENCODER_RESET = 0x0001800B
     const val VIDEO_ENCODER_FRAME_RATE_CHANGE = 0x0001800C
     const val VIDEO_ENCODER_FRAME_RATE_CHANGE_DONE = 0x0001000D
+    const val TELE_STATE_CHANGE_INCOMING = 0x00010014
+    const val TELE_STATE_CHANGE_OUTGOING = 0x00010015
+    const val TELE_STATE_CHANGE_IDLE = 0x00010016
     const val SCREEN_ON = 0x00010018
     const val FOREGROUND = 0x0001001B
     const val LAUNCH_MODE_NORMAL = 0x0001801D
+    const val LAUNCH_MODE_PHONE = 0x0001801E
     const val GO_TO_DESKTOP = 0x00010021
     const val MIC_RECORD_WAKEUP_START = 0x00010022
     const val MIC_RECORD_END = 0x00010023
@@ -53,9 +57,10 @@ object Msg {
     const val MODULE_STATUS = 0x00010026
     const val STATISTIC_INFO = 0x00018027
     const val MODULE_CONTROL = 0x00018028
-    /** HOG CarLink: было 0x00010029 (неверный id); в SDK Baidu MSG_CMD_CAR_GEAR = 0x00018029. */
-    const val GEAR_INFO = 0x00018029
-    /** Телефон просит ГУ вывести CarLife на экран (Baidu CarlifeUtil.sendGotoCarlife на стороне ГУ). */
+    /** ГУ -> MD: передача, поле 1 (2 P, 3 D, 5 R, 0 зажигание выкл; Kia 20032131, h672). */
+    const val HU_GEAR_INFO = 0x00018029
+    const val GEAR_INFO = 0x00010029
+    /** HOG CarLink: телефон просит ГУ вывести CarLife на экран (Baidu CarlifeUtil.sendGotoCarlife на стороне ГУ). */
     const val REQUEST_GO_TO_FOREGROUND = 0x00010038
     const val NAVI_NEXT_TURN_INFO = 0x00010030
     const val MEDIA_INFO = 0x00010035
@@ -73,6 +78,8 @@ object Msg {
     const val MD_AUTHEN_RESULT = 0x0001004B
     const val MD_FEATURE_CONFIG_REQUEST = 0x00010051
     const val HU_FEATURE_CONFIG_RESPONSE = 0x00018052
+    const val BT_START_IDENTIFY_REQ = 0x00018053
+    const val BT_IDENTIFY_RESULT_IND = 0x00010054
     const val ERROR_CODE = 0x00018055
     const val VIDEO_ENCODER_JPEG = 0x00018056
     const val VIDEO_ENCODER_JPEG_ACK = 0x00010057
@@ -135,7 +142,7 @@ object Msg {
         FOREGROUND to "FOREGROUND",
         0x0001001C to "BACKGROUND",
         LAUNCH_MODE_NORMAL to "LAUNCH_MODE_NORMAL",
-        0x0001801E to "LAUNCH_MODE_PHONE",
+        LAUNCH_MODE_PHONE to "LAUNCH_MODE_PHONE",
         0x0001801F to "LAUNCH_MODE_MAP",
         0x00018020 to "LAUNCH_MODE_MUSIC",
         GO_TO_DESKTOP to "GO_TO_DESKTOP",
@@ -147,6 +154,7 @@ object Msg {
         STATISTIC_INFO to "STATISTIC_INFO",
         MODULE_CONTROL to "MODULE_CONTROL",
         GEAR_INFO to "GEAR_INFO",
+        HU_GEAR_INFO to "HU_GEAR_INFO",
         NAVI_NEXT_TURN_INFO to "NAVI_NEXT_TURN_INFO",
         0x00010031 to "CAR_DATA_SUBSCRIBE",
         0x00010032 to "CAR_DATA_SUBSCRIBE_DONE(C++)",
@@ -177,8 +185,8 @@ object Msg {
         0x00018050 to "BT_HFP_STATUS_RESPONSE",
         MD_FEATURE_CONFIG_REQUEST to "MD_FEATURE_CONFIG_REQUEST",
         HU_FEATURE_CONFIG_RESPONSE to "HU_FEATURE_CONFIG_RESPONSE",
-        0x00018053 to "BT_START_IDENTIFY_REQ",
-        0x00010054 to "BT_IDENTIFY_RESULT_IND",
+        BT_START_IDENTIFY_REQ to "BT_START_IDENTIFY_REQ",
+        BT_IDENTIFY_RESULT_IND to "BT_IDENTIFY_RESULT_IND",
         ERROR_CODE to "ERROR_CODE",
         0x00018056 to "VIDEO_ENCODER_JPEG",
         0x00010057 to "VIDEO_ENCODER_JPEG_ACK",
@@ -310,6 +318,13 @@ object Wire {
         }
         return out
     }
+
+    /**
+     * Запись как у Baidu (AoaWriteTransport :73-85, AOAConnectManager :177-190): 8 байт заголовка одним write,
+     * весь inner одним write любого размера. Для ГУ Mobis CCNC (h242).
+     */
+    fun writeWhole(chan: Int, inner: ByteArray): List<ByteArray> =
+        if (inner.isEmpty()) listOf(outerHeader(chan, 0)) else listOf(outerHeader(chan, inner.size), inner)
 
     fun parseCmd(inner: ByteArray): CmdMsg? {
         if (inner.size < 8) return null
@@ -562,6 +577,9 @@ object Msgs {
     fun authenResponse(encryptValue: String) = PbWriter().string(1, encryptValue).toByteArray()
 
     fun authenRequest(random: String) = PbWriter().string(1, random).toByteArray()
+
+    /** CarlifeBTIdentifyResultInd {required int32 status=1; required string address=2} (Baidu BtHfpProtocolHelper :135-147). */
+    fun btIdentifyResult(status: Int, address: String) = PbWriter().int32(1, status).string(2, address).toByteArray()
 
     /** CarlifeTouchAction; pointerx/pointery (второй палец) optional, без них тело как у одного пальца. */
     fun touchAction(action: Int, x: Int, y: Int, pointerX: Int? = null, pointerY: Int? = null): ByteArray {

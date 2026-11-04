@@ -42,3 +42,5 @@ desktop.ini
 
 # HOG CarLink: personal handover notes stay local
 /تسليم_HOG_CarLink.md
+# метки проверенных APK (verify-apk.ps1), по ним хук пускает деплой
+/.release/

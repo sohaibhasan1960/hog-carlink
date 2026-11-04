@@ -16,9 +16,10 @@ class ReadinessStepsTest {
 
     @Test
     fun everyStepListedOnceAndKeysUnique() {
-        // HOG CarLink: шаги USB и «Какая у вас машина» убраны из списка (enum остался)
-        assertEquals(StepId.values().toSet() - setOf(StepId.FIRST, StepId.CAR), ids.toSet())
-        assertEquals(ids.size, ids.toSet().size)
+        // выбор режима и шаги лаунчера лежат в EXTRA_STEPS; HOG CarLink: шаги USB и «Какая у вас машина» убраны (enum остался)
+        val all = ids + Readiness.EXTRA_STEPS.map { it.id }
+        assertEquals(StepId.values().toSet() - setOf(StepId.FIRST, StepId.CAR), all.toSet())
+        assertEquals(all.size, all.toSet().size)
         assertEquals(StepId.values().size, StepId.values().map { it.key }.toSet().size)
     }
 

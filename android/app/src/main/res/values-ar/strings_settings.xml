@@ -35,9 +35,7 @@
 
     <string name="set_video">الفيديو</string>
     <string name="set_transcode_title">إعادة الترميز</string>
-    <string name="set_transcode_sub">أكثر موثوقية · +60 ms</string>
     <string name="set_direct_title">تمرير مباشر</string>
-    <string name="set_direct_sub">أسرع · لا يعمل مع كل شاشات السيارات</string>
 
     <string name="set_resolution">دقة الفيديو</string>
     <string name="set_apply_next">يُطبَّق عند الاتصال التالي.</string>
@@ -121,8 +119,6 @@
     <string name="video_r720_sub">يناسب معظم شاشات السيارات</string>
     <string name="video_r1080_title">1920×1080</string>
     <string name="video_r1080_sub">أوضح، لكنه أثقل على الهاتف وشاشة السيارة</string>
-    <string name="video_r1440_title">2560×1440 (تجريبي)</string>
-    <string name="video_r1440_sub">قد يرفض Android Auto فيديو 1440p — تظهر شاشة سوداء عندها، فارجع إلى 1920×1080</string>
     <string name="video_wide_title">عريض 8:3 (قص)</string>
     <string name="video_wide_sub">للشاشات العريضة: 1280×480، بحجم أكبر</string>
     <string name="video_wide_mid_title">عريض 8:3 متوسط (Mazda CX-5)</string>
@@ -180,7 +176,6 @@
     <string name="wl_title">لاسلكي</string>
     <string name="wl_note">للسيارات التي تدعم CarLife اللاسلكي. شغّل نقطة الاتصال على الهاتف، ووصّل شاشة السيارة بها (قائمة شاشة السيارة: Wi-Fi)، وافتح CarLife على شاشة السيارة ثم اضغط الزر أدناه. لا حاجة إلى كابل؛ وإذا وصّلته، تكون الأولوية لـ USB.</string>
     <string name="wl_start">انتظار السيارة عبر Wi-Fi</string>
-    <string name="wl_stop">إيقاف</string>
     <string name="wl_status_line">الحالة: %1$s</string>
     <string name="wl_off">متوقف</string>
     <string name="wl_no_permission">بدون إذن «الأجهزة المجاورة» لا يمكن للسيارة الاتصال عبر Wi-Fi</string>
@@ -255,4 +250,47 @@
     <string name="wl_cw_scan_title">الشبكات القريبة</string>
     <string name="wl_cw_scan_none">لم تُعثر على شبكات. تأكد أن السيارة شغّالة وقريبة، ثم حاول مرة أخرى.</string>
     <string name="wl_cw_scan_location">شغّل الموقع من إعدادات الهاتف: لا يعرض أندرويد الشبكات القريبة من دونه.</string>
+    <!-- HOG CarLink: نصوص 4.0 من المشروع الأصلي -->
+    <string name="set_calls_title">إبلاغ شاشة السيارة بالمكالمات</string>
+    <string name="set_calls_sub">يحتاج إذن «الهاتف»: يعرف HOG CarLink بالمكالمة الواردة ويبلغ السيارة، وتُكتم الموسيقى أثناء المكالمة</string>
+    <string name="set_transcode_desc">يعيد الهاتف ترميز الفيديو لشاشة السيارة: أي دقة وأي معدل إطارات.</string>
+    <string name="set_transcode_plus">+ أكثر ثباتًا، يعمل مع أي شاشة سيارة</string>
+    <string name="set_transcode_minus">− حمل على الهاتف، استهلاك للبطارية، تأخير +60 مللي ثانية</string>
+    <string name="set_direct_desc">يذهب فيديو Android Auto إلى شاشة السيارة كما هو. الشاشات العريضة تقصّ الصورة بنفسها.</string>
+    <string name="set_direct_plus">+ تأخير وحرارة واستهلاك بطارية أقل</string>
+    <string name="set_direct_minus">− لا يمكن ضبط معدل الإطارات</string>
+    <string name="set_direct_desktop_desc">في وضع «المشغّل الخاص» يرمّز الهاتف شاشته مرة واحدة ويسلّم السيارة بث H.264 جاهزًا، دون إعادة ترميز.</string>
+    <string name="set_res_pick">اختر الدقة</string>
+    <string name="set_res_group_standard">شاشات عادية</string>
+    <string name="set_res_group_wide">شاشات عريضة</string>
+    <string name="set_res_group_portrait">شاشات عمودية</string>
+    <string name="set_res_ratio_wide_976">2.3:1</string>
+    <string name="set_fps_direct">في التمرير المباشر يحدد Android Auto معدل الإطارات</string>
+    <string name="video_wide_836_title">عريضة 1920×836 (VW Tiguan L Pro، تمرير مباشر)</string>
+    <string name="video_wide_836_sub">نسبة نافذة 2240×976 دون تكبير على الهاتف: الشاشة تكبّر بنفسها. للقص دون إعادة ترميز</string>
+    <string name="video_portrait_960_title">عمودية 3:4</string>
+    <string name="video_portrait_960_sub">960×1280: الشاشة العمودية كاملة</string>
+    <string name="video_portrait_1152_title">عمودية 5:6 (Hyundai Tucson NX4c)</string>
+    <string name="video_portrait_1152_sub">960×1152: شاشة 960×1280 دون شريط المكيف في الأسفل، دون تمطيط</string>
+    <string name="fps_60_title">60 إطارًا</string>
+    <string name="fps_60_sub">هدف أعلى لمعدل الإطارات؛ يحتاج هاتفًا وشاشة سيارة قادرين</string>
+    <string name="car_hyundai_tucson_nx4c">Hyundai Tucson NX4c</string>
+    <string name="car_toyota_rav4_2025">Toyota RAV4 2025</string>
+    <string name="bm_title">الوضع</string>
+    <string name="bm_aa_note">تعرض شاشة السيارة Android Auto من هاتفك.</string>
+    <string name="bm_own_launcher">مشغّل خاص</string>
+    <string name="bm_launcher_title">المشغّل</string>
+    <string name="bm_need_13">يتطلب Android 13 أو أحدث</string>
+    <string name="bm_sum_state">%1$s · %2$s</string>
+    <string name="bm_act_on">مفعّل</string>
+    <string name="bm_act_off">غير مفعّل</string>
+    <string name="bm_act_lost">فُقد الوصول، فعّله من جديد</string>
+    <string name="about_title">حول التطبيق</string>
+    <string name="about_note">المؤلفون والتراخيص</string>
+    <string name="about_authors">المؤلفون</string>
+    <string name="about_opensource">مفتوح المصدر</string>
+    <string name="about_author_yegor">Yegor</string>
+    <string name="about_author_ildar">Ildar Sadykov</string>
+    <string name="about_open_project">صفحة المشروع</string>
+    <string name="about_license_unavailable">نص الترخيص غير متاح. راجع صفحة المشروع.</string>
 </resources>

@@ -83,6 +83,11 @@ class TranscodeLink : CarlifeLink {
         return ok
     }
 
+    val keySizes = CopyOnWriteArrayList<Int>()
+    override fun onEncodedKeyFrame(size: Int) {
+        keySizes.add(size)
+    }
+
     override fun sendAudio(channel: Int, type: Int, payload: ByteArray) = true
     override fun sendModuleStatus(module: Int, status: Int) = true
     override fun createTranscoder(out: TranscodeOutput): VideoTranscoder? {
@@ -125,6 +130,31 @@ class AaTranscodeCoreTest {
         // повторный START: тот же транскодер
         core.onCarlifeStart()
         assertEquals(1, link.created)
+    }
+
+    @Test
+    fun mobisReportsEncoderIdrSizesToLinkOthersDoNot() {
+        core.onHuInfo("Mobis", "CCNC", "NX4C", "CCNC")
+        core.onCarlifeStart()
+        core.onCodecConfig(aaCfg)
+        core.onEncoderConfig(encCfg)
+        core.onFrame(aaIdr, 1)
+        core.onEncoderFrame(encIdr, true)                      // первый IDR уходит с приклеенным SPS/PPS
+        assertEquals(listOf(encCfg.size + encIdr.size), link.keySizes.toList())
+        core.onEncoderFrame(encP, false)                       // P в потолок не идёт
+        core.onEncoderFrame(encIdr, true)
+        assertEquals(listOf(encCfg.size + encIdr.size, encIdr.size), link.keySizes.toList())
+    }
+
+    @Test
+    fun nonMobisNonVwDoesNotReportIdrSizes() {
+        core.onCarlifeStart()
+        core.onCodecConfig(aaCfg)
+        core.onEncoderConfig(encCfg)
+        core.onFrame(aaIdr, 1)
+        core.onEncoderFrame(encIdr, true)
+        core.onEncoderFrame(encIdr, true)
+        assertTrue(link.keySizes.isEmpty())
     }
 
     /** Довести до AA-видео в CarLife, затем PAUSE: выход энкодера отбрасывается (как sendVideo=false на паузе). */
@@ -193,6 +223,53 @@ class AaTranscodeCoreTest {
         core.onCodecConfig(aaCfg)
         core.onFrame(aaIdr, 1)                                 // passthrough как раньше: склейка и отправка
         assertArrayEquals(aaCfg + aaIdr, link.sent[0])
+    }
+
+    @Test
+    fun passthroughWideRewritesSpsCrop() {
+        val sc = byteArrayOf(0, 0, 0, 1)
+        val sps = sc + byteArrayOf(0x67, 0x42, 0x80.toByte(), 0x1f, 0xda.toByte(), 0x01, 0x40, 0x16, 0xe9.toByte(), 0xa8.toByte(), 0x28, 0x30, 0x28, 0x36, 0x85.toByte(), 0x09, 0xa8.toByte())
+        val pps = sc + byteArrayOf(0x68, 0xce.toByte(), 0x3c, 0x80.toByte())
+        val idr = sc + byteArrayOf(0x65, 0x88.toByte(), 0x84.toByte(), 0x00, 0x21)
+        val p = sc + byteArrayOf(0x41, 0x9a.toByte(), 0x01, 0x02)
+        core.transcodeEnabled = false
+        core.videoMode = VideoMode.WIDE_2_1                    // AA 1280x720, поля по 40 px сверху и снизу
+        core.onCarlifeStart()
+        core.onCodecConfig(sps + pps)
+        core.onFrame(idr, 1)
+        core.onFrame(p, 2)
+        core.onFrame(sps + pps + idr, 3)                       // IDR со своим SPS тоже переписывается
+        val first = link.sent[0]
+        val info = SpsCrop.parse(first.copyOfRange(4, first.size - pps.size - idr.size))
+        assertEquals(1280 to 640, info.visibleW to info.visibleH)
+        assertArrayEquals(p, link.sent[1])
+        assertArrayEquals(first, link.sent[2])
+        assertTrue(logs.toString(), logs.any { it.contains("SPS-кроп") && it.contains("1280x640") })
+    }
+
+    @Test
+    fun passthroughMarginsAtBottomCropsOnlyBottom() {
+        val sc = byteArrayOf(0, 0, 0, 1)
+        val sps = sc + byteArrayOf(0x67, 0x42, 0x80.toByte(), 0x1f, 0xda.toByte(), 0x01, 0x40, 0x16, 0xe9.toByte(), 0xa8.toByte(), 0x28, 0x30, 0x28, 0x36, 0x85.toByte(), 0x09, 0xa8.toByte())
+        val pps = sc + byteArrayOf(0x68, 0xce.toByte(), 0x3c, 0x80.toByte())
+        val idr = sc + byteArrayOf(0x65, 0x88.toByte(), 0x84.toByte(), 0x00, 0x21)
+        core.transcodeEnabled = false
+        core.videoMode = VideoMode.WIDE                        // AA 1280x720, поле 240 целиком снизу
+        core.marginsAtBottom = true
+        core.onCarlifeStart()
+        core.onCodecConfig(sps + pps)
+        core.onFrame(idr, 1)
+        val first = link.sent[0]
+        val info = SpsCrop.parse(first.copyOfRange(4, first.size - pps.size - idr.size))
+        assertEquals(0, info.top)
+        assertEquals(240, info.bottom)
+        val before = core.keyframeRequests
+        now += 1000; core.tick()
+        assertEquals(before, core.keyframeRequests)
+        now += 1500; core.tick()                               // через 2 с после первого IDR - один повторный запрос
+        assertEquals(before + 1, core.keyframeRequests)
+        now += 5000; core.tick()
+        assertEquals(before + 1, core.keyframeRequests)
     }
 
     @Test
@@ -337,6 +414,65 @@ class AaTranscodeCoreTest {
         assertEquals(0, link.sent.size)
         core.onFrame(aaIdr, 3)
         assertArrayEquals(aaCfg + aaIdr, link.sent[0])
+    }
+
+    @Test
+    fun desktopEncoderFailureNeverSendsHighBitrateSourceDirectly() {
+        core.desktopInputEnabled = true
+        core.onCarlifeStart()
+        core.onCodecConfig(aaCfg)
+        core.onFrame(aaIdr, 1)
+        core.onTranscodeError("encoder failed")
+        assertNotNull(core.desktopVideoError)
+        assertFalse(core.isTranscoding)
+        core.onFrame(aaP, 2)
+        core.onFrame(aaIdr, 3)
+        core.onEncoderFrame(encIdr, true)
+        core.onCarlifeStart()
+        core.onFrame(aaIdr, 4)
+        assertTrue(link.sent.isEmpty())
+        assertTrue(link.texts.last().contains("encoder failed"))
+        assertEquals(1, link.created)
+    }
+
+    @Test
+    fun desktopEncoderCreationFailureNeverFallsBackToPassthrough() {
+        core.desktopInputEnabled = true
+        link.transcoder = null
+        core.onCarlifeStart()
+        core.onCodecConfig(aaCfg)
+        core.onFrame(aaIdr, 1)
+        assertNotNull(core.desktopVideoError)
+        assertTrue(link.sent.isEmpty())
+        assertFalse(logs.any { it.contains("откат на passthrough") })
+    }
+
+    @Test
+    fun desktopRejectsUnexpectedEncodedOutputSize() {
+        core.desktopInputEnabled = true
+        core.onCarlifeStart()
+        core.onCodecConfig(aaCfg)
+        core.onFrame(aaIdr, 1)
+        val actual1080Sps = Golden.hex("00000001 6742c028d900780227e5c044000003000400000300f03c60c920")
+        core.onEncoderConfig(actual1080Sps)
+        core.onEncoderFrame(encIdr, true)
+        core.onFrame(aaIdr, 2)
+        assertTrue(core.desktopVideoError!!.contains("1920×1080"))
+        assertTrue(link.sent.isEmpty())
+    }
+
+    @Test
+    fun desktopNative720OutputStillReachesCarLife() {
+        core.desktopInputEnabled = true
+        core.onCarlifeStart()
+        core.onCodecConfig(aaCfg)
+        core.onFrame(aaIdr, 1)
+        val actual720Config = Golden.hex("00000001 6742801fda014016e9a8283028368509a8 00000001 68ce3c80")
+        core.onEncoderConfig(actual720Config)
+        core.onEncoderFrame(encIdr, true)
+        assertNull(core.desktopVideoError)
+        assertArrayEquals(actual720Config + encIdr, link.sent.single())
+        assertTrue(logs.any { it.contains("stage=carlife-encoder-sps") && it.contains("visible=1280x720") && it.contains("matches=true") })
     }
 
     @Test

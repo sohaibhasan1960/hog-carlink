@@ -17,6 +17,7 @@ import android.os.Handler
 import android.os.Looper
 import com.yegorkapomidorka.headswap.AppLog
 import com.yegorkapomidorka.headswap.link.diag.WLog
+import com.yegorkapomidorka.headswap.link.wifi.HotspotDetect
 import com.yegorkapomidorka.headswap.link.wifi.LanIface
 import java.net.Inet4Address
 import java.net.InetAddress
@@ -49,6 +50,8 @@ class P2pJoin(
     private val mgr: WifiP2pManager? = ctx.getSystemService(WifiP2pManager::class.java)
     private var channel: WifiP2pManager.Channel? = null
     private var target: P2pTarget? = null
+    /** Когда началась текущая попытка: тот же TARGET_INFO в первые [JOIN_TIMEOUT_MS] её не перезапускает. */
+    private var startedAt = 0L
     private var receiver: BroadcastReceiver? = null
     /** Поколение попытки: колбэки и отложенные шаги прошлой (после стопа или рестарта) с ним не совпадут и ничего не сделают. */
     private var gen = 0
@@ -87,9 +90,13 @@ class P2pJoin(
             WLog.ev(WLog.P2P, "lost", "how" to "нет p2p-интерфейса при новом TARGET_INFO")
             lostMain()
         }
-        when (P2pPolicy.onTarget(active = target != null, joined = joinedIp != null)) {
+        val cur = target
+        val same = cur != null && cur.sameAs(t)
+        val ageMs = System.currentTimeMillis() - startedAt
+        when (P2pPolicy.onTarget(active = cur != null, joined = joinedIp != null, same = same, ageMs = ageMs, freshMs = JOIN_TIMEOUT_MS)) {
             P2pOnTarget.SKIP -> {
-                WLog.ev(WLog.P2P, "skip", "why" to "уже в группе")
+                if (joinedIp != null) WLog.ev(WLog.P2P, "skip", "why" to "уже в группе")
+                else WLog.ev(WLog.P2P, "skip", "why" to "попытка идёт", "ageMs" to ageMs)
                 return
             }
             P2pOnTarget.RESTART -> {
@@ -102,6 +109,7 @@ class P2pJoin(
         if (!hasPermission()) return fail("нет разрешения «Устройства поблизости»")
         gen++
         target = t
+        startedAt = System.currentTimeMillis()
         val ch = m.initialize(ctx, Looper.getMainLooper()) { WLog.ev(WLog.P2P, "channel-lost") }
         channel = ch
         registerReceiver()
@@ -313,10 +321,8 @@ class P2pJoin(
         onJoined(lan.ip)
     }
 
-    /** Точка доступа телефона поднята: swlan* у Samsung, ap* у остальных, с IPv4. */
-    private fun hotspotUp(): Boolean = NetworkInterface.getNetworkInterfaces()?.toList().orEmpty().any { ni ->
-        (ni.name.startsWith("swlan") || ni.name.startsWith("ap")) && ni.isUp && ni.inetAddresses.toList().any { it is Inet4Address }
-    }
+    /** Точка доступа телефона поднята (h420: у Xiaomi она на wlan1, имена swlan и ap не ловят). */
+    private fun hotspotUp(): Boolean = HotspotDetect.isUp(ctx)
 
     private fun p2pIface(): LanIface? {
         for (ni in NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()) {

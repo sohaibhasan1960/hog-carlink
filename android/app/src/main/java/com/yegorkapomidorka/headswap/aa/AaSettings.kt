@@ -73,10 +73,41 @@ class AaPrefs(ctx: Context) {
         get() = TouchDecimation.parse(sp.getString("touchDecimation", TouchDecimation.DEFAULT.name))
         set(v) = sp.edit().putString("touchDecimation", v.name).apply()
 
-    /** Видео моста:перекодирование (по умолчанию) или passthrough H.264 AA как есть. */
+    /**
+     * Режим моста (ключ BridgeMode, по умолчанию Android Auto): сырое сохранённое значение, на Android ниже 13 оно
+     * может быть DESKTOP - применяемый режим даёт [BridgeMode.effective]. Читается один раз на подключение.
+     */
+    var bridgeMode: BridgeMode
+        get() = BridgeMode.parse(sp.getString("bridgeMode", BridgeMode.DEFAULT.key))
+        set(v) = sp.edit().putString("bridgeMode", v.key).apply()
+
+    /**
+     * Свой IDR раз в 2 с в прямом проброске (IdrSplice, ADR 0005), раздел для разработчиков. По умолчанию включён;
+     * выключают на ГУ, которые сами возвращают картинку после камеры (VW). Ключ новый: старый idrSplice был выключен по умолчанию.
+     */
+    var ownIdr: Boolean
+        get() = sp.getBoolean("ownIdr", true)
+        set(v) = sp.edit().putBoolean("ownIdr", v).apply()
+
+    /** Видео моста: passthrough H.264 AA как есть (по умолчанию с 3.0) или перекодирование. */
     var transcode: Boolean
-        get() = sp.getBoolean("transcode", true)
+        get() = sp.getBoolean("transcode", false)
         set(v) = sp.edit().putBoolean("transcode", v).apply()
+
+    /**
+     * Одноразовая миграция на 3.0: прямой проброс и частота «Авто» для всех, кто обновился.
+     * Зовётся из MainActivity и BridgeService (приложение могло запуститься от USB), идемпотентна.
+     * Пресет «Мой автомобиль» не трогаем: он остаётся подписью, настройки пользователь меняет сам.
+     */
+    fun migrateTo30() {
+        if (sp.getBoolean("video30Migrated", false)) return
+        sp.edit()
+            .putBoolean("transcode", false)
+            .putString("fpsSetting", FpsSetting.AUTO.name)
+            .putBoolean("video30Migrated", true)
+            .apply()
+        AppLog.i("миграция 3.0: прямой проброс, частота кадров Авто")
+    }
 
     /** Разрешение видео (имя VideoMode, по умолчанию 1280×720). Читается один раз на подключение. */
     var videoMode: VideoMode
@@ -179,6 +210,11 @@ class AaPrefs(ctx: Context) {
     var micVrStatus: Boolean
         get() = sp.getBoolean("micVrStatus", true)
         set(v) = sp.edit().putBoolean("micVrStatus", v).apply()
+
+    /** Сообщать ГУ о звонках (TelephonyManager -> MODULE_STATUS PHONE + TELE_STATE); по умолчанию выкл. Читается на подключение. */
+    var callsToHu: Boolean
+        get() = sp.getBoolean("callsToHu", false)
+        set(v) = sp.edit().putBoolean("callsToHu", v).apply()
 
     /** Трек, обложка и прогресс из AA -> MEDIA_INFO / MEDIA_PROGRESS_BAR. Читается на подключение. */
     var metaMusic: Boolean

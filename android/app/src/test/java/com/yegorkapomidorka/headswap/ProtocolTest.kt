@@ -686,10 +686,10 @@ class ProtocolTest {
             assertEquals(15, Handshake.chooseFps(FpsSetting.FPS15, req))
             assertEquals(30, Handshake.chooseFps(FpsSetting.FPS30, req))
         }
-        assertEquals(FpsSetting.FPS15, FpsSetting.DEFAULT)
+        assertEquals(FpsSetting.AUTO, FpsSetting.DEFAULT)
         assertEquals(FpsSetting.FPS15, FpsSetting.parse("FPS15"))
-        assertEquals(FpsSetting.FPS15, FpsSetting.parse(null))
-        assertEquals(FpsSetting.FPS15, FpsSetting.parse("мусор"))
+        assertEquals(FpsSetting.AUTO, FpsSetting.parse(null))
+        assertEquals(FpsSetting.AUTO, FpsSetting.parse("мусор"))
     }
 
     @Test
@@ -752,5 +752,42 @@ class ProtocolTest {
     fun reassemblerPassesInsaneLengthThrough() {
         val bad = ByteArray(256).also { Wire.putU32(it, 0, 10 * 1024 * 1024) }
         assertTrue(DataReassembler().feed(bad) === bad)
+    }
+
+    @Test
+    fun writeWholeIsHeaderPlusOneBody() {
+        // Mobis CCNC (h242): как Baidu, тело одним write любого размера
+        val big = Wire.dataInner(Msg.VIDEO_DATA, 0, ByteArray(40000) { 1 })
+        val w = Wire.writeWhole(Ch.VIDEO, big)
+        assertEquals(2, w.size)
+        assertEquals(8, w[0].size)
+        assertEquals(big.size, Wire.u32(w[0], 4))
+        assertEquals(Ch.VIDEO, Wire.u32(w[0], 0))
+        assertTrue(w[1] === big)
+        assertEquals(1, Wire.writeWhole(Ch.CMD, ByteArray(0)).size)
+    }
+
+    @Test
+    fun btIdentifyResultBody() {
+        // status=1 (varint), address=2 (string)
+        assertArrayEquals(hex("08 00 12 04 41 42 43 44"), Msgs.btIdentifyResult(0, "ABCD"))
+    }
+
+    @Test
+    fun baiduMicStartForTucsonIsRecordEnd() {
+        // Tucson: VOICE_WAKEUP=0, BLUETOOTH_AUTO_PAIR=1, ALL_VOICE_WAKEUP_DISABLE=1, ключа VOICE_MIC нет
+        val tucson = listOf("VOICE_WAKEUP" to 0, "BLUETOOTH_AUTO_PAIR" to 1, "ALL_VOICE_WAKEUP_DISABLE" to 1)
+        assertEquals(Handshake.MicStart.END, Handshake.baiduMicStart(tucson))
+        assertEquals(Handshake.MicStart.END, Handshake.baiduMicStart(tucson.reversed()))
+    }
+
+    @Test
+    fun baiduMicStartOtherConfigs() {
+        assertEquals(Handshake.MicStart.WAKEUP_START, Handshake.baiduMicStart(emptyList()))
+        assertEquals(Handshake.MicStart.WAKEUP_START, Handshake.baiduMicStart(listOf("VOICE_WAKEUP" to 1)))
+        assertEquals(Handshake.MicStart.END, Handshake.baiduMicStart(listOf("VOICE_MIC" to 2)))
+        assertEquals(Handshake.MicStart.NONE, Handshake.baiduMicStart(listOf("VOICE_MIC" to 1)))
+        assertEquals(Handshake.MicStart.NONE, Handshake.baiduMicStart(listOf("VOICE_MIC" to 1, "VOICE_WAKEUP" to 0)))
+        assertEquals(Handshake.MicStart.END, Handshake.baiduMicStart(listOf("VOICE_WAKEUP" to 0)))
     }
 }

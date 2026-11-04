@@ -133,4 +133,31 @@
     <string name="step_car_pick_hint">حين يتصل الهاتف بالسيارة عبر البلوتوث يبدأ HOG CarLink وحده، دون أي ضغطة.</string>
     <string name="step_car_pick_primary">اختيار السيارة</string>
     <string name="step_car_pick_short">سيارتك</string>
+    <!-- HOG CarLink: نصوص 4.0 من المشروع الأصلي -->
+    <string name="step_notif_hint_launcher">يُدخل رمز تفعيل HOG CarLink مباشرة في الإشعار. ويظهر في الإشعارات أيضًا سير الاتصال بشاشة السيارة.</string>
+    <string name="step_mode_title">اختر الوضع</string>
+    <string name="step_mode_subtitle">ما الذي يظهر على شاشة السيارة. يمكنك تغييره من الإعدادات في أي وقت.</string>
+    <string name="step_mode_aa_body">Android Auto العادي: الخرائط والموسيقى والمكالمات. يعمل عبر خادم شاشة السيارة.</string>
+    <string name="step_mode_own_body">تعرض شاشة السيارة سطح مكتب HOG CarLink أو مشغّل سيارة من الهاتف.</string>
+    <string name="step_mode_warn_title">تنبيه</string>
+    <string name="step_mode_warn_body">يحتاج هذا الوضع إلى وضع المطوّر في أندرويد وتفعيل HOG CarLink عبر «تصحيح الأخطاء اللاسلكي».</string>
+    <string name="step_mode_warn_risk">هذه إعدادات فيها مخاطرة. تفعّلها على مسؤوليتك.</string>
+    <string name="step_mode_primary">التالي</string>
+    <string name="step_mode_short">الوضع</string>
+    <string name="step_devmode_title">فعّل وضع المطوّر</string>
+    <string-array name="step_devmode_list">
+        <item>اضغط «فتح الإعدادات»، فتُفتح «حول الهاتف»</item>
+        <item>اضغط «رقم الإصدار» 7 مرات حتى تظهر «أصبحت الآن مطوّرًا»</item>
+        <item>إذا طلب الهاتف، أدخل رمز القفل</item>
+    </string-array>
+    <string name="step_devmode_hint">وضع المطوّر مطلوب فقط لـ«تصحيح الأخطاء اللاسلكي». إذا كان مفعّلًا، اضغط «تم بالفعل».</string>
+    <string name="step_devmode_primary">فتح الإعدادات</string>
+    <string name="step_devmode_short">وضع المطوّر</string>
+    <string-array name="step_activate_list">
+        <item>اضغط «تفعيل»، فتُفتح «خيارات المطوّرين» (في Xiaomi: إعدادات إضافية ← خيارات المطوّرين)</item>
+        <item>فعّل «تصحيح الأخطاء اللاسلكي» واضغط «إقران الجهاز برمز الإقران»</item>
+        <item>اكتب الرمز الظاهر في إشعار HOG CarLink</item>
+    </string-array>
+    <string name="step_activate_hint">يضيع التفعيل بعد إعادة تشغيل الهاتف. سيطلب HOG CarLink إعادته، ويستغرق نصف دقيقة.</string>
+    <string name="step_activate_short">تفعيل HOG CarLink</string>
 </resources>

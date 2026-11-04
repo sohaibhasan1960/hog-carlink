@@ -12,6 +12,7 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.widget.EditText
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -19,23 +20,37 @@ import com.yegorkapomidorka.headswap.MainActivity
 import com.yegorkapomidorka.headswap.AppLog
 import com.yegorkapomidorka.headswap.R
 import com.yegorkapomidorka.headswap.aa.AaPrefs
+import com.yegorkapomidorka.headswap.aa.BridgeMode
 import com.yegorkapomidorka.headswap.aa.CarPreset
 import com.yegorkapomidorka.headswap.link.car.CarNetwork
 import com.yegorkapomidorka.headswap.link.car.CarPairing
 import com.yegorkapomidorka.headswap.link.car.CarWifi
 import com.yegorkapomidorka.headswap.link.car.WifiScan
+import com.yegorkapomidorka.headswap.dex.PhoneActivation
 
 /**
- * Онбординг (Onboarding.dc.html) и чеклист готовности. Шаги из Readiness.STEPS; при первом запуске уже выполненные
- * (определяются автоматически или отмечены вручную) пропускаются, при повторном прохождении показываются все.
- * В конце - чеклист со статусом каждого пункта; тот же чеклист открывается из Настроек.
+ * Онбординг (Onboarding.dc.html) и чеклист готовности. Первый шаг - выбор режима, дальше путь зависит от него
+ * (OnboardingPath): Android Auto - прежние десять шагов из Readiness.STEPS, свой лаунчер - режим разработчика, активация и общие шаги.
+ * При первом запуске уже выполненные шаги (определяются автоматически или отмечены вручную) пропускаются, при повторном
+ * прохождении показываются все. В конце - чеклист со статусом каждого пункта; тот же чеклист открывается из Настроек.
  */
 class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAtChecklist: Boolean, startAt: StepId? = null) : Screen(host) {
     private val root = ctx.vbox()
     override val view: View get() = root
     private val ui = UiPrefs(ctx)
-    private val queue: List<StepInfo>
+    private val aa = AaPrefs(ctx)
+    private val desktopOk = BridgeMode.desktopSupported(Build.VERSION.SDK_INT)
+
+    /** Режим, по которому строится путь: сохранённый в настройках, при отладке шагом лаунчера - лаунчер. */
+    private var chosen = OnboardingPath.modeFor(BridgeMode.effective(aa.bridgeMode, Build.VERSION.SDK_INT), startAt)
+    private var queue: List<StepInfo>
     private var pos = 0
+
+    /** Блок активации живёт между перерисовками шага: идущая попытка и введённые порты не теряются. */
+    private var activation: PhoneActivationBlock? = null
+    private var renderedReady = false
+    private var renderedBusy = false
+    private var renderedLabel = ""
     private var checklist = false
 
     /** Шаг открыт из чеклиста: после него возвращаемся в чеклист. */
@@ -53,10 +68,24 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
     private val cwHandler = Handler(Looper.getMainLooper())
 
     init {
-        queue = if (showAll) Readiness.STEPS else Readiness.STEPS.filter { !Readiness.isDone(ctx, it.id) }
+        queue = buildQueue(startAt)
         checklist = startAtChecklist || queue.isEmpty()
         if (startAt != null) pos = queue.indexOfFirst { it.id == startAt }.coerceAtLeast(0)
         render()
+    }
+
+    private fun buildQueue(keep: StepId?): List<StepInfo> =
+        OnboardingPath.queue(chosen, desktopOk, showAll, { Readiness.isDone(ctx, it) }, keep).map { Readiness.info(it) }
+
+    /** Строки чеклиста: шаги выбранного пути без выбора режима. */
+    private fun checklistSteps(): List<StepInfo> = OnboardingPath.full(chosen, false).map { Readiness.info(it) }
+
+    override fun tick() {
+        val block = activation ?: return
+        if (checklist || current()?.id != StepId.ACTIVATE) return
+        block.refresh()
+        if (block.ready && !renderedReady) { next(); return }      // активация прошла, пока шаг был открыт: идём дальше сами
+        if (block.ready != renderedReady || PhoneActivation.busy != renderedBusy || block.activateLabel != renderedLabel) render()
     }
 
     override fun onShow() {
@@ -74,6 +103,7 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             CarPairing.start(host)      // отказ выбор не блокирует: шаг останется невыполненным
         }
         val s = current() ?: return
+        if (!checklist && s.id == StepId.ACTIVATE) { activation?.onPermissionResult(); return }      // render() потерял бы ожидание разрешения
         if (!checklist && Readiness.isDone(ctx, s.id) && (s.id == StepId.NOTIF || s.id == StepId.MIC)) next() else render()
     }
 
@@ -116,6 +146,8 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             s == null -> return
             s.id == StepId.CAR -> renderCar(s)
             s.id == StepId.CAR_WIFI -> renderCarWifi(s)
+            s.id == StepId.MODE -> renderMode(s)
+            s.id == StepId.ACTIVATE -> renderActivate(s)
             else -> renderStep(s)
         }
     }
@@ -123,10 +155,9 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
     /** Полоса «Шаг n из N» с точками. */
     private fun renderProgress(s: StepInfo) {
         val c = ctx
-        val all = Readiness.STEPS
-        val idx = all.indexOf(s)
-        val total = if (single != null || showAll) all.size else queue.size
-        val n = if (single != null || showAll) idx + 1 else pos + 1
+        // из чеклиста номер считается по полному пути, иначе по очереди (выполненные шаги в ней уже пропущены)
+        val ids = if (single != null) OnboardingPath.full(chosen, desktopOk) else queue.map { it.id }
+        val (n, total) = OnboardingPath.progress(ids, s.id)
         root.pad(c, 20, 20, 20, 24)
         val top = c.hbox().apply {
             addView(c.text(c.getString(R.string.onb_step_progress, n, total), 14f, 600, c.clr(R.color.on2)), lp(0, WRAP, 1f))
@@ -148,30 +179,15 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
 
         // прокручивается только картинка и текст, заголовок остаётся на месте
         val body = c.vbox().apply {
-            addView(
-                FrameLayout(c).apply {
-                    background = c.shape(c.clr(R.color.surf2), 28)
-                    // с подсказкой и на шагах с окном Android Auto макет компактнее: текст целиком виден без прокрутки
-                    val compact = s.hint != null || s.id == StepId.AA_DEV || s.id == StepId.AA_UNKNOWN
-                    minimumHeight = c.dp(if (compact) 0 else 190)
-                    pad(c, 20, 20, 20, 20)
-                    addView(Mocks.build(c, s.id), FrameLayout.LayoutParams(MATCH, WRAP, Gravity.CENTER_VERTICAL))
-                },
-                lp(MATCH, WRAP).margins(c, 0, 4, 0, 0),
-            )
+            // с подсказкой и на шагах с окном Android Auto макет компактнее: текст целиком виден без прокрутки
+            val compact = s.hint != null || s.id == StepId.AA_DEV || s.id == StepId.AA_UNKNOWN
+            addView(c.stepMockCard(Mocks.build(c, s.id), compact), lp(MATCH, WRAP).margins(c, 0, 4, 0, 0))
             val text = c.vbox(10).apply { pad(c, 0, 18, 0, 36) }     // нижний отступ больше затемнения края: конец текста не тонет в fade
-            if (done) text.addView(doneChip(), lp(WRAP, WRAP))
-            text.addView(numberedList(s.listItems(c)), lp(MATCH, WRAP))
-            s.hint?.let {
-                text.addView(
-                    c.text(c.getString(it), 14f, 400, c.clr(R.color.onpric)).apply {
-                        lineHeight = c.dp(20)
-                        background = c.shape(c.clr(R.color.pric), 16)
-                        pad(c, 14, 12, 14, 12)
-                    },
-                    lp(MATCH, WRAP),
-                )
-            }
+            if (done) text.addView(c.doneChip(c.getString(R.string.onb_done_chip)), lp(WRAP, WRAP))
+            text.addView(c.numberedList(s.listItems(c)), lp(MATCH, WRAP))
+            // В пути лаунчера уведомления нужны прежде всего для кода сопряжения активации.
+            val hint = if (s.id == StepId.NOTIF && chosen == BridgeMode.DESKTOP) R.string.step_notif_hint_launcher else s.hint
+            hint?.let { text.addView(c.stepHint(c.getString(it)), lp(MATCH, WRAP)) }
             addView(text, lp(MATCH, WRAP))
         }
         root.addView(fadingScroll(body), lp(MATCH, 0, 1f))
@@ -186,6 +202,91 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
         }
         val skipLabel = if (done && s.id != StepId.FIRST) c.getString(R.string.onb_back) else c.getString(s.skip)
         buttons.addView(c.linkButton(skipLabel, 48).apply { setOnClickListener { onSkip(s, done) } })
+        root.addView(buttons, lp(MATCH, WRAP))
+    }
+
+    /** Первый шаг: Android Auto или свой лаунчер. Выбор пишется в тот же режим моста, что переключатель в «Режиме». */
+    private fun renderMode(s: StepInfo) {
+        val c = ctx
+        shownDone = Readiness.isDone(c, s.id)
+        renderProgress(s)
+        renderTitle(s)
+        val launcher = chosen == BridgeMode.DESKTOP
+        val body = c.vbox(12).apply { pad(c, 0, 4, 0, 24) }
+        body.addView(c.text(c.getString(s.body!!), 17f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(24) })
+        body.addView(
+            c.modeCard(R.drawable.ic_car, c.getString(R.string.bm_aa), c.getString(R.string.step_mode_aa_body), emptyList(), !launcher) { pickMode(BridgeMode.ANDROID_AUTO) },
+            lp(MATCH, WRAP).margins(c, 0, 4, 0, 0),
+        )
+        body.addView(
+            c.modeCard(R.drawable.ic_plug, c.getString(R.string.bm_own_launcher), c.getString(R.string.step_mode_own_body), listOf("Headswap", "CarDash"), launcher) { pickMode(BridgeMode.DESKTOP) },
+            lp(MATCH, WRAP),
+        )
+        if (launcher) {
+            body.addView(
+                c.modeWarning(c.getString(R.string.step_mode_warn_title), c.getString(R.string.step_mode_warn_body), c.getString(R.string.step_mode_warn_risk)),
+                lp(MATCH, WRAP),
+            )
+        }
+        root.addView(fadingScroll(body), lp(MATCH, 0, 1f))
+        root.addView(c.primaryButton(c.getString(s.primary)).apply {
+            setOnClickListener {
+                ui.setManualDone(s.id.key, true)
+                AppLog.i("онбординг, режим: ${chosen.key}")
+                next()
+            }
+        })
+    }
+
+    private fun pickMode(m: BridgeMode) {
+        if (aa.bridgeMode != m) {
+            aa.bridgeMode = m
+            AppLog.i("настройка: режим моста -> ${m.key} (онбординг)")
+        }
+        if (chosen != m) {
+            chosen = m
+            queue = buildQueue(StepId.MODE)      // хвост очереди зависит от режима
+            pos = queue.indexOfFirst { it.id == StepId.MODE }.coerceAtLeast(0)
+        }
+        render()
+    }
+
+    /**
+     * Шаг активации лаунчера: статус, макет, пункты и поля ручного ввода ведёт PhoneActivationBlock (тот же поток, что в «Режиме»),
+     * заголовок и кнопки - как у остальных шагов. Внизу «Активировать» (во время попытки «Отмена») и «Ввести порт и код вручную».
+     * Когда активация прошла, пока шаг открыт, онбординг идёт дальше сам (tick); если шаг открыт уже активированным - «Дальше».
+     */
+    private fun renderActivate(s: StepInfo) {
+        val c = ctx
+        val block = activation ?: PhoneActivationBlock(host, c.resources.getStringArray(s.list!!).toList(), s.hint!!, embedded = true).also { activation = it }
+        block.refresh()
+        val ready = block.ready
+        val busy = PhoneActivation.busy
+        shownDone = Readiness.isDone(c, s.id)
+        renderedReady = ready
+        renderedBusy = busy
+        renderedLabel = block.activateLabel
+        renderProgress(s)
+        (block.titleView.parent as? ViewGroup)?.removeView(block.titleView)
+        root.addView(block.titleView, lp(MATCH, WRAP).margins(c, 0, 4, 0, 16))
+        (block.view.parent as? ViewGroup)?.removeView(block.view)
+        val body = c.vbox().apply {
+            pad(c, 0, 4, 0, 36)
+            addView(block.view, lp(MATCH, WRAP))
+        }
+        root.addView(fadingScroll(body), lp(MATCH, 0, 1f))
+        val buttons = c.vbox(4)
+        when {
+            ready -> {
+                buttons.addView(c.primaryButton(c.getString(R.string.onb_next)).apply { setOnClickListener { next() } })
+                buttons.addView(c.linkButton(c.getString(R.string.onb_back), 48).apply { setOnClickListener { stepBack() } })
+            }
+            busy -> buttons.addView(c.primaryButton(c.getString(R.string.pa_cancel)).apply { setOnClickListener { block.cancelNow() } })
+            else -> {
+                buttons.addView(c.primaryButton(block.activateLabel).apply { setOnClickListener { block.activateNow() } })
+                buttons.addView(c.containerButton(c.getString(R.string.pa_manual_toggle)).apply { setOnClickListener { block.toggleManual() } })
+            }
+        }
         root.addView(buttons, lp(MATCH, WRAP))
     }
 
@@ -409,39 +510,6 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
         )
     }
 
-    /** Пронумерованный список: кружок pri с цифрой и текст шага. */
-    private fun numberedList(items: List<String>): View {
-        val c = ctx
-        return c.vbox(12).apply {
-            items.forEachIndexed { i, t ->
-                addView(
-                    c.hbox(12).apply {
-                        gravity = Gravity.TOP
-                        addView(
-                            FrameLayout(c).apply {
-                                background = c.oval(c.clr(R.color.pri))
-                                addView(c.text("${i + 1}", 14f, 700, c.clr(R.color.onpri)), FrameLayout.LayoutParams(WRAP, WRAP, Gravity.CENTER))
-                            },
-                            lp(c.dp(26), c.dp(26)),
-                        )
-                        addView(c.text(t, 17f, 400).apply { lineHeight = c.dp(24) }, lp(0, WRAP, 1f))
-                    },
-                    lp(MATCH, WRAP),
-                )
-            }
-        }
-    }
-
-    private fun doneChip(): View {
-        val c = ctx
-        return c.hbox(6).apply {
-            background = c.shape(c.clr(R.color.okc), 10)
-            pad(c, 10, 4, 12, 4)
-            addView(c.icon(R.drawable.ic_check, 14, c.clr(R.color.ok)))
-            addView(c.text(c.getString(R.string.onb_done_chip), 13f, 600, c.clr(R.color.ok)))
-        }
-    }
-
     private fun onPrimary(s: StepInfo, done: Boolean) {
         val c = ctx
         if (done && s.id != StepId.FIRST) { next(); return }
@@ -461,6 +529,8 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             StepId.CAR -> next()      // свои кнопки в renderCar
             StepId.CAR_WIFI -> next()      // свои кнопки в renderCarWifi
             StepId.CAR_PICK -> pickCar()
+            StepId.DEVMODE -> Readiness.openDeviceInfo(c)
+            StepId.MODE, StepId.ACTIVATE -> {}      // свои кнопки в renderMode / renderActivate
         }
     }
 
@@ -479,7 +549,7 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
         if (done && s.id != StepId.FIRST) { stepBack(); return }
         when (s.id) {
             StepId.FIRST -> stepBack()
-            StepId.AA_DEV, StepId.AA_UNKNOWN, StepId.AUTOSTART, StepId.BACKGROUND, StepId.BLUETOOTH, StepId.LOCATION -> { ui.setManualDone(s.id.key, true); next() }
+            StepId.AA_DEV, StepId.AA_UNKNOWN, StepId.AUTOSTART, StepId.BACKGROUND, StepId.BLUETOOTH, StepId.LOCATION, StepId.DEVMODE -> { ui.setManualDone(s.id.key, true); next() }
             else -> next()
         }
     }
@@ -527,15 +597,16 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
         root.addView(top, c.lpDp(MATCH, 48))
 
         val list = c.vbox(12).apply { pad(c, 0, 8, 0, 8) }
-        val doneCount = Readiness.STEPS.count { Readiness.isDone(c, it.id) }
-        val heading = if (doneCount == Readiness.STEPS.size) c.getString(R.string.onb_all_ready) else c.getString(R.string.onb_ready_count, doneCount, Readiness.STEPS.size)
+        val steps = checklistSteps()
+        val doneCount = steps.count { Readiness.isDone(c, it.id) }
+        val heading = if (doneCount == steps.size) c.getString(R.string.onb_all_ready) else c.getString(R.string.onb_ready_count, doneCount, steps.size)
         list.addView(c.text(heading, 28f, 600).apply {
             letterSpacing = -0.01f
             lineHeight = c.dp(34)
         })
         list.addView(c.text(c.getString(R.string.onb_checklist_hint), 17f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(24) })
         val card = c.card(24).apply { pad(c, 0, 6, 0, 6) }
-        for (s in Readiness.STEPS) card.addView(checkRow(s), c.lpDp(MATCH, 60))
+        for (s in steps) card.addView(checkRow(s), c.lpDp(MATCH, 60))
         list.addView(card, lp(MATCH, WRAP).margins(c, 0, 8, 0, 0))
         root.addView(fadingScroll(list), lp(MATCH, 0, 1f))
 
@@ -595,7 +666,7 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
     private companion object {
         /** Тот же код, что в настройках: BLUETOOTH_CONNECT перед выбором машины (38 занят диалогом CDM). */
         const val REQ_CAR_BT = 39
-        const val REQ_WIFI_SCAN = 40
+        const val REQ_WIFI_SCAN = 43      // 40 - READ_PHONE_STATE, 41 - карточка «Телефон», 42 - активация (апстрим 4.0)
         const val CW_CHECK_TIMEOUT_MS = 60_000L
         const val CW_CHECK_HOLD_MS = 5_000L
     }

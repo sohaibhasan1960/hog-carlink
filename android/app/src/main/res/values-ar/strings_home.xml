@@ -51,7 +51,6 @@
 
     <!-- Home screen: widgets -->
     <string name="home_settings">الإعدادات</string>
-    <string name="home_btn_stop">إيقاف</string>
     <string name="home_btn_open_aa">فتح إعدادات Android Auto</string>
     <string name="home_grace_waiting">في انتظار إعادة الاتصال</string>
     <string name="home_grace_left">متبقٍ %1$d ث</string>
@@ -96,4 +95,20 @@
     <!-- HOG CarLink: кнопка «Поделиться» на главном -->
     <string name="home_share">مشاركة التطبيق</string>
     <string name="home_share_text">HOG CarLink: تطبيق Android Auto للسيارات ذات شاشة CarLife. للتحميل:</string>
+    <!-- HOG CarLink: نصوص 4.0 من المشروع الأصلي -->
+    <string name="home_title_unknown">تحقق من خادم شاشة السيارة</string>
+    <string name="home_title_checking">جارٍ فحص خادم شاشة السيارة</string>
+    <string name="home_sub_unknown">لم يتمكن HOG CarLink من فحص الخادم. في Android Auto ← ⋮: إذا رأيت «إيقاف خادم وحدة الرأس» فهو يعمل؛ وإذا رأيت «بدء خادم وحدة الرأس» فشغّله.</string>
+    <string name="home_sub_checking">ثانيتان: يتصل HOG CarLink بـ Android Auto لحظة قصيرة.</string>
+    <string name="home_sub_parked_unknown">الرحلة القادمة: إذا لم يظهر Android Auto، تحقق من خادم شاشة السيارة: Android Auto ← ⋮.</string>
+    <string name="home_stage_unknown">لم يُفحص</string>
+    <string name="home_stage_checking">جارٍ الفحص</string>
+    <string name="notif_parked_unknown">انفصلت السيارة</string>
+    <string name="notif_server_unknown">تحقق من أن خادم شاشة السيارة يعمل</string>
+    <string name="mock_dev_title">خيارات المطوّرين</string>
+    <string name="mock_dev_wifi">تصحيح الأخطاء اللاسلكي</string>
+    <string name="mock_dev_pair">إقران الجهاز برمز الإقران</string>
+    <string name="mock_about_title">حول الهاتف</string>
+    <string name="mock_about_build">رقم الإصدار</string>
+    <string name="mock_about_build_sub">في Xiaomi: «إصدار النظام»</string>
 </resources>

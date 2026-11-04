@@ -18,7 +18,6 @@ class VideoModeTest {
             VideoMode.R1024 to Row("1280x720", 256, 120, 160, 1024, 600, 2_000_000),
             VideoMode.R720 to Row("1280x720", 0, 0, 160, 1280, 720, 4_000_000),
             VideoMode.R1080 to Row("1920x1080", 0, 0, 240, 1920, 1080, 8_000_000),
-            VideoMode.R1440 to Row("2560x1440", 0, 0, 320, 2560, 1440, 12_000_000),
             VideoMode.ID6 to Row("1280x720", 0, 32, 232, 800, 480, 4_000_000),
             VideoMode.ID6_HD to Row("1280x720", 0, 32, 232, 1280, 688, 4_000_000),
             VideoMode.WIDE to Row("1280x720", 0, 240, 160, 1280, 480, 4_000_000),
@@ -27,6 +26,9 @@ class VideoModeTest {
             VideoMode.WIDE_640 to Row("1920x1080", 0, 440, 160, 1920, 640, 6_000_000),
             VideoMode.WIDE_2_1 to Row("1280x720", 0, 80, 160, 1280, 640, 4_000_000),
             VideoMode.WIDE_976 to Row("1920x1080", 0, 244, 160, 2240, 976, 8_000_000),
+            VideoMode.WIDE_836 to Row("1920x1080", 0, 244, 160, 1920, 836, 6_000_000),
+            VideoMode.PORTRAIT_960 to Row("1080x1920", 120, 640, 160, 960, 1280, 6_000_000),
+            VideoMode.PORTRAIT_1152 to Row("1080x1920", 120, 768, 160, 960, 1152, 6_000_000),
         )
         assertEquals(expected.keys, VideoMode.values().toSet())
         for ((m, r) in expected) {
@@ -61,7 +63,7 @@ class VideoModeTest {
         assertEquals(60f / 720f, m.crop.v0, 1e-6f)
         assertEquals(660f / 720f, m.crop.v1, 1e-6f)
         assertTrue(m.needsTranscode)
-        assertEquals(VideoMode.R720, m.effective(transcode = false))
+        assertEquals(m, m.effective(transcode = false))         // 1:1 с полями: SPS-кроп в passthrough
         assertEquals(m, m.effective(transcode = true))
         assertEquals("1024×600", m.outLabel)
         assertEquals(VideoMode.R1024, VideoMode.parse("R1024"))
@@ -82,7 +84,7 @@ class VideoModeTest {
 
     @Test
     fun effectiveAndParse() {
-        assertEquals(VideoMode.R720, VideoMode.WIDE.effective(transcode = false))
+        assertEquals(VideoMode.WIDE, VideoMode.WIDE.effective(transcode = false))
         assertEquals(VideoMode.WIDE, VideoMode.WIDE.effective(transcode = true))
         assertEquals(VideoMode.R1080, VideoMode.R1080.effective(transcode = false))
         assertEquals(VideoMode.R800, VideoMode.R800.effective(transcode = false))
@@ -125,6 +127,12 @@ class VideoModeTest {
         assertEquals(57 to 661, VideoMode.WIDE_HD.mapTouch(57, 661))
         assertEquals(180f / 1080f, VideoMode.WIDE_HD.crop.v0, 1e-6f)
         assertEquals(900f / 1080f, VideoMode.WIDE_HD.crop.v1, 1e-6f)
+        // h521: поля внизу (SPS-кроп), а перекодирование принудительное - транскодер режет верхние 720 строк (v вверх)
+        val bottom = VideoMode.WIDE_HD.cropFor(marginsAtBottom = true)
+        assertEquals(360f / 1080f, bottom.v0, 1e-6f)
+        assertEquals(1f, bottom.v1, 1e-6f)
+        assertEquals(VideoMode.WIDE_HD.crop, VideoMode.WIDE_HD.cropFor(marginsAtBottom = false))
+        assertTrue(VideoMode.R720.cropFor(marginsAtBottom = true).isNone)
         val mid = VideoMode.WIDE_MID
         assertEquals(1727 to 647, mid.mapTouch(2000, 900))
         assertEquals(864 to 324, mid.mapTouch(864, 324))
@@ -143,7 +151,29 @@ class VideoModeTest {
         assertTrue(c640.needsTranscode)
         assertEquals("1920×640", c640.outLabel)
         assertEquals(VideoMode.WIDE_640, VideoMode.parse("WIDE_640"))
-        assertEquals(listOf(VideoMode.WIDE, VideoMode.WIDE_MID, VideoMode.WIDE_HD, VideoMode.WIDE_640, VideoMode.WIDE_2_1, VideoMode.WIDE_976), VideoMode.values().takeLast(6))
+        assertEquals(listOf(VideoMode.WIDE, VideoMode.WIDE_MID, VideoMode.WIDE_HD, VideoMode.WIDE_640, VideoMode.WIDE_2_1, VideoMode.WIDE_976, VideoMode.WIDE_836), VideoMode.values().toList().subList(6, 13))      // HOG CarLink: 4-5 - ID6, ID6_HD
+    }
+
+    @Test
+    fun portrait() {
+        // те же поля, что считает своё разрешение: пресет и CustomVideoMode дают одну геометрию
+        for (m in listOf(VideoMode.PORTRAIT_960, VideoMode.PORTRAIT_1152)) {
+            val c = CustomVideoMode(m.outW, m.outH)
+            assertEquals(m.name, c.aaResolution, m.aaResolution)
+            assertEquals(m.name, c.marginW to c.marginH, m.marginW to m.marginH)
+            assertTrue(m.name, m.needsTranscode)
+        }
+        val p = VideoMode.PORTRAIT_960
+        assertEquals(60f / 1080f, p.crop.u0, 1e-6f)
+        assertEquals(320f / 1920f, p.crop.v0, 1e-6f)
+        assertEquals(959 to 1279, p.mapTouch(2000, 2000))
+        assertEquals(480 to 640, p.mapTouch(480, 640))
+        assertEquals("960×1280", p.outLabel)
+        // SDR: res=7 (1080x1920), margin_w 120 (78), margin_h 640 (80 05)
+        val sdr = hex(M.serviceDiscoveryResponse(p.sdOptions(false)).payload)
+        assertTrue(sdr, sdr.contains("0807100218782080052" + "8a001"))
+        assertEquals(VideoMode.PORTRAIT_1152, VideoMode.parse("PORTRAIT_1152"))
+        assertEquals("960×1152", VideoMode.PORTRAIT_1152.outLabel)
     }
 
     @Test
@@ -156,31 +186,29 @@ class VideoModeTest {
         assertEquals(40f / 720f, k.crop.v0, 1e-6f)
         assertEquals(680f / 720f, k.crop.v1, 1e-6f)
         assertTrue(k.needsTranscode)
-        assertEquals(VideoMode.R720, k.effective(transcode = false))
+        assertEquals(k, k.effective(transcode = false))
         assertEquals("1280×640", k.outLabel)
         assertEquals(VideoMode.WIDE_2_1, VideoMode.parse("WIDE_2_1"))
     }
 
     @Test
-    fun wide976AndR1440() {
+    fun wide976() {
         val k = VideoMode.WIDE_976
         assertEquals(122f / 1080f, k.crop.v0, 1e-6f)
         assertEquals(958f / 1080f, k.crop.v1, 1e-6f)
         assertEquals(0f, k.crop.u0, 1e-6f)
         assertEquals(1f, k.crop.u1, 1e-6f)
         assertTrue(k.needsTranscode)
-        assertEquals(VideoMode.R720, k.effective(transcode = false))
+        assertEquals(VideoMode.WIDE_836, k.effective(transcode = false))
         // рабочая область AA 1920x836 масштабируется в кадр ГУ 2240x976: тач пересчитывается и клампится в область
         assertEquals(1919 to 835, k.mapTouch(3000, 2000))
         assertEquals(960 to 418, k.mapTouch(1120, 488))
         assertEquals(0 to 0, k.mapTouch(0, 0))
         assertEquals(1919 to 835, k.mapTouch(2239, 975))
         assertEquals("2240×976", k.outLabel)
-        assertTrue(VideoMode.R1440.crop.isNone)
-        assertFalse(VideoMode.R1440.needsTranscode)
-        assertEquals(7 to 9, VideoMode.R1440.mapTouch(7, 9))
-        assertEquals(VideoMode.R1440, VideoMode.parse("R1440"))
         assertEquals(VideoMode.WIDE_976, VideoMode.parse("WIDE_976"))
+        // убранный режим из старых prefs - режим по умолчанию
+        assertEquals(VideoMode.DEFAULT, VideoMode.parse("R1440"))
     }
 
     @Test
@@ -202,8 +230,6 @@ class VideoModeTest {
     fun sdrOtherModes() {
         val r1080 = hex(M.serviceDiscoveryResponse(VideoMode.R1080.sdOptions(false)).payload)
         assertTrue(r1080, r1080.contains("0803100218002000" + "28f001"))      // res=3, margins 0, density 240
-        val r1440 = hex(M.serviceDiscoveryResponse(VideoMode.R1440.sdOptions(false)).payload)
-        assertTrue(r1440, r1440.contains("0804100218002000" + "28c002"))      // res=4, margins 0, density 320
         val wide976 = hex(M.serviceDiscoveryResponse(VideoMode.WIDE_976.sdOptions(false)).payload)
         assertTrue(wide976, wide976.contains("08031002180020f401" + "28a001"))   // res=3, margin_h 244 (f4 01), density 160 (a0 01)
         val r800 = hex(M.serviceDiscoveryResponse(VideoMode.R800.sdOptions(false)).payload)
@@ -245,7 +271,7 @@ class VideoModeTest {
             assertTrue(m.name, m.needsTranscode)
         }
         assertEquals(VideoMode.ID6_HD, VideoMode.ID6_HD.effective(transcode = true))
-        assertEquals(VideoMode.R720, VideoMode.ID6_HD.effective(transcode = false))
+        assertEquals(VideoMode.ID6_HD, VideoMode.ID6_HD.effective(transcode = false))      // 4.0: SPS-кроп
         // ID6: тач ГУ в кадре 800x480 -> область AA 1280x688
         assertEquals(0 to 0, VideoMode.ID6.mapTouch(0, 0))
         assertEquals(640 to 344, VideoMode.ID6.mapTouch(400, 240))
@@ -323,11 +349,20 @@ class VideoModeTest {
         assertEquals(180, AaDensity.step(AaDensity.AUTO, 160, up = true))
         assertEquals(140, AaDensity.step(AaDensity.AUTO, 160, up = false))
         assertEquals(100, AaDensity.step(AaDensity.AUTO, 120, up = false))
-        assertEquals(280, AaDensity.step(AaDensity.AUTO, 320, up = false))      // R1440: авто выше максимума
+        assertEquals(280, AaDensity.step(AaDensity.AUTO, 320, up = false))      // авто выше максимума сетки
         assertEquals(AaDensity.AUTO, AaDensity.step(AaDensity.AUTO, 320, up = true))
         // на краях стоим
         assertEquals(280, AaDensity.step(280, 160, up = true))
         assertEquals(100, AaDensity.step(100, 160, up = false))
         assertEquals(220, AaDensity.step(200, 160, up = true))
+    }
+
+    @Test
+    fun id6InPassthrough() {
+        // HOG CarLink: ID6_HD режется SPS-кропом (без перекодирования), откат ID6 остаётся собой и требует перекодирования
+        assertTrue(VideoMode.ID6_HD.spsCropable)
+        assertEquals(VideoMode.ID6_HD, VideoMode.ID6_HD.effective(false))
+        assertEquals(VideoMode.ID6, VideoMode.ID6.effective(false))
+        assertTrue(VideoMode.ID6.needsTranscode && !VideoMode.ID6.spsCropable)
     }
 }

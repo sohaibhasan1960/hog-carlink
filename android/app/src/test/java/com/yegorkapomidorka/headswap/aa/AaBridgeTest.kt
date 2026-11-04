@@ -64,6 +64,12 @@ class FakeLink : CarlifeLink {
     override fun goToDesktop() {
         desktops++
     }
+
+    @Volatile var mediaDrops = 0
+    override fun dropQueuedMedia(): Int {
+        mediaDrops++
+        return 0
+    }
 }
 
 class FakePeer : AaPeer {
@@ -115,6 +121,44 @@ class AaBridgeCoreTest {
     private val core = AaBridgeCore({ l, _ -> logs.add(l) }, { now }).also { it.attach(link) }
 
     private fun types(b: ByteArray) = AnnexB.nalTypes(b)
+
+    @Test
+    fun hyundaiCn7ForcesTranscode() {
+        // h638: на CN7 прямой проброс моргает и гаснет
+        core.transcodeEnabled = false
+        core.onHuInfo("QTI", "sm6150_au for arm64", "other")
+        assertFalse(core.huHyundaiCn7)
+        assertFalse(core.transcodeEnabled)
+        core.onHuInfo("QTI", "sm6150_au for arm64", AaBridgeCore.HYUNDAI_CN7_PRODUCT)
+        assertTrue(core.huHyundaiCn7)
+        assertTrue(core.transcodeEnabled)
+        assertEquals(1, logs.count { it.contains("Hyundai CN7: passthrough отключаю") })
+    }
+
+    @Test
+    fun mobisFlagFromHuInfoOrChannelForcesTranscode() {
+        // h242: Tucson (Mobis CCNC) опознаётся по HU_INFO, запасной признак - канал 20022188
+        assertFalse(core.huMobisNx4c)
+        core.onHuInfo("Samsung", "SM-A", "a", "exynos")
+        core.onHuStatistic("20082122")
+        assertFalse(core.huMobisNx4c)
+        core.onHuInfo("Mobis", "AVN5", "other", "OTHER")      // другое ГУ Mobis по производителю не включает флаг
+        assertFalse(core.huMobisNx4c)
+        core.transcodeEnabled = false
+        core.onHuInfo("Mobis", "CCNC", "NX4C", "CCNC")
+        assertTrue(core.huMobisNx4c)
+        assertTrue(core.transcodeEnabled)
+        assertEquals(1, logs.count { it == "MOBIS CCNC: режим Baidu включён" })
+        core.onHuStatistic("20022188")                        // повторно не пишет строку
+        assertEquals(1, logs.count { it == "MOBIS CCNC: режим Baidu включён" })
+        core.attach(link)
+        assertFalse(core.huMobisNx4c)
+        core.onHuStatistic("20022188")
+        assertTrue(core.huMobisNx4c)
+        core.attach(link)
+        core.onHuInfo(null, null, null, "CCNC")               // только board
+        assertTrue(core.huMobisNx4c)
+    }
 
     @Test
     fun huThemeDrivesAaNightModeAndSurvivesPeerReconnect() {
@@ -223,171 +267,80 @@ class AaBridgeCoreTest {
         assertEquals(2, peer.keyframes)
         core.onFrame(idr, 4)                                  // после IDR запросы прекращаются
         assertArrayEquals(cfg + idr, link.sent[2])
-        now += 10_000
+        now += AaBridgeCore.SPS_CROP_KICK_MS + 10_000
         core.tick()
-        assertEquals(2, peer.keyframes)
+        assertEquals("повторный кадр h529 был на первом старте сессии, после второго START его нет", 2, peer.keyframes)
+        assertEquals(0, logs.count { it.contains("повторный ключевой кадр") })
     }
 
-    /** Passthrough, IDR ушёл в now=0, затем P-кадры; peer подключён. */
-    private fun h295Setup(hondaFlag: Boolean): FakePeer {
+    @Test
+    fun noRepeatedKeyframeAfterPauseStartAndNewFirstIdr() {
         val peer = FakePeer()
         core.peer = peer
-        if (hondaFlag) core.onHuStatistic(AaBridgeCore.HONDA_20772121_CHANNEL)
+        core.onCarlifeStart()
+        core.onCodecConfig(cfg)
+        core.onFrame(idr, 1)                                  // первый IDR сессии в now=0
+        now = AaBridgeCore.SPS_CROP_KICK_MS
+        core.tick()
+        assertEquals("повторный кадр на первом старте", 1, peer.keyframes)
+        now = 10_000
+        core.onCarlifePause()
+        core.onCarlifeStart()                                 // цикл NATIVE -> PROJECTED от самого START
+        assertEquals("START после PAUSE: цикл от START", 2, peer.keyframes)
+        core.onFrame(idr, 2)                                  // новый первый IDR после START
+        now += AaBridgeCore.SPS_CROP_KICK_MS + 10_000
+        core.tick()
+        assertEquals("повторного кадра после PAUSE/START нет", 2, peer.keyframes)
+        assertEquals(1, logs.count { it.contains("повторный ключевой кадр") })
+    }
+
+    @Test
+    fun repeatedKeyframeAgainOnNewCarlifeSession() {
+        val peer = FakePeer()
+        core.peer = peer
         core.onCarlifeStart()
         core.onCodecConfig(cfg)
         core.onFrame(idr, 1)
-        core.onFrame(p1, 2)
-        return peer
-    }
-
-    @Test
-    fun h295TouchAfterIdleAndStaleIdrRequestsKeyframeCycleAndKeepsGateOpen() {
-        val peer = h295Setup(true)
-        val sentBefore = link.sent.size
-        now = 5000
-        core.onCarlifeTouch(0, 10, 10)
-        assertEquals("тач ушёл в AA", 1, peer.touches.size)
-        assertEquals("сразу полный цикл", 1, peer.keyframes)
-        assertTrue(logs.any { it.startsWith("BRIDGE h295: тач после 5000 мс без IDR, пауза в тачах ") && it.endsWith(" мс -> keyframe-цикл") })
-        core.onFrame(p1, 3)                                   // gate открыт: P-кадр проходит
-        assertEquals(sentBefore + 1, link.sent.size)
-        assertArrayEquals(p1, link.sent.last())
-        core.onTouch(0)                                       // второй DOWN ГУ (~2 мс): пауза в тачах ~0, триггера нет
-        assertEquals(1, peer.keyframes)
-        core.tick()                                           // отдельного фолбэка нет
-        assertEquals(1, peer.keyframes)
-        now = 5400
-        core.onFrame(idr, 4)                                  // IDR в обычной ветке (gate открыт), без takeover
-        assertEquals(1, link.takeovers)
-        assertEquals(1, link.hides)
-        core.onFrame(p1, 5)
-        assertArrayEquals(p1, link.sent.last())
-    }
-
-    @Test
-    fun h295AwaitedBareIdrIsGluedWithAaConfig() {
-        h295Setup(true)
-        now = 5000
-        core.onTouch(0)
-        now = 7500
-        core.onFrame(idr, 4)
-        assertArrayEquals(cfg + idr, link.sent.last())
-        assertEquals(listOf(7, 8, 5), types(link.sent.last()))
-        assertTrue(logs.any { it.startsWith("BRIDGE h295: IDR через 2500 мс после тача, nal=[5] -> [7, 8, 5]") })
-        now = 7600
-        core.onFrame(idr, 5)                                  // ожидание закончено: следующий IDR как в main
-        assertArrayEquals(idr, link.sent.last())
-        core.onFrame(p1, 6)
-        assertArrayEquals(p1, link.sent.last())
-    }
-
-    @Test
-    fun h295AwaitedIdrWithInlineSpsPpsIsNotGluedAgain() {
-        h295Setup(true)
-        now = 5000
-        core.onTouch(0)
-        now = 6000
-        core.onFrame(cfg + idr, 4)
-        assertArrayEquals(cfg + idr, link.sent.last())
-        assertTrue(logs.any { it.startsWith("BRIDGE h295: IDR через 1000 мс после тача, nal=[7, 8, 5] -> [7, 8, 5]") })
-    }
-
-    @Test
-    fun h295IdrWithoutTriggerIsNotGlued() {
-        h295Setup(true)
-        now = 100
-        core.onFrame(idr, 4)
-        assertArrayEquals(idr, link.sent.last())
-        now = 2000                                            // IDR свежий: триггера нет и после паузы
-        core.onTouch(0)
-        core.onFrame(idr, 5)
-        assertArrayEquals(idr, link.sent.last())
-        assertTrue(logs.none { it.startsWith("BRIDGE h295: IDR через") })
-    }
-
-    @Test
-    fun h295PFramesAfterTriggerAreNotTouched() {
-        h295Setup(true)
-        now = 5000
-        core.onTouch(0)
-        core.onFrame(p1, 3)
-        assertArrayEquals(p1, link.sent.last())
-    }
-
-    @Test
-    fun h295IdrAfterGiveUpIsNotGlued() {
-        h295Setup(true)
-        now = 5000
-        core.onTouch(0)
-        now = 15_100
-        core.tick()                                           // 10.1 с без IDR: ожидание сброшено
-        core.onFrame(idr, 4)
-        assertArrayEquals(idr, link.sent.last())
-        assertTrue(logs.none { it.startsWith("BRIDGE h295: IDR через") })
-    }
-
-    @Test
-    fun h295NoTriggerIfPreviousTouchWasLessThanIdleAgo() {
-        val peer = h295Setup(true)
-        now = 1000
-        core.onTouch(0)                                       // IDR свежий, но тач запомнен
-        now = 3000
-        core.onTouch(2)                                       // MOVE тоже считается тачем
-        now = 6900                                            // IDR старый, прошлый тач 3.9 с назад (< 4 с)
-        core.onTouch(0)
-        assertEquals("пауза 3.9 с < 4 с", 0, peer.keyframes)
-        now = 10_900                                          // прошлый тач ровно 4 с назад
-        core.onTouch(0)
-        assertEquals(1, peer.keyframes)
-    }
-
-    @Test
-    fun h295FreshIdrDoesNotTriggerEvenAfterIdle() {
-        val peer = h295Setup(true)
-        now = 2000                                            // IDR 2 с назад (<= 2.5 с)
-        core.onTouch(0)
-        assertEquals(0, peer.keyframes)
-    }
-
-    @Test
-    fun h295RateLimitsRepeatedTriggers() {
-        val peer = h295Setup(true)
-        now = 5000
-        core.onTouch(0)
-        assertEquals(1, peer.keyframes)
-        now = 9100                                            // пауза 4.1 с, но с триггера 4.1 с > 3 с: можно снова
-        core.onTouch(0)
-        assertEquals(2, peer.keyframes)
-        now = 13_200
-        core.onFrame(idr, 4)
-        now = 20_000
+        now = AaBridgeCore.SPS_CROP_KICK_MS
         core.tick()
-        assertEquals("tick циклов не добавляет", 2, peer.keyframes)
+        assertEquals(1, peer.keyframes)
+        now = 20_000
+        core.attach(FakeLink())                               // USB вернулся при живой AA: новая CarLife-сессия
+        core.onCarlifeStart()
+        assertEquals("START новой сессии: цикл", 2, peer.keyframes)
+        core.onFrame(idr, 2)
+        now += AaBridgeCore.SPS_CROP_KICK_MS - 1
+        core.tick()
+        assertEquals("раньше 2000 мс повторного кадра нет", 2, peer.keyframes)
+        now += 1
+        core.tick()
+        assertEquals("на новой сессии повторный кадр снова есть", 3, peer.keyframes)
+        now += 10_000
+        core.tick()
+        assertEquals("ровно один", 3, peer.keyframes)
+        assertEquals(2, logs.count { it.contains("повторный ключевой кадр") })
     }
 
     @Test
-    fun h295DoesNothingWithoutHondaFlag() {
-        val peer = h295Setup(false)
-        now = 60_000
-        core.onTouch(0)
-        assertEquals(0, peer.keyframes)
-        core.onFrame(p1, 3)
-        assertArrayEquals(p1, link.sent.last())               // gate открыт
+    fun repeatedKeyframe2sAfterFirstIdrWithoutCrop() {
+        val peer = FakePeer()
+        core.peer = peer
+        core.onCarlifeStart()
+        core.onCodecConfig(cfg)
+        core.onFrame(idr, 1)                                  // passthrough без SPS-кропа (R1080), IDR в now=0
+        now = AaBridgeCore.SPS_CROP_KICK_MS - 1
+        core.tick()
+        assertEquals("раньше 2000 мс повторного кадра нет", 0, peer.keyframes)
+        assertTrue(logs.none { it.contains("повторный ключевой кадр") })
+        now = AaBridgeCore.SPS_CROP_KICK_MS
+        core.tick()
+        assertEquals(1, peer.keyframes)
+        assertEquals(1, logs.count { it.contains("повторный ключевой кадр") })
+        now += 10_000
+        core.tick()
+        assertEquals("одноразовый", 1, peer.keyframes)
+        assertEquals(1, logs.count { it.contains("повторный ключевой кадр") })
     }
-
-    @Test
-    fun h295MoveUpAreNotTriggersAndAttachResetsFlag() {
-        val peer = h295Setup(true)
-        now = 60_000
-        core.onTouch(2)                                       // MOVE - не триггер
-        core.onTouch(1)                                       // UP - не триггер
-        assertEquals(0, peer.keyframes)
-        assertTrue(core.huHonda20772121)
-        core.attach(link)                                     // новая сессия сбрасывает флаг ГУ
-        assertFalse(core.huHonda20772121)
-    }
-
-    private fun AaBridgeCore.onTouch(action: Int) = onCarlifeTouch(action, 10, 10)
 
     @Test
     fun keyframeRequestWaitsForDelayWhenAaVideoAppearsAfterStart() {
@@ -418,6 +371,58 @@ class AaBridgeCoreTest {
         core.onCarlifeTouch(0, 5, 5)                          // AA не подключён: игнор без исключений
         assertEquals(3, peer.touches.size)
         assertTrue(logs.any { it.contains("DOWN 40,675") })
+    }
+
+    @Test
+    fun desktopCancelReleasesBothPointersAndStartsFreshGesture() {
+        val peer = FakePeer()
+        core.peer = peer
+        core.desktopInputEnabled = true
+        core.onCarlifeTouch(0, 100, 100)
+        core.onCarlifeTouch(261, 100, 100, 300, 300)
+        core.onCarlifeTouch(3, 0, 0)
+        assertEquals(Triple(3, 0, pts(0, 100, 100, 1, 300, 300)), peer.events.last())
+        core.onCarlifeTouch(3, 0, 0) // A second cancellation must not synthesize a contact.
+        assertEquals(3, peer.events.size)
+        core.onCarlifeTouch(0, 50, 60)
+        core.onCarlifeTouch(1, 50, 60)
+        assertEquals(Triple(0, 0, pts(0, 50, 60)), peer.events[3])
+        assertEquals(Triple(1, 0, pts(0, 50, 60)), peer.events[4])
+    }
+
+    @Test
+    fun desktopDetachCancelsContactsWithoutReplayingBufferedMoves() {
+        val peer = FakePeer()
+        core.peer = peer
+        core.desktopInputEnabled = true
+        core.touchDecimationProvider = { TouchDecimation.X2 }
+        core.onCarlifeTouch(0, 10, 10)
+        core.onCarlifeTouch(2, 11, 11)
+        core.onCarlifeTouch(2, 12, 12) // Buffered, not sent to the desktop yet.
+        core.onCarlifeClosed(FakeLink()) // Stale session must not cancel the current gesture.
+        assertEquals(2, peer.events.size)
+        core.onCarlifeClosed(link)
+        assertEquals(Triple(3, 0, pts(0, 11, 11)), peer.events.last())
+        core.attach(FakeLink())
+        core.onCarlifeTouch(0, 20, 20)
+        assertEquals(listOf(0, 2, 3, 0), peer.events.map { it.first })
+        assertEquals(Triple(0, 0, pts(0, 20, 20)), peer.events.last())
+    }
+
+    @Test
+    fun desktopCancelDropsPendingMovePacerTimer() {
+        val timers = FakeTimers()
+        val c = AaBridgeCore({ _, _ -> }, { timers.now }, audioSchedule = timers::schedule).also { it.attach(link) }
+        val peer = FakePeer()
+        c.peer = peer
+        c.desktopInputEnabled = true
+        c.onHuStatistic("20082114") // Delphi smoothing queues the second move.
+        c.onCarlifeTouch(0, 10, 10)
+        c.onCarlifeTouch(2, 11, 11)
+        c.onCarlifeTouch(2, 12, 12)
+        c.onCarlifeTouch(3, 0, 0)
+        timers.advance(TouchBurstPacer.DEFAULT_INTERVAL_MS * 2)
+        assertEquals(listOf(0, 2, 3), peer.events.map { it.first })
     }
 
     @Test
@@ -556,6 +561,82 @@ class AaBridgeCoreTest {
         core.onCarlifeHardKey(16)                             // AA не подключён: игнор без исключений
         assertEquals(3, peer.keys.size)
         assertTrue(AaBridgeCore.HARD_KEY_TO_ANDROID.values.all { it in AapMessages.KEYCODES_SUPPORTED })
+    }
+
+    @Test
+    fun desktopHomeMappingIsOptInAndKeepsMainAndBackKeys() {
+        val peer = FakePeer()
+        core.peer = peer
+        core.onCarlifeHardKey(0x01) // CarLife HOME belongs to the HU in AA mode.
+        assertTrue(peer.keys.isEmpty())
+        core.onCarlifeHardKey(0x1E) // MAIN already maps to Android HOME.
+        assertEquals(listOf(3), peer.keys.toList())
+
+        core.mapHomeKey = true
+        core.onCarlifeHardKey(0x01)
+        core.onCarlifeHardKey(0x0E)
+        assertEquals(listOf(3, 3, 4), peer.keys.toList())
+
+        core.mapHomeKey = false
+        core.onCarlifeHardKey(0x01)
+        assertEquals(listOf(3, 3, 4), peer.keys.toList())
+        core.mapHomeKey = true
+        core.peer = null
+        core.onCarlifeHardKey(0x01) // Disconnected desktop must not crash or queue a stale key.
+        assertEquals(listOf(3, 3, 4), peer.keys.toList())
+    }
+
+    @Test
+    fun launchPhoneOnlyOnKia20032131() {
+        val peer = FakePeer()
+        core.peer = peer
+        core.onCarlifeLaunchPhone()                           // чужое ГУ: только лог
+        assertTrue(peer.keys.isEmpty())
+        core.onHuStatistic("20032131")                        // h672 Kia Seltos
+        core.onCarlifeLaunchPhone()
+        now += 200
+        core.onCarlifeLaunchPhone()                           // вторая из пары: глотаем
+        now += 5000
+        core.onCarlifeLaunchPhone()                           // следующее нажатие
+        assertEquals(listOf(5, 5), peer.keys.toList())
+        core.attach(link)
+        assertTrue("новая сессия - флаг заново", !core.huKia20032131)
+    }
+
+    @Test
+    fun keyFrameAfterReverseOnlyOnKia20032131() {
+        assertTrue("чужое ГУ", !core.onHuGear(5) && !core.onHuGear(3))
+        core.onHuStatistic("20032131")
+        assertTrue("P -> R", !core.onHuGear(2) && !core.onHuGear(5))
+        assertTrue("R -> R", !core.onHuGear(5))
+        assertTrue("R -> D", core.onHuGear(3))
+        assertTrue("D -> P", !core.onHuGear(2))
+        core.onHuGear(5)
+        core.attach(link)
+        assertTrue("новая сессия - передача заново", !core.onHuGear(3))
+    }
+
+    @Test
+    fun seekKeysAnswerCall() {
+        val peer = FakePeer()
+        core.peer = peer
+        var call = PhoneCall.RINGING
+        core.phoneCallProvider = { call }
+        core.onCarlifeHardKey(16)                             // чужое ГУ: перемотка как была
+        core.onCarlifeHardKey(0)                              // чужое ГУ: keycode 0 игнор
+        assertEquals(listOf(87), peer.keys.toList())
+        peer.keys.clear()
+        core.onHuStatistic("20082114")                        // VW CNS2 Delphi (Дмитрий)
+        core.onCarlifeHardKey(15)                             // звонит: назад (зелёная слева) = принять
+        core.onCarlifeHardKey(16)                             // звонит: вперёд (красная справа) = отклонить
+        call = PhoneCall.ACTIVE
+        core.onCarlifeHardKey(15)                             // разговор: назад глотаем
+        core.onCarlifeHardKey(16)                             // разговор: вперёд = положить трубку
+        call = PhoneCall.IDLE
+        core.onCarlifeHardKey(16)                             // без звонка снова перемотка
+        core.onCarlifeHardKey(0)                              // удержание перемотки = пауза/плей
+        assertEquals(listOf(5, 6, 6, 87, 85), peer.keys.toList())
+        assertTrue(logs.any { it.contains("руль keycode=15 -> AA KEYCODE 5 (звонок RINGING)") })
     }
 
     @Test
@@ -730,6 +811,102 @@ class AaBridgeAudioTest {
     private val SPEECH = AapMessages.CH_AUDIO_SPEECH
     private fun pcm(n: Int, v: Int = 1) = ByteArray(n) { (v + it % 5).toByte() }
     private fun hexs(b: ByteArray) = b.joinToString("") { "%02x".format(it) }
+
+    @Test
+    fun delphiCallPausesMediaAndDropsTail() {
+        // h425: хвост музыки AA при входящем забивал USB на ~20 с - пауза сразу, хвост не шлём до play
+        core.peer = FakePeer()
+        var call = PhoneCall.IDLE
+        core.phoneCallProvider = { call }
+        core.onHuStatistic("20082114")
+        core.onCarlifeStart()
+        core.onMediaStatus(AaMediaStatus(2, "YandexMusic", 10, null, null, null))
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 1)
+        call = PhoneCall.RINGING
+        core.onMediaStatus(AaMediaStatus(3, "YandexMusic", 10, null, null, null))   // плеер встал под рингтон
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 2)                   // хвост буфера AA
+        core.onCarlifeHardKey(0x20)                                                 // ГУ ушло в звонок: второй раз не паузим
+        core.onAudioStop(AapMessages.CH_AUDIO_MEDIA)
+        assertEquals(listOf(0x30001, 0x30006, 0x30003), link.audio.map { it.type })
+        call = PhoneCall.IDLE
+        core.onAudioStart(AapMessages.CH_AUDIO_MEDIA)                               // после звонка AA заиграл снова
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 3)
+        assertEquals(listOf(0x30001, 0x30006, 0x30003, 0x30001, 0x30006), link.audio.map { it.type })
+    }
+
+    @Test
+    fun delphiTelephonyRingingPausesMediaAtOnce() {
+        // h425: телефония сообщает RINGING раньше, чем плеер AA сменит статус и AudioManager.mode станет RINGTONE
+        core.peer = FakePeer()
+        core.onHuStatistic("20082114")
+        core.onCarlifeStart()
+        core.onMediaStatus(AaMediaStatus(2, "YandexMusic", 10, null, null, null))
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 1)
+        core.onPhoneCallState(1)                                                    // RINGING, статус плеера не менялся, mode ещё NORMAL
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 2)                   // хвост буфера AA
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 3)
+        assertEquals(listOf(0x30001, 0x30006, 0x30003), link.audio.map { it.type })
+        assertEquals(1, link.mediaDrops)
+        assertTrue(logs.any { it.contains("BRIDGE звонок RINGING (телефония)") })
+    }
+
+    @Test
+    fun delphiTelephonyIdleReleasesPauseWhenPlayerPlaying() {
+        // звонок сбросили быстро, плеер AA не успел встать и события play не будет: паузу снимает конец звонка
+        core.peer = FakePeer()
+        core.onHuStatistic("20082114")
+        core.onCarlifeStart()
+        core.onMediaStatus(AaMediaStatus(2, "YandexMusic", 10, null, null, null))
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 1)
+        core.onPhoneCallState(1)
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 2)
+        core.onPhoneCallState(0)                                                    // IDLE, плеер всё это время playing
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 3)
+        assertEquals(listOf(0x30001, 0x30006, 0x30003, 0x30001, 0x30006), link.audio.map { it.type })
+        assertTrue(logs.any { it.contains("BRIDGE звонок закончен, плеер AA играет") })
+    }
+
+    @Test
+    fun delphiTelephonyIdleKeepsPauseWhenPlayerStopped() {
+        core.peer = FakePeer()
+        core.onHuStatistic("20082114")
+        core.onCarlifeStart()
+        core.onMediaStatus(AaMediaStatus(2, "YandexMusic", 10, null, null, null))
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 1)
+        core.onPhoneCallState(1)
+        core.onMediaStatus(AaMediaStatus(3, "YandexMusic", 10, null, null, null))   // плеер встал под рингтон
+        core.onPhoneCallState(0)
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 2)                   // хвост: плеер стоит, пауза держится
+        assertEquals(listOf(0x30001, 0x30006, 0x30003), link.audio.map { it.type })
+        core.onMediaStatus(AaMediaStatus(2, "YandexMusic", 10, null, null, null))   // пользователь снова запустил
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 3)
+        assertEquals(listOf(0x30001, 0x30006, 0x30003, 0x30001, 0x30006), link.audio.map { it.type })
+    }
+
+    @Test
+    fun telephonyRingingDoesNotTouchMediaOnOtherHu() {
+        core.peer = FakePeer()
+        core.onCarlifeStart()
+        core.onMediaStatus(AaMediaStatus(2, "YandexMusic", 10, null, null, null))
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 1)
+        core.onPhoneCallState(1)
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 2)
+        core.onPhoneCallState(0)
+        assertEquals(listOf(0x30001, 0x30006, 0x30006), link.audio.map { it.type })
+        assertEquals(0, link.mediaDrops)
+    }
+
+    @Test
+    fun callDoesNotTouchMediaOnOtherHu() {
+        core.peer = FakePeer()
+        core.phoneCallProvider = { PhoneCall.RINGING }
+        core.onCarlifeStart()
+        core.onMediaStatus(AaMediaStatus(2, "YandexMusic", 10, null, null, null))
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 1)
+        core.onMediaStatus(AaMediaStatus(3, "YandexMusic", 10, null, null, null))
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 2)
+        assertEquals(listOf(0x30001, 0x30006, 0x30006), link.audio.map { it.type })
+    }
 
     @Test
     fun mediaInitThenDataOnMediaChannelWithExactCodesAndBodies() {
@@ -1158,6 +1335,49 @@ class AaBridgeAudioTest {
         core.onVoiceSession(2)
         timers.advance(1000)
         assertTrue("после голоса и VR STOP - снова VR=0 (громкость)", "M4=0" in link.events)
+    }
+
+    @Test
+    fun vwCns2DelphiDelaysFirstTtsInitAfterNaviAndKeepsSpeech() {
+        val l = FakeLink()
+        val c = AaBridgeCore({ m, _ -> logs.add(m) }, clockMs = { timers.now }, audioSchedule = timers::schedule).also { it.attach(l) }
+        c.ttsPrerollProvider = { TtsPreroll.MS0 }
+        c.onHuStatistic("20082114")                                      // h425: первая подсказка сессии молчит
+        c.onCarlifeStart()
+        val a = pcm(2048, 1)
+        val b = pcm(2048, 2)
+        c.onAudioStart(SPEECH)
+        c.onAudioData(SPEECH, a, 1)
+        timers.advance(100)
+        c.onAudioData(SPEECH, b, 2)
+        assertTrue(l.audio.none { it.chan == 4 })                          // NAVI=1 ушёл, INIT ещё нет: речь копится
+        assertTrue("M2=1" in l.events)
+        timers.advance(200)
+        val tts = l.audio.filter { it.chan == 4 }
+        assertEquals(0x40001, tts[0].type)
+        assertArrayEquals(a + b, tts.drop(1).flatMap { it.payload.toList() }.toByteArray())
+        // следующая фраза: NAVI=1 давно держится - без задержки
+        c.onAudioStop(SPEECH)
+        timers.advance(1500)
+        val before = l.audio.size
+        c.onAudioData(SPEECH, a, 3)
+        assertEquals(0x40001, l.audio[before].type)
+    }
+
+    @Test
+    fun vwCns2DelphiShortPhraseStoppedWhileWaitingForInitStillPlays() {
+        val l = FakeLink()
+        val c = AaBridgeCore({ m, _ -> logs.add(m) }, clockMs = { timers.now }, audioSchedule = timers::schedule).also { it.attach(l) }
+        c.ttsPrerollProvider = { TtsPreroll.MS0 }
+        c.onHuStatistic("20082114")
+        c.onCarlifeStart()
+        c.onAudioStart(SPEECH)
+        c.onAudioData(SPEECH, pcm(2048), 1)
+        c.onAudioStop(SPEECH)
+        timers.advance(300)
+        assertEquals(listOf(0x40001, 0x40003, 0x40003), l.audio.filter { it.chan == 4 }.map { it.type })  // Авто на Delphi: по 1024 Б
+        timers.advance(1500)
+        assertEquals(0x40002, l.audio.last { it.chan == 4 }.type)        // STOP после выдачи, с обычной отсрочкой
     }
 
     @Test

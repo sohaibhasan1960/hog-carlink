@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.ColorStateList
+import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Handler
@@ -20,9 +21,11 @@ import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.PopupWindow
 import android.widget.ScrollView
 import android.widget.SeekBar
 import android.widget.TextView
+import android.widget.Toast
 import com.yegorkapomidorka.headswap.AppLocale
 import com.yegorkapomidorka.headswap.AppLog
 import com.yegorkapomidorka.headswap.AppTheme
@@ -33,7 +36,10 @@ import com.yegorkapomidorka.headswap.MainActivity
 import com.yegorkapomidorka.headswap.R
 import com.yegorkapomidorka.headswap.aa.AaDensity
 import com.yegorkapomidorka.headswap.aa.AaPrefs
+import com.yegorkapomidorka.headswap.aa.BridgeMode
 import com.yegorkapomidorka.headswap.aa.CAR_MAKES
+import com.yegorkapomidorka.headswap.aa.CallStateSource
+import com.yegorkapomidorka.headswap.aa.CarPreset
 import com.yegorkapomidorka.headswap.aa.CustomVideoMode
 import com.yegorkapomidorka.headswap.aa.EQ_BAND_MAX
 import com.yegorkapomidorka.headswap.aa.EQ_BAND_MIN
@@ -46,6 +52,10 @@ import com.yegorkapomidorka.headswap.aa.FpsSetting
 import com.yegorkapomidorka.headswap.aa.MicMode
 import com.yegorkapomidorka.headswap.aa.MusicRate
 import com.yegorkapomidorka.headswap.aa.VideoMode
+import com.yegorkapomidorka.headswap.desktop.DesktopAppCatalog
+import com.yegorkapomidorka.headswap.dex.DelegatedDesktopAccess
+import com.yegorkapomidorka.headswap.dex.DesktopPick
+import com.yegorkapomidorka.headswap.dex.DexPrefs
 import com.yegorkapomidorka.headswap.link.car.CarNetwork
 import com.yegorkapomidorka.headswap.link.car.CarPairing
 import com.yegorkapomidorka.headswap.link.car.CarProfile
@@ -73,6 +83,8 @@ fun scaffold(ctx: Context, title: String, onBack: () -> Unit, body: View): Linea
 
 /** Разделы настроек: на главном экране по строке на каждый, внутри — свой экран (SettingsSectionScreen). */
 enum class SettingsSection(val key: String, val titleRes: Int, val iconRes: Int) {
+    /** Режим моста: Android Auto / Headswap Desktop и активация рабочего стола с ПК. */
+    MODE("mode", R.string.bm_title, R.drawable.ic_plug),
     APPEARANCE("appearance", R.string.set_sec_appearance, R.drawable.ic_palette),
     VIDEO("video", R.string.set_video, R.drawable.ic_video),
     SOUND("sound", R.string.set_sec_sound, R.drawable.ic_mic),
@@ -92,8 +104,10 @@ enum class SettingsSection(val key: String, val titleRes: Int, val iconRes: Int)
     SUPPORT("support", R.string.sup_title, R.drawable.ic_report);
 
     companion object {
-        /** Разделы этой сборки: без беты беспровода его нет ни в меню, ни по ключу. */
-        fun shown(): List<SettingsSection> = values().filter { it != WIRELESS || BuildConfig.WIRELESS_BETA }
+        /** Разделы этой сборки: без беты беспровода его нет ни в меню, ни по ключу; без обновлений - их раздела. */
+        fun shown(): List<SettingsSection> = values().filter {
+            (it != WIRELESS || BuildConfig.WIRELESS_BETA) && (it != UPDATES || Updater.ENABLED)
+        }
 
         fun byKey(key: String?): SettingsSection? = shown().firstOrNull { it.key == key }
 
@@ -132,6 +146,13 @@ private val EQ_PRESETS = listOf(
 )
 
 private fun Context.eqPresetName(p: EqPreset): String = getString(EQ_PRESETS.first { it.first == p }.second)
+
+/** Состояние активации рабочего стола с ПК: подпись и цвет. Дёшево (проверка четырёх разрешений), годится для тикера. */
+private fun Context.desktopActivation(): Pair<String, Int> = when (DelegatedDesktopAccess.status(this)) {
+    DelegatedDesktopAccess.Status.READY -> getString(R.string.bm_act_on) to R.color.ok
+    DelegatedDesktopAccess.Status.PERMISSION_LOST -> getString(R.string.bm_act_lost) to R.color.warn
+    DelegatedDesktopAccess.Status.INACTIVE -> getString(R.string.bm_act_off) to R.color.warn
+}
 
 private fun Context.micMissing(aa: AaPrefs): Boolean =
     aa.micMode != MicMode.CAR && checkSelfPermission(Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
@@ -179,6 +200,8 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
             addView(link(R.drawable.ic_check, c.getString(R.string.set_check_ready), null, false) { host.showOnboarding(checklist = true) })
             addView(c.divider())
             addView(link(R.drawable.ic_terminal, c.getString(R.string.set_for_devs), null, true) { host.showDev() })
+            addView(c.divider())
+            addView(link(R.drawable.ic_logo, c.getString(R.string.about_title), c.getString(R.string.about_note), false) { host.showAbout() })
         }
         body.addView(links, lp(MATCH, WRAP))
 
@@ -236,6 +259,14 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
             if (tv.text.toString() != text) tv.text = text
             tv.setTextColor(c.clr(color))
         }
+        val bridgeMode = BridgeMode.effective(aa.bridgeMode, Build.VERSION.SDK_INT)
+        if (bridgeMode == BridgeMode.DESKTOP) {
+            val (act, actColor) = c.desktopActivation()
+            set(SettingsSection.MODE, c.getString(R.string.bm_sum_state, c.getString(R.string.bm_desktop), act), actColor)
+        } else {
+            set(SettingsSection.MODE, c.getString(R.string.bm_aa))
+        }
+
         val lang = c.getString(LANGS.firstOrNull { it.first == AppLocale.get(c) }?.second ?: R.string.lang_system)
         val theme = c.getString(THEMES.firstOrNull { it.first == AppTheme.get(c) }?.second ?: R.string.theme_system)
         set(SettingsSection.APPEARANCE, c.getString(R.string.set_sum_appearance, lang, theme))
@@ -341,6 +372,15 @@ private class Segmented(val ctx: Context, private val labels: List<String>, sp: 
             b.text = if (on) "✓ ${labels[i]}" else labels[i]
         }
     }
+
+    /** Недоступный переключатель затемнён, нажатия не проходят (клик висит на каждой кнопке, не на рамке). */
+    fun setEnabled(on: Boolean) {
+        view.alpha = if (on) 1f else 0.45f
+        for (b in buttons) {
+            b.isEnabled = on
+            b.isClickable = on
+        }
+    }
 }
 
 /** Один раздел настроек (язык и тема, видео, звук, ГУ, обновления). */
@@ -350,11 +390,21 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
     private val themeRows = LinkedHashMap<String, RadioRow>()
     private val micRows = HashMap<MicMode, RadioRow>()
     private val rateRows = LinkedHashMap<MusicRate, RadioRow>()
-    private val modeRows = LinkedHashMap<VideoMode, RadioRow>()
     private var makeValue: TextView? = null
+    private var modeSeg: Segmented? = null
+    private var actHost: LinearLayout? = null
+    private var phoneCardNote: TextView? = null
+    private var phoneActivation: PhoneActivationBlock? = null
     private var transcodeSeg: Segmented? = null
-    private var transcodeNote: TextView? = null
+    private var transcodeDesc: View? = null
+    private var directDesc: View? = null
     private var customResNote: TextView? = null
+    private var resField: LinearLayout? = null
+    private var resValue: TextView? = null
+    private var resRatio: TextView? = null
+    private var resSub: TextView? = null
+    private var resChevron: ImageView? = null
+    private var resPopup: PopupWindow? = null
     private var fpsSeg: Segmented? = null
     private var densityValue: TextView? = null
     private var densitySub: TextView? = null
@@ -383,6 +433,8 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
     private var wlCarWarn: TextView? = null
     private var wlCarForget: View? = null
     private var wlAwaitingCarPermission = false
+    private var callsRow: ToggleRow? = null
+    private var callsAwaitingPermission = false
     private var wlCwLine: TextView? = null
     private var wlCwSsid: EditText? = null
     private var wlCwPass: EditText? = null
@@ -396,6 +448,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
 
     init {
         when (section) {
+            SettingsSection.MODE -> buildMode()
             SettingsSection.APPEARANCE -> buildAppearance()
             SettingsSection.VIDEO -> buildVideo()
             SettingsSection.SOUND -> buildSound()
@@ -410,6 +463,8 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
     }
 
     override fun onShow() {
+        if (section == SettingsSection.MODE) refreshMode()      // активацию могли выполнить, пока экран был закрыт
+        if (section == SettingsSection.VIDEO) refreshVideoMode()      // своё разрешение могли поменять в разделе для разработчиков
         refreshMic()
         refreshEq()
         refreshEqEntry()
@@ -419,7 +474,12 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         if (section == SettingsSection.APPS) maybeShowAppsWarning()
     }
 
+    override fun onHide() {
+        resPopup?.dismiss()
+    }
+
     override fun tick() {
+        if (section == SettingsSection.MODE) refreshMode()
         refreshUpdate()
         refreshWireless()
     }
@@ -430,6 +490,9 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
             cwAwaitingScan = false
             if (WifiScan.granted(ctx)) onCarWifiScan()
         }
+        refreshPhoneCardPermissions()
+        phoneActivation?.onPermissionResult()
+        onCallsPermissionResult()
         if (wlAwaitingPermission) {
             wlAwaitingPermission = false
             val lan = Build.VERSION.SDK_INT < 37 || NetProbe.localNetworkGranted(ctx) == "granted"
@@ -444,7 +507,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
 
     override fun onActivityResultDone() = refreshWireless()
 
-    /** Беспровод (бета): пояснение, старт/стоп, выбор машины для автостарта по Bluetooth, отчёт. */
+    /** Беспровод (бета): пояснение, старт, выбор машины для автостарта по Bluetooth, отчёт. */
     private fun wirelessCard(): View {
         val c = ctx
         val card = c.vbox(8).apply {
@@ -458,8 +521,6 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         // высота кнопок задаётся явно (как на других экранах): pill с WRAP сжимается до высоты текста
         card.addView(c.primaryButton(c.getString(R.string.wl_start), heightDp = 60, sp = 17f).apply { setOnClickListener { onWirelessStart() } },
             lp(MATCH, c.dp(60)).apply { topMargin = c.dp(4) })
-        card.addView(c.outlineButton(c.getString(R.string.wl_stop), heightDp = 56, sp = 16f).apply { setOnClickListener { Actions.stopBridge(c) } },
-            lp(MATCH, c.dp(56)))
         // выбор машины: дальше при её Bluetooth-подключении ожидание по Wi-Fi стартует само
         wlCarLine = c.text("", 15f, 500).also { card.addView(it, lp(MATCH, WRAP).apply { topMargin = c.dp(8) }) }
         card.addView(c.text(c.getString(R.string.wl_car_note), 13f, 400, c.clr(R.color.on2)), lp(MATCH, WRAP))
@@ -674,14 +735,146 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         /** BLUETOOTH_CONNECT перед выбором машины (38 занят диалогом CDM, CarPairing.REQ_CAR_PAIR). */
         const val REQ_CAR_BT = 39
         /** HOG CarLink: геолокация для списка сетей рядом (WifiScan). */
-        const val REQ_WIFI_SCAN = 40
+        const val REQ_WIFI_SCAN = 43      // 40 - READ_PHONE_STATE, 41 - карточка «Телефон», 42 - активация (апстрим 4.0)
+        /** READ_PHONE_STATE при включении «Сообщать ГУ о звонках»; тот же код, что MainActivity.REQ_PHONE_STATE (лог результата). */
+        const val REQ_PHONE_STATE = 40
+        /** Разрешения карточки «Телефон» лаунчера Headswap Desktop. */
+        const val REQ_PHONE_CARD = 41
+        val PHONE_CARD_PERMISSIONS = listOf(
+            Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_CONTACTS,
+            Manifest.permission.CALL_PHONE, Manifest.permission.ANSWER_PHONE_CALLS,
+        )
         /** Проверка Wi-Fi машины из настроек: сколько ждём одобрения и входа, и сколько держим сеть после входа. */
         const val CW_CHECK_TIMEOUT_MS = 60_000L
         const val CW_CHECK_HOLD_MS = 5_000L
+        /** Группы выпадающего списка разрешений; WIDE_836 отдельной строкой нет (это WIDE_976 в passthrough). */
+        val RES_STANDARD = listOf(VideoMode.R800, VideoMode.R1024, VideoMode.R720, VideoMode.R1080)
+        val RES_WIDE = listOf(VideoMode.WIDE, VideoMode.WIDE_MID, VideoMode.WIDE_HD, VideoMode.WIDE_640, VideoMode.WIDE_2_1, VideoMode.WIDE_976)
+        val RES_PORTRAIT = listOf(VideoMode.PORTRAIT_960, VideoMode.PORTRAIT_1152)
+        /** Слова названия машины, которые в списке разрешений не нужны: годы, двигатель, гибрид, рестайлинг. */
+        val CAR_NAME_NOISE = Regex("""(?i)(19|20)\d\d([–-](19|20)?\d\d)?|\d\.\dT|гибрид|hybrid|дорестайл|рестайлинг|restyling|facelift|pre-facelift""")
     }
 
     private fun note(text: String, color: Int = R.color.on2): TextView =
         ctx.text(text, 13f, 400, ctx.clr(color)).also { body.addView(it, lp(WRAP, WRAP).margins(ctx, 8, 2, 8, 0)) }
+
+    // --- режим моста ---
+
+    private fun buildMode() {
+        val c = ctx
+        body.addView(c.sectionTitle(c.getString(R.string.bm_title)))
+        if (!BridgeMode.desktopSupported(Build.VERSION.SDK_INT)) {
+            // ниже Android 13 режим DESKTOP недоступен и трактуется как Android Auto
+            body.addView(c.text(c.getString(R.string.bm_need_13), 16f, 600, c.clr(R.color.warn)), lp(WRAP, WRAP).margins(c, 8, 4, 8, 0))
+            note(c.getString(R.string.bm_aa_note))
+            return
+        }
+        val seg = Segmented(c, listOf(c.getString(R.string.bm_aa), c.getString(R.string.bm_own_launcher)), 15f) { setBridgeMode(BridgeMode.values()[it]) }
+        modeSeg = seg
+        body.addView(seg.view, lp(MATCH, WRAP))
+        actHost = c.vbox(8).also { body.addView(it, lp(MATCH, WRAP)) }
+        refreshMode()
+    }
+
+    private fun setBridgeMode(m: BridgeMode) {
+        if (aa.bridgeMode == m) return
+        aa.bridgeMode = m
+        val running = BridgeService.alive && CarLifeState.running
+        AppLog.i("настройка: режим моста -> ${m.key}" + if (running) ", применится к следующему подключению (текущая сессия не прерывается)" else "")
+        refreshMode()
+    }
+
+    private fun refreshMode() {
+        val c = ctx
+        val seg = modeSeg ?: return
+        val desktop = aa.bridgeMode == BridgeMode.DESKTOP
+        seg.setSelected(if (desktop) 1 else 0)
+        val box = actHost ?: return
+        if (!desktop) {
+            box.visibility = View.GONE
+            return
+        }
+        box.visibility = View.VISIBLE
+        if (box.childCount == 0) buildActivation(box)      // токен создаётся только когда блок впервые понадобился
+        phoneActivation?.refresh()
+    }
+
+    /** Блок раздела «Режим» для своего лаунчера: выбор лаунчера, под ним разрешения карточки «Телефон» (только у Headswap), активация. */
+    private fun buildActivation(box: LinearLayout) {
+        val c = ctx
+        // карточка «Телефон» есть только у нашего лаунчера: журнал вызовов, контакты, звонок и ответ с экрана ГУ
+        val permBox = c.vbox().apply { visibility = View.GONE }
+        buildDesktopLauncher(box) { ownLauncher -> permBox.visibility = if (ownLauncher) View.VISIBLE else View.GONE }
+        permBox.addView(c.tonalButton(c.getString(R.string.l_perm_button)).apply {
+            setOnClickListener { requestPhoneCardPermissions() }
+        }, c.lpDp(MATCH, 52).margins(c, 0, 12, 0, 0))
+        phoneCardNote = c.text(c.getString(R.string.l_perm_summary), 13f, 400, c.clr(R.color.on2))
+            .also { permBox.addView(it, lp(WRAP, WRAP).margins(c, 8, 2, 8, 0)) }
+        box.addView(permBox, lp(MATCH, WRAP))
+        phoneActivation = PhoneActivationBlock(host).also { box.addView(it.view, lp(MATCH, WRAP)) }
+        refreshPhoneCardPermissions()
+    }
+
+    /**
+     * Лаунчер на ГУ: наш Headswap или любой установленный HOME-лаунчер (CarDash, DriveDeck) в окне над нашей панелью
+     * «Назад / Домой / Недавние». Выбор пишется в DexPrefs и применяется к идущему сеансу через showDesktop: наш
+     * LauncherActivity по onNewIntent перечитывает выбор. Список читаем не на главном потоке.
+     */
+    private fun buildDesktopLauncher(box: LinearLayout, onSelected: (ownLauncher: Boolean) -> Unit) {
+        val c = ctx
+        val dex = DexPrefs(c)
+        var options = emptyList<DesktopAppCatalog.Entry>()
+        var loaded = false      // пока список лаунчеров не прочитан, выбранный чужой не считаем пропавшим
+        val rows = LinkedHashMap<String?, RadioRow>()      // ключ - «пакет/класс», null - Headswap
+        fun mark() {
+            val current = DesktopPick.selected(dex.desktopComponent, options)?.key      // лаунчер пропал: показываем Headswap, он и запустится
+            for ((key, row) in rows) row.setSelected(key == current)
+            onSelected(current == null && (loaded || dex.desktopComponent == null))
+        }
+        val list = c.vbox(8)
+        fun add(key: String?, title: String) {
+            val row = RadioRow(c, title, "") {
+                if (dex.desktopComponent == key) return@RadioRow
+                dex.desktopComponent = key
+                AppLog.i("настройка: лаунчер на ГУ -> ${key ?: "Headswap"}")
+                mark()
+                if (BridgeService.alive) BridgeService.requestDesktopHome(c)
+            }
+            rows[key] = row
+            list.addView(row.view, lp(MATCH, WRAP))
+        }
+        add(null, c.getString(R.string.bm_launcher_own))
+        mark()
+        box.addView(c.sectionTitle(c.getString(R.string.bm_launcher_title)))
+        box.addView(list, lp(MATCH, WRAP))
+        Thread({
+            val found = DesktopPick.installed(c)
+            Handler(Looper.getMainLooper()).post {
+                options = found
+                loaded = true
+                for (e in found) add(e.key, e.label)
+                mark()
+            }
+        }, "desktop-launchers").apply { isDaemon = true; start() }
+    }
+
+    private fun missingPhoneCardPermissions(): List<String> = PHONE_CARD_PERMISSIONS.filter {
+        ctx.checkSelfPermission(it) != PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestPhoneCardPermissions() {
+        val ask = missingPhoneCardPermissions()
+        if (ask.isEmpty()) {
+            Toast.makeText(ctx, R.string.l_perm_granted, Toast.LENGTH_SHORT).show()
+            return
+        }
+        host.requestPermissions(ask.toTypedArray(), REQ_PHONE_CARD)
+    }
+
+    private fun refreshPhoneCardPermissions() {
+        val granted = missingPhoneCardPermissions().isEmpty()
+        phoneCardNote?.text = ctx.getString(if (granted) R.string.l_perm_granted else R.string.l_perm_summary)
+    }
 
     // --- язык и тема ---
 
@@ -733,18 +926,22 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
     private fun buildVideo() {
         val c = ctx
         body.addView(c.sectionTitle(c.getString(R.string.set_mode)))
-        val seg = Segmented(c, listOf(c.getString(R.string.set_transcode_title), c.getString(R.string.set_direct_title)), 15f) { setTranscode(it == 0) }
-        transcodeSeg = seg
-        body.addView(seg.view, lp(MATCH, WRAP))
-        transcodeNote = note("")
+        if (BridgeMode.effective(aa.bridgeMode, Build.VERSION.SDK_INT) == BridgeMode.DESKTOP) {
+            // «Свой лаунчер»: телефон кодирует экран один раз и отдаёт ГУ готовый H.264 - выбирать нечего, это и есть проброс.
+            // Настройку AA (aa.transcode) не трогаем: она снова работает при возврате в режим Android Auto.
+            body.addView(Segmented(c, listOf(c.getString(R.string.set_direct_title)), 15f) {}.apply { setSelected(0) }.view, lp(MATCH, WRAP))
+            body.addView(c.text(c.getString(R.string.set_direct_desktop_desc), 13f, 400, c.clr(R.color.on2)).apply { setLineSpacing(0f, 1.4f) },
+                lp(MATCH, WRAP).margins(c, 8, 4, 8, 0))
+        } else {
+            val seg = Segmented(c, listOf(c.getString(R.string.set_transcode_title), c.getString(R.string.set_direct_title)), 15f) { setTranscode(it == 0) }
+            transcodeSeg = seg
+            body.addView(seg.view, lp(MATCH, WRAP))
+            body.addView(modeDescription(), lp(MATCH, WRAP).margins(c, 8, 4, 8, 0))
+        }
 
         body.addView(c.sectionTitle(c.getString(R.string.set_resolution)))
         customResNote = note("").apply { visibility = View.GONE }
-        for (m in VideoMode.values()) {
-            val row = RadioRow(c, c.getString(m.titleRes), c.getString(m.subRes)) { setVideoMode(m) }
-            modeRows[m] = row
-            body.addView(row.view, lp(MATCH, WRAP))
-        }
+        body.addView(resolutionField(), lp(MATCH, WRAP))
         note(c.getString(R.string.set_apply_next))
 
         body.addView(c.sectionTitle(c.getString(R.string.set_aa_density)))
@@ -752,7 +949,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         note(c.getString(R.string.set_aa_density_note))
 
         body.addView(c.sectionTitle(c.getString(R.string.set_fps)))
-        val fps = FpsSetting.values()
+        val fps = FpsSetting.values().filter { it != FpsSetting.FPS60 }
         val fSeg = Segmented(c, fps.map { c.getString(it.titleRes) }, 15f) { setFps(fps[it]) }
         fpsSeg = fSeg
         body.addView(fSeg.view, lp(MATCH, WRAP))
@@ -766,35 +963,226 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
     private fun setTranscode(on: Boolean, save: Boolean = true) {
         if (save) aa.transcode = on
         transcodeSeg?.setSelected(if (on) 0 else 1)
-        transcodeNote?.text = ctx.getString(if (on) R.string.set_transcode_sub else R.string.set_direct_sub)
+        transcodeDesc?.visibility = if (on) View.VISIBLE else View.INVISIBLE
+        directDesc?.visibility = if (on) View.INVISIBLE else View.VISIBLE
         refreshVideoMode()
+        refreshFps()
+    }
+
+    /**
+     * Описание режима под переключателем: суть серым, плюс цветом ok, минус цветом warn. Оба блока лежат друг на друге,
+     * невидимый INVISIBLE: высота всегда по большему, ниже ничего не прыгает при переключении.
+     */
+    private fun modeDescription(): View {
+        val c = ctx
+        fun block(desc: Int, plus: Int, minus: Int) = c.vbox(4).apply {
+            for ((res, color) in listOf(desc to R.color.on2, plus to R.color.ok, minus to R.color.warn)) {
+                addView(c.text(c.getString(res), 13f, 400, c.clr(color)).apply { setLineSpacing(0f, 1.4f) }, lp(MATCH, WRAP))
+            }
+        }
+        val t = block(R.string.set_transcode_desc, R.string.set_transcode_plus, R.string.set_transcode_minus)
+        val d = block(R.string.set_direct_desc, R.string.set_direct_plus, R.string.set_direct_minus)
+        transcodeDesc = t
+        directDesc = d
+        return FrameLayout(c).apply {
+            addView(t, FrameLayout.LayoutParams(MATCH, WRAP))
+            addView(d, FrameLayout.LayoutParams(MATCH, WRAP))
+        }
     }
 
     private fun setVideoMode(m: VideoMode) {
-        if (m.needsTranscode && !aa.transcode) return      // кроп возможен только при перекодировании
+        if (blocked(m)) return      // кроп: перекодирование или SPS-кроп (h529)
         aa.videoMode = m
         refreshVideoMode()
     }
 
-    /** Без перекодирования «широкий» недоступен: радио затемнено, фактический режим 1280×720 (в prefs выбор остаётся). */
+    /** Режим недоступен без перекодирования: в passthrough он схлопнулся бы в 1280×720 (кроп с масштабом SPS-кропом не сделать). */
+    private fun blocked(m: VideoMode): Boolean = m != VideoMode.R720 && m.effective(aa.transcode) == VideoMode.R720
+
+    /** Строка списка, которой показывается режим: WIDE_836 отдельно не показывается, это WIDE_976 в passthrough. */
+    private fun rowOf(m: VideoMode): VideoMode = if (m == VideoMode.WIDE_836) VideoMode.WIDE_976 else m
+
+    /** Разрешение строки: в passthrough WIDE_976 показывает 1920×836; недоступная строка - своё, а не 1280×720. */
+    private fun rowLabel(m: VideoMode): String = (if (blocked(m)) m else m.effective(aa.transcode)).outLabel
+
+    private fun ratioOf(m: VideoMode): String = when (m) {
+        VideoMode.R800 -> "5:3"
+        VideoMode.R1024 -> "17:10"
+        VideoMode.R720, VideoMode.R1080 -> "16:9"
+        VideoMode.WIDE, VideoMode.WIDE_MID, VideoMode.WIDE_HD -> "8:3"
+        VideoMode.WIDE_640 -> "3:1"
+        VideoMode.WIDE_2_1 -> "2:1"
+        VideoMode.WIDE_976, VideoMode.WIDE_836 -> ctx.getString(R.string.set_res_ratio_wide_976)
+        VideoMode.PORTRAIT_960 -> "3:4"
+        VideoMode.PORTRAIT_1152 -> "5:6"
+        VideoMode.ID6, VideoMode.ID6_HD -> "1.86:1"      // HOG CarLink: окно CarLife на VW ID.6
+    }
+
+    /**
+     * Машины из «Мой автомобиль» с этим режимом: «Honda CR-V…, Vezel… · Volkswagen Bora…, Golf…» (бренд - первое слово названия).
+     * Режим по умолчанию (1280×720) стоит у всех машин без особого экрана, их не перечисляем. null = машин нет.
+     */
+    private fun carsFor(m: VideoMode): String? {
+        if (m == VideoMode.DEFAULT) return null
+        val names = CarPreset.values().filter { it.settings.videoMode == m }.map { shortCarName(ctx.getString(it.titleRes)) }
+        if (names.isEmpty()) return null
+        return names.distinct().joinToString(", ")
+    }
+
+    /** Марка и модель без годов, поколений, рестайлов и двигателя: «Honda CR-V, 6 поколение, дорестайл» -> «Honda CR-V». */
+    private fun shortCarName(title: String): String =
+        title.substringBefore(',').substringBefore('(')
+            .split(' ').filter { it.isNotEmpty() && !CAR_NAME_NOISE.matches(it) }
+            .joinToString(" ")
+            .replaceFirst("Volkswagen ", "VW ")
+
+    /** Подпись режима: машины, для которых он задан, иначе короткое описание. */
+    private fun subOf(m: VideoMode): String = carsFor(m) ?: ctx.getString(m.subRes)
+
+    /** Поле «Разрешение видео»: текущее разрешение, пропорция, машины; по нажатию - выпадающий список под полем. */
+    private fun resolutionField(): View {
+        val c = ctx
+        val value = c.text("", 20f, 600)
+        val ratio = c.text("", 12f, 600, c.clr(R.color.on2)).apply {
+            background = c.shape(0, 8, c.clr(R.color.line), 1)
+            pad(c, 6, 2, 6, 2)
+        }
+        val sub = c.text("", 14f, 400, c.clr(R.color.on2)).apply {
+            maxLines = 2
+            ellipsize = TextUtils.TruncateAt.END
+        }
+        val chevron = c.icon(R.drawable.ic_chevron, 20, c.clr(R.color.on2))
+        resValue = value
+        resRatio = ratio
+        resSub = sub
+        resChevron = chevron
+        val field = c.hbox(12).apply {
+            minimumHeight = c.dp(76)
+            pad(c, 16, 12, 14, 12)
+            isClickable = true
+            isFocusable = true
+            contentDescription = c.getString(R.string.set_res_pick)
+            addView(c.vbox(4).apply {
+                addView(c.hbox(8).apply {
+                    addView(value)
+                    addView(ratio)
+                }, lp(WRAP, WRAP))
+                addView(sub, lp(MATCH, WRAP))
+            }, lp(0, WRAP, 1f))
+            addView(chevron)
+            setOnClickListener { showResPopup() }
+        }
+        resField = field
+        setResFieldOpen(false)
+        return field
+    }
+
+    /** Открытый список: рамка pri и шеврон вверх. */
+    private fun setResFieldOpen(open: Boolean) {
+        val c = ctx
+        resField?.background = c.rippleBg(c.shape(c.clr(R.color.surf), 20, if (open) c.clr(R.color.pri) else 0, 1.5f), 20)
+        resChevron?.rotation = if (open) -90f else 90f
+    }
+
+    /** Выпадающий список разрешений под полем, шириной поля; не влезает по высоте - прокрутка. */
+    private fun showResPopup() {
+        val anchor = resField ?: return
+        if (resPopup != null) return
+        val c = ctx
+        val selected = rowOf(aa.videoMode.effective(aa.transcode))
+        val list = c.vbox().apply { pad(c, 0, 4, 0, 8) }
+        for ((titleRes, modes) in listOf(
+            R.string.set_res_group_standard to RES_STANDARD, R.string.set_res_group_wide to RES_WIDE, R.string.set_res_group_portrait to RES_PORTRAIT,
+        )) {
+            list.addView(c.text(c.getString(titleRes).uppercase(), 12f, 600, c.clr(R.color.acc)).apply {
+                letterSpacing = 0.06f
+                pad(c, 16, 12, 16, 6)
+            }, lp(MATCH, WRAP))
+            for (m in modes) list.addView(resRow(m, m == selected), lp(MATCH, WRAP).margins(c, 6, 0, 6, 0))
+        }
+        val content = c.vbox().apply {
+            background = c.shape(c.clr(R.color.surf2), 16)
+            clipToOutline = true
+            addView(ScrollView(c).apply { addView(list) }, lp(MATCH, 0, 1f))
+        }
+        // высота: весь список или место под полем (не меньше 280 dp: тогда PopupWindow сам прокрутит экран к полю)
+        content.measure(View.MeasureSpec.makeMeasureSpec(anchor.width, View.MeasureSpec.EXACTLY), View.MeasureSpec.UNSPECIFIED)
+        val loc = IntArray(2)
+        anchor.getLocationOnScreen(loc)
+        val frame = Rect()
+        anchor.getWindowVisibleDisplayFrame(frame)
+        val gap = c.dp(6)
+        val below = frame.bottom - (loc[1] + anchor.height) - gap - c.dp(8)
+        val height = minOf(content.measuredHeight, maxOf(below, c.dp(280)))
+        val pw = PopupWindow(content, anchor.width, height, true).apply {
+            setBackgroundDrawable(c.shape(c.clr(R.color.surf2), 16))
+            elevation = c.dp(8).toFloat()
+            isOutsideTouchable = true
+            setOnDismissListener {
+                resPopup = null
+                setResFieldOpen(false)
+            }
+        }
+        resPopup = pw
+        setResFieldOpen(true)
+        pw.showAsDropDown(anchor, 0, gap)
+    }
+
+    /** Строка списка: разрешение и пропорция слева, машины или описание справа; недоступная в режиме - затемнена и не нажимается. */
+    private fun resRow(m: VideoMode, selected: Boolean): View {
+        val c = ctx
+        val blocked = blocked(m)
+        val fg = c.clr(if (selected) R.color.onpric else R.color.on)
+        val fg2 = c.clr(if (selected) R.color.onpric else R.color.on2)
+        return c.hbox(12).apply {
+            minimumHeight = c.dp(56)
+            pad(c, 10, 8, 10, 8)
+            background = c.rippleBg(if (selected) c.shape(c.clr(R.color.pric), 12) else null, 12)
+            alpha = if (blocked) 0.45f else 1f
+            isClickable = true
+            // силуэт экрана в пропорции режима, под ним пропорция цифрой
+            val label = rowLabel(m)
+            val (w, h) = label.split('×').map { it.trim().toIntOrNull() ?: 1 }.let { it[0] to it.getOrElse(1) { 1 } }
+            addView(c.vbox(3).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                addView(View(c).apply { background = c.shape(0, 3, fg2, 1.5f) },
+                    LinearLayout.LayoutParams(c.dp(36), c.dp(36f * h / w)))
+                addView(c.text(ratioOf(m), 10f, 400, fg2).apply { gravity = Gravity.CENTER_HORIZONTAL }, lp(MATCH, WRAP))
+            }, LinearLayout.LayoutParams(c.dp(40), WRAP).apply { gravity = Gravity.CENTER_VERTICAL })
+            addView(c.vbox(2).apply {
+                addView(c.text(label, 16f, 600, fg))
+                addView(c.text(if (blocked) c.getString(R.string.set_needs_transcode) else subOf(m), 13f, 400, fg2).apply {
+                    maxLines = 2
+                    ellipsize = TextUtils.TruncateAt.END
+                })
+            }, lp(0, WRAP, 1f))
+            if (selected) addView(c.icon(R.drawable.ic_check, 20, fg))
+            setOnClickListener {
+                if (blocked) return@setOnClickListener
+                resPopup?.dismiss()
+                setVideoMode(m)
+            }
+        }
+    }
+
+    /** Поле показывает режим, который реально применится (без перекодирования недоступный - 1280×720, в prefs выбор остаётся). */
     private fun refreshVideoMode() {
         val shown = aa.videoMode.effective(aa.transcode)
-        // своё разрешение из раздела для разработчиков перекрывает список (без перекодирования оно само уходит в R720)
+        val row = rowOf(shown)
+        // своё разрешение из раздела для разработчиков перекрывает выбор (без перекодирования оно само уходит в R720)
         val custom = aa.videoGeometry.effective(aa.transcode) as? CustomVideoMode
         customResNote?.apply {
             visibility = if (custom != null) View.VISIBLE else View.GONE
             if (custom != null) text = ctx.getString(R.string.set_custom_res_active, custom.outLabel, ctx.getString(R.string.dev_title))
         }
-        for ((m, row) in modeRows) {
-            val blocked = m.needsTranscode && !aa.transcode
-            row.setSelected(m == shown)
-            row.setSub(if (blocked) ctx.getString(R.string.set_needs_transcode) else ctx.getString(m.subRes))
-            row.view.alpha = if (blocked) 0.45f else if (custom != null) 0.6f else 1f
-        }
+        resValue?.text = shown.outLabel
+        resRatio?.text = ratioOf(row)
+        resSub?.text = subOf(row)
+        resField?.alpha = if (custom != null) 0.6f else 1f
         refreshDensity()      // «авто» зависит от режима
     }
 
-    /** «−  значение  +  Авто»: 11 вариантов (авто и 100..280 через 20) не влезают в Segmented, поэтому степпер. */
+    /** «Авто  −  значение  +»: 11 вариантов (авто и 100..280 через 20) не влезают в Segmented, поэтому степпер. */
     private fun densityCard(): View {
         val c = ctx
         fun stepButton(label: String, desc: String, up: Boolean) = c.text(label, 24f, 500, c.clr(R.color.acc)).apply {
@@ -822,13 +1210,14 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         val row = c.hbox(10).apply {
             background = c.shape(c.clr(R.color.surf), 20)
             pad(c, 12, 10, 12, 10)
+            addView(auto, c.lpDp(WRAP, 44))
             addView(minus, c.lpDp(c.dp(48), 48))
             addView(c.vbox(2).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
                 addView(value, lp(MATCH, WRAP))
                 addView(sub, lp(MATCH, WRAP))
             }, lp(0, WRAP, 1f))
             addView(plus, c.lpDp(c.dp(48), 48))
-            addView(auto, c.lpDp(WRAP, 44))
         }
         refreshDensity()
         return row
@@ -867,9 +1256,12 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         refreshFps()
     }
 
+    /** В прямом пробросе частоту задаёт AA: переключатель затемнён и не нажимается, выбор в prefs остаётся. */
     private fun refreshFps() {
-        fpsSeg?.setSelected(FpsSetting.values().indexOf(aa.fpsSetting))
-        fpsNote?.text = ctx.getString(aa.fpsSetting.subRes)
+        val direct = !aa.transcode
+        fpsSeg?.setSelected(FpsSetting.values().filter { it != FpsSetting.FPS60 }.indexOf(aa.fpsSetting).coerceAtLeast(0))
+        fpsSeg?.setEnabled(!direct)
+        fpsNote?.text = ctx.getString(if (direct) R.string.set_fps_direct else aa.fpsSetting.subRes)
     }
 
     // --- звук и микрофон ---
@@ -900,6 +1292,31 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         }
         micNote = note("", R.color.warn)
         refreshMic()
+
+        callsRow = ToggleRow(c, c.getString(R.string.set_calls_title), c.getString(R.string.set_calls_sub), aa.callsToHu) { onCallsToggle(it) }
+        body.addView(callsRow!!.view, lp(MATCH, WRAP).margins(c, 0, 12, 0, 0))
+    }
+
+    /** Включение просит READ_PHONE_STATE (API 31+); результат - в onPermissionResult. */
+    private fun onCallsToggle(on: Boolean) {
+        aa.callsToHu = on
+        if (!on || callsPermissionGranted()) return
+        callsAwaitingPermission = true
+        host.requestPermissions(arrayOf(Manifest.permission.READ_PHONE_STATE), REQ_PHONE_STATE)
+    }
+
+    private fun callsPermissionGranted() =
+        Build.VERSION.SDK_INT < CallStateSource.PERMISSION_SDK ||
+            ctx.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED
+
+    /** Отказ в «Телефон»: флажок возвращаем в выкл. */
+    private fun onCallsPermissionResult() {
+        if (!callsAwaitingPermission) return
+        callsAwaitingPermission = false
+        if (callsPermissionGranted()) return
+        AppLog.i("звонки: READ_PHONE_STATE отказано, флажок «Сообщать ГУ о звонках» выключен")
+        aa.callsToHu = false
+        callsRow?.setChecked(false)
     }
 
     /** Строка «Эквалайзер · пресет ›» под «Звук по USB»: открывает экран EQ; без звука по USB затемнена. */

@@ -71,6 +71,9 @@ class UpdatePrefs(ctx: Context) {
  * Состояние для экранов - поля [step], [progress], [error] (экраны опрашивают их в tick).
  */
 object Updater {
+    /** HOG CarLink: обновление из своих релизов включено (UpdateLogic.REPO); у апстрима 4.0 выключено. */
+    const val ENABLED = UpdateLogic.ENABLED
+
     enum class Step { IDLE, CHECKING, DOWNLOADING, INSTALLING }
 
     @Volatile
