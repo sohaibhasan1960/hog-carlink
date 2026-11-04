@@ -243,6 +243,9 @@ class MainActivity : Activity() {
     /** HOG CarLink: время намаза, азан, икама, азкары. */
     fun showPrayer() = push("prayer", com.yegorkapomidorka.headswap.ui.PrayerScreen(this))
 
+    /** HOG CarLink: OBD-адаптер ELM327 (KONNWEI KW906). */
+    fun showObd() = push("obd", com.yegorkapomidorka.headswap.ui.ObdScreen(this))
+
     /** HOG CarLink: «Приложения для магнитолы» с главного экрана (там же установка AABrowser / Fermata). */
     fun showCarApps() = showSettingsSection(SettingsSection.APPS)
 
@@ -267,6 +270,7 @@ class MainActivity : Activity() {
                 "diag" -> showDiag()
                 "about" -> showAbout()
                 "prayer" -> showPrayer()
+                "obd" -> showObd()
                 "onboarding" -> showOnboarding()
                 "onboarding_all" -> showOnboarding(rerun = true)
                 "checklist" -> showOnboarding(checklist = true)

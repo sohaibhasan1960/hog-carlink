@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: OBD-адаптер ELM327 (obd/, ui/ObdScreen) -->
+    <string name="obd_title">OBD adapter</string>
+    <string name="obd_sub">KONNWEI KW906 and other ELM327</string>
+    <string name="obd_lead">Plug the adapter into the car OBD port, pair it in the phone Bluetooth settings (name KONNWEI, PIN 1234 or 0000), then pick it below.</string>
+    <string name="obd_not_connected">Not connected</string>
+    <string name="obd_devices">Paired devices</string>
+    <string name="obd_pair">Open Bluetooth settings</string>
+    <string name="obd_live">Live values</string>
+    <string name="obd_read_codes">Read fault codes</string>
+    <string name="obd_meb_soc">Battery charge (VW, beta)</string>
+    <string name="obd_log">Adapter log</string>
+    <string name="obd_note">Electric cars answer only some standard values. The VW battery charge request is experimental and not yet checked on the ID.6.</string>
+    <string name="obd_no_devices">No paired devices. Pair the adapter in Bluetooth settings first.</string>
+    <string name="obd_connecting">Connecting to %1$s…</string>
+    <string name="obd_connected">Connected: %1$s</string>
+    <string name="obd_failed">No connection. Check that the car is on and the adapter is plugged in.</string>
+    <string name="obd_na">n/a</string>
+    <string name="obd_speed">Speed: %1$s km/h</string>
+    <string name="obd_volts">12 V battery: %1$s V</string>
+    <string name="obd_ambient">Outside: %1$s °C</string>
+    <string name="obd_battery">Drive battery: %1$s%%</string>
+    <string name="obd_protocol">Protocol: %1$s</string>
+    <string name="obd_reading">Reading…</string>
+    <string name="obd_no_codes">No fault codes</string>
+    <string name="obd_codes">Fault codes: %1$s</string>
+    <string name="obd_soc">Battery charge: %1$s%%</string>
+    <string name="obd_soc_none">The car did not answer the battery request</string>
+</resources>

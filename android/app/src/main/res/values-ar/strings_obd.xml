@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: OBD-адаптер ELM327 (obd/, ui/ObdScreen) -->
+    <string name="obd_title">محوّل OBD</string>
+    <string name="obd_sub">KONNWEI KW906 وغيره من ELM327</string>
+    <string name="obd_lead">صِل المحوّل بمنفذ OBD في السيارة، واقرنه من إعدادات البلوتوث في الهاتف (الاسم KONNWEI، والرمز 1234 أو 0000)، ثم اختره بالأسفل.</string>
+    <string name="obd_not_connected">غير متصل</string>
+    <string name="obd_devices">الأجهزة المقترنة</string>
+    <string name="obd_pair">فتح إعدادات البلوتوث</string>
+    <string name="obd_live">القراءات المباشرة</string>
+    <string name="obd_read_codes">قراءة أكواد الأعطال</string>
+    <string name="obd_meb_soc">شحن البطارية (VW، تجريبي)</string>
+    <string name="obd_log">سجل المحوّل</string>
+    <string name="obd_note">السيارات الكهربائية لا تجيب إلا عن بعض القراءات القياسية. طلب شحن بطارية VW تجريبي ولم يُجرَّب بعد على ID.6.</string>
+    <string name="obd_no_devices">لا توجد أجهزة مقترنة. اقرن المحوّل أولًا من إعدادات البلوتوث.</string>
+    <string name="obd_connecting">جارٍ الاتصال بـ %1$s…</string>
+    <string name="obd_connected">متصل: %1$s</string>
+    <string name="obd_failed">لا يوجد اتصال. تأكد أن السيارة مشغّلة وأن المحوّل موصول.</string>
+    <string name="obd_na">غير متاح</string>
+    <string name="obd_speed">السرعة: %1$s كم/س</string>
+    <string name="obd_volts">بطارية 12 فولت: %1$s فولت</string>
+    <string name="obd_ambient">الحرارة الخارجية: %1$s °م</string>
+    <string name="obd_battery">بطارية القيادة: %1$s%%</string>
+    <string name="obd_protocol">البروتوكول: %1$s</string>
+    <string name="obd_reading">جارٍ القراءة…</string>
+    <string name="obd_no_codes">لا توجد أكواد أعطال</string>
+    <string name="obd_codes">أكواد الأعطال: %1$s</string>
+    <string name="obd_soc">شحن البطارية: %1$s%%</string>
+    <string name="obd_soc_none">لم تُجب السيارة على طلب الشحن</string>
+</resources>

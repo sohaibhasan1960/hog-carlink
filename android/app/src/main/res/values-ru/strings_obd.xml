@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- HOG CarLink: OBD-адаптер ELM327 (obd/, ui/ObdScreen) -->
+    <string name="obd_title">OBD-адаптер</string>
+    <string name="obd_sub">KONNWEI KW906 и другие ELM327</string>
+    <string name="obd_lead">Вставьте адаптер в OBD-разъём машины, сопрягите его в настройках Bluetooth телефона (имя KONNWEI, PIN 1234 или 0000) и выберите ниже.</string>
+    <string name="obd_not_connected">Не подключено</string>
+    <string name="obd_devices">Сопряжённые устройства</string>
+    <string name="obd_pair">Открыть настройки Bluetooth</string>
+    <string name="obd_live">Живые значения</string>
+    <string name="obd_read_codes">Прочитать коды ошибок</string>
+    <string name="obd_meb_soc">Заряд батареи (VW, бета)</string>
+    <string name="obd_log">Журнал адаптера</string>
+    <string name="obd_note">Электромобили отвечают только на часть стандартных значений. Запрос заряда батареи VW - опытный, на ID.6 ещё не проверен.</string>
+    <string name="obd_no_devices">Нет сопряжённых устройств. Сначала сопрягите адаптер в настройках Bluetooth.</string>
+    <string name="obd_connecting">Подключаюсь к %1$s…</string>
+    <string name="obd_connected">Подключено: %1$s</string>
+    <string name="obd_failed">Нет связи. Проверьте, что машина включена и адаптер вставлен.</string>
+    <string name="obd_na">нет</string>
+    <string name="obd_speed">Скорость: %1$s км/ч</string>
+    <string name="obd_volts">Батарея 12 В: %1$s В</string>
+    <string name="obd_ambient">Снаружи: %1$s °C</string>
+    <string name="obd_battery">Тяговая батарея: %1$s%%</string>
+    <string name="obd_protocol">Протокол: %1$s</string>
+    <string name="obd_reading">Читаю…</string>
+    <string name="obd_no_codes">Кодов ошибок нет</string>
+    <string name="obd_codes">Коды ошибок: %1$s</string>
+    <string name="obd_soc">Заряд батареи: %1$s%%</string>
+    <string name="obd_soc_none">Машина не ответила на запрос заряда</string>
+</resources>

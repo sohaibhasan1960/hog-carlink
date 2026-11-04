@@ -202,6 +202,10 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
                 if (i > 0) card.addView(c.divider())
                 card.addView(sectionRow(s))
             }
+            if (titleRes == R.string.set_group_car) {
+                card.addView(c.divider())
+                card.addView(link(R.drawable.ic_car, c.getString(R.string.obd_title), c.getString(R.string.obd_sub), false) { host.showObd() })
+            }
             if (titleRes == R.string.set_group_use) {
                 card.addView(c.divider())
                 card.addView(link(R.drawable.ic_moon, c.getString(R.string.pr_title), c.getString(R.string.pr_enable), false) { host.showPrayer() })
