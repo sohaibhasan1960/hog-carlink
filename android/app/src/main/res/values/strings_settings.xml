@@ -123,7 +123,7 @@
     <string name="set_sum_appearance">Language: %1$s · theme: %2$s</string>
     <string name="set_sum_mic">microphone: %1$s</string>
     <string name="set_sum_headunit">Certificate %1$s</string>
-    <string name="set_footer">HOG CarLink %1$s · based on Headswap (GPL-3.0)</string>
+    <string name="set_footer">HOG CarLink %1$s · based on Headswap (GPL-3.0) · QR: ZXing (Apache-2.0)</string>
 
     <!-- Video modes (VideoMode) -->
     <string name="video_r800_title">800×480</string>
@@ -305,4 +305,12 @@
     <string name="capp_downloading">Downloading… %1$d%%</string>
     <string name="capp_installing">Confirm the installation</string>
     <string name="capp_failed">Not installed. Check the internet connection and try again.</string>
+    <!-- HOG CarLink: QR code of the car Wi-Fi (QrScan) -->
+    <string name="wl_cw_qr">Scan the car\'s Wi-Fi QR code</string>
+    <string name="wl_cw_qr_title">Car Wi-Fi QR code</string>
+    <string name="wl_cw_qr_hint">Point the camera at the hotspot QR code on the car screen. The network name and password fill in by themselves.</string>
+    <string name="wl_cw_qr_filled">Network name and password taken from the QR code. Tap Save.</string>
+    <string name="wl_cw_qr_not_wifi">This is not a Wi-Fi code. It contains: %1$s</string>
+    <string name="wl_cw_qr_no_camera">Camera unavailable: %1$s</string>
+    <string name="wl_cw_qr_permission">Allow camera access to scan the code; the camera is used only while scanning.</string>
 </resources>

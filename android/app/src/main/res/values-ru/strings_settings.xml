@@ -123,7 +123,7 @@
     <string name="set_sum_appearance">Язык: %1$s · тема: %2$s</string>
     <string name="set_sum_mic">микрофон: %1$s</string>
     <string name="set_sum_headunit">Сертификат %1$s</string>
-    <string name="set_footer">HOG CarLink %1$s · на основе Headswap (GPL-3.0)</string>
+    <string name="set_footer">HOG CarLink %1$s · на основе Headswap (GPL-3.0) · QR: ZXing (Apache-2.0)</string>
 
     <!-- Video modes (VideoMode) -->
     <string name="video_r800_title">800×480</string>
@@ -302,4 +302,12 @@
     <string name="capp_downloading">Скачиваю… %1$d%%</string>
     <string name="capp_installing">Подтвердите установку</string>
     <string name="capp_failed">Не установлено. Проверьте интернет и повторите.</string>
+    <!-- HOG CarLink: QR-код Wi-Fi машины (QrScan) -->
+    <string name="wl_cw_qr">Сканировать QR-код Wi-Fi машины</string>
+    <string name="wl_cw_qr_title">QR-код Wi-Fi машины</string>
+    <string name="wl_cw_qr_hint">Наведите камеру на QR-код точки доступа на экране машины. Имя сети и пароль заполнятся сами.</string>
+    <string name="wl_cw_qr_filled">Имя сети и пароль взяты из QR-кода. Нажмите «Сохранить».</string>
+    <string name="wl_cw_qr_not_wifi">Это не код Wi-Fi. В нём: %1$s</string>
+    <string name="wl_cw_qr_no_camera">Камера недоступна: %1$s</string>
+    <string name="wl_cw_qr_permission">Разрешите доступ к камере, чтобы считать код; камера нужна только на время сканирования.</string>
 </resources>

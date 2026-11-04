@@ -60,6 +60,7 @@ import com.yegorkapomidorka.headswap.link.car.CarNetwork
 import com.yegorkapomidorka.headswap.link.car.CarPairing
 import com.yegorkapomidorka.headswap.link.car.CarProfile
 import com.yegorkapomidorka.headswap.link.car.CarWifi
+import com.yegorkapomidorka.headswap.link.car.WifiQr
 import com.yegorkapomidorka.headswap.link.car.WifiScan
 import com.yegorkapomidorka.headswap.link.diag.NetProbe
 import com.yegorkapomidorka.headswap.update.UpdatePrefs
@@ -480,6 +481,8 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
 
     override fun onHide() {
         resPopup?.dismiss()
+        qrScan?.dismiss()
+        qrScan = null
     }
 
     override fun tick() {
@@ -498,6 +501,10 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         refreshPhoneCardPermissions()
         phoneActivation?.onPermissionResult()
         onCallsPermissionResult()
+        if (cwAwaitingQr) {
+            cwAwaitingQr = false
+            if (QrScan.granted(ctx)) onCarWifiQr() else showCwResult(ctx.getString(R.string.wl_cw_qr_permission), R.color.warn)
+        }
         if (wlAwaitingPermission) {
             wlAwaitingPermission = false
             val lan = Build.VERSION.SDK_INT < 37 || NetProbe.localNetworkGranted(ctx) == "granted"
@@ -546,6 +553,11 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         // HOG CarLink: имя сети из списка сетей рядом (пароль всё равно вручную: сохранённые сети телефона приложению недоступны)
         card.addView(c.outlineButton(c.getString(R.string.wl_cw_scan), heightDp = 56, sp = 16f).apply { setOnClickListener { onCarWifiScan() } },
             lp(MATCH, c.dp(56)))
+        // HOG CarLink: QR-код Wi-Fi с экрана машины заполняет и имя, и пароль (WifiQr); кнопки нет, если камеры нет
+        if (QrScan.hasCamera(c)) {
+            card.addView(c.outlineButton(c.getString(R.string.wl_cw_qr), heightDp = 56, sp = 16f).apply { setOnClickListener { onCarWifiQr() } },
+                lp(MATCH, c.dp(56)))
+        }
         wlCwResult = c.text("", 13f, 400, c.clr(R.color.on2)).apply { visibility = View.GONE }.also { card.addView(it, lp(MATCH, WRAP)) }
         card.addView(c.outlineButton(c.getString(R.string.wl_cw_save), heightDp = 56, sp = 16f).apply { setOnClickListener { onCarWifiSave() } },
             lp(MATCH, c.dp(56)))
@@ -729,6 +741,38 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         }, WifiScan.SETTLE_MS)
     }
 
+    private var cwAwaitingQr = false
+    private var qrScan: QrScan? = null
+
+    /** HOG CarLink: QR-код Wi-Fi с экрана машины -> имя сети и пароль в поля (сохранение - кнопкой, как и раньше). */
+    private fun onCarWifiQr() {
+        val c = ctx
+        if (!QrScan.granted(c)) {
+            cwAwaitingQr = true
+            host.requestPermissions(arrayOf(QrScan.PERMISSION), REQ_QR_SCAN)
+            return
+        }
+        qrScan?.dismiss()
+        qrScan = QrScan(
+            c, c.getString(R.string.wl_cw_qr_title), c.getString(R.string.wl_cw_qr_hint),
+            onText = { applyCarWifiQr(it) },
+            onError = { showCwResult(c.getString(R.string.wl_cw_qr_no_camera, it), R.color.warn) },
+        ).also { it.show() }
+    }
+
+    private fun applyCarWifiQr(text: String) {
+        val net = WifiQr.parse(text)
+        if (net == null) {
+            AppLog.i("QR Wi-Fi машины: не Wi-Fi код (${text.length} симв.)")
+            showCwResult(ctx.getString(R.string.wl_cw_qr_not_wifi, text.take(QR_SHOW_CHARS)), R.color.warn)
+            return
+        }
+        wlCwSsid?.setText(net.ssid)
+        wlCwPass?.setText(net.pass)
+        AppLog.i("QR Wi-Fi машины: сеть «${net.ssid}», пароль " + if (net.pass.isEmpty()) "пустой" else "${net.pass.length} симв.")
+        showCwResult(ctx.getString(R.string.wl_cw_qr_filled), R.color.ok)
+    }
+
     private fun startWireless() {
         AppLog.i("кнопка «Ждать машину по Wi-Fi»")
         ctx.startForegroundService(Intent(ctx, BridgeService::class.java).setAction(BridgeService.ACTION_WIFI_B))
@@ -749,6 +793,10 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
             Manifest.permission.READ_PHONE_STATE, Manifest.permission.READ_CALL_LOG, Manifest.permission.READ_CONTACTS,
             Manifest.permission.CALL_PHONE, Manifest.permission.ANSWER_PHONE_CALLS,
         )
+        /** HOG CarLink: камера для QR-кода Wi-Fi машины (QrScan). */
+        const val REQ_QR_SCAN = 44
+        /** Сколько символов чужого QR показать, чтобы понять, что это было. */
+        const val QR_SHOW_CHARS = 60
         /** Проверка Wi-Fi машины из настроек: сколько ждём одобрения и входа, и сколько держим сеть после входа. */
         const val CW_CHECK_TIMEOUT_MS = 60_000L
         const val CW_CHECK_HOLD_MS = 5_000L

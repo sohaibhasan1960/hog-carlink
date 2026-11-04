@@ -38,6 +38,7 @@ object About {
         OpenSource("curve25519-elisabeth, ed25519-elisabeth", "0.1.0", "Jack Grigg", "MIT, BSD-3-Clause",
             "https://github.com/cryptography-cafe/curve25519-elisabeth", "MIT-Elisabeth.txt"),
         OpenSource("Bouncy Castle", "1.86", "The Legion of the Bouncy Castle Inc.", "MIT", "https://www.bouncycastle.org", "MIT-BouncyCastle.txt"),
+        OpenSource("ZXing", "3.5.3", "ZXing authors", "Apache-2.0", "https://github.com/zxing/zxing", APACHE),
         OpenSource("Okio", "3.18.2", "Square, Inc.", "Apache-2.0", "https://github.com/square/okio", APACHE),
         OpenSource("AndroidHiddenApiBypass", "6.1", "LSPosed", "Apache-2.0", "https://github.com/LSPosed/AndroidHiddenApiBypass", APACHE),
         OpenSource("Jetpack Compose, AndroidX", "1.9.4", "The Android Open Source Project", "Apache-2.0",

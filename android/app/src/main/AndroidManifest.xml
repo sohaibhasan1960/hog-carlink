@@ -47,6 +47,18 @@
     <uses-permission android:name="android.permission.REQUEST_COMPANION_RUN_IN_BACKGROUND" />
     <!-- HOG CarLink: присутствие машины будит CarPresenceService (CDM), параллельно ACL -->
     <uses-permission android:name="android.permission.REQUEST_OBSERVE_COMPANION_DEVICE_PRESENCE" />
+    <!-- HOG CarLink: QR-code of the car Wi-Fi from the head unit screen (ui/QrScan); asked only when the button is pressed -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-feature
+        android:name="android.hardware.camera.any"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.camera.autofocus"
+        android:required="false" />
+
     <!-- микрофон телефона как запасной источник звука для AA (режим «авто»/«телефон») -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!-- h428: состояние звонка для ГУ (MODULE_STATUS PHONE / TELE_STATE), как Baidu -->
