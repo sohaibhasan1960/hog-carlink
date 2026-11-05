@@ -86,6 +86,8 @@
         <package android:name="me.aap.fermata.auto.dear.google.why" />
         <package android:name="dev.codex.aaparkedyoutube" />
         <package android:name="com.kododake.aabrowser" />
+        <!-- HOG CarLink: «فتح في تدارس» на экране Корана (ui/QuranScreen) -->
+        <package android:name="com.tadarose_quran" />
         <!-- поиск любых приложений для Android Auto: плееры (сервис) и полноэкранные (activity) -->
         <intent>
             <action android:name="android.intent.action.MAIN" />

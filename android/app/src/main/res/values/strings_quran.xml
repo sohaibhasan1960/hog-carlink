@@ -29,4 +29,6 @@
     <string name="pr_audio_note">You can choose a recording on your phone (for example, adhkar recited by Sheikh Mishary Alafasy that you own) instead of the phone voice.</string>
     <string name="pr_voice_male">Male voice</string>
     <string name="pr_voice_female">Female voice</string>
+    <string name="qr_tadarus_open">Open in Tadarus (mushaf and tafsir)</string>
+    <string name="qr_tadarus_get">Get Tadarus (mushaf and tafsir)</string>
 </resources>

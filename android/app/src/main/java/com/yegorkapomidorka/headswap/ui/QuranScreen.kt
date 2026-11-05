@@ -77,6 +77,20 @@ class QuranScreen(host: MainActivity) : Screen(host) {
         topBox.addView(c.tonalButton(c.getString(R.string.pr_stop)).apply {
             setOnClickListener { c.startService(Intent(c, PrayerPlayer::class.java).setAction(PrayerPlayer.ACTION_STOP)) }
         }, lp(MATCH, c.dp(48)))
+        // «Тадарус» (com.tadarose_quran): мусхаф с тафсирами - открыть; нет - страница в магазине
+        val tadarus = c.packageManager.getLaunchIntentForPackage(TADARUS)
+        topBox.addView(c.containerButton(c.getString(if (tadarus != null) R.string.qr_tadarus_open else R.string.qr_tadarus_get)).apply {
+            setOnClickListener {
+                try {
+                    host.startActivity(tadarus ?: Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$TADARUS")))
+                } catch (_: Exception) {
+                    try {
+                        host.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$TADARUS")))
+                    } catch (_: Exception) {
+                    }
+                }
+            }
+        }, lp(MATCH, WRAP))
         topBox.addView(c.text(c.getString(R.string.qr_data_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
     }
 
@@ -151,6 +165,10 @@ class QuranScreen(host: MainActivity) : Screen(host) {
                     .show()
             }
         }, "quran-text").start()
+    }
+
+    private companion object {
+        const val TADARUS = "com.tadarose_quran"
     }
 
     private fun arabicDigits(n: Int): String = n.toString().map { '٠' + (it - '0') }.joinToString("")

@@ -29,4 +29,6 @@
     <string name="pr_audio_note">Можно выбрать запись на телефоне (например, азкары в чтении шейха Мишари Аль-Афаси, которые у вас есть) вместо голоса телефона.</string>
     <string name="pr_voice_male">Мужской голос</string>
     <string name="pr_voice_female">Женский голос</string>
+    <string name="qr_tadarus_open">Открыть в «Тадарус» (мусхаф и тафсир)</string>
+    <string name="qr_tadarus_get">Установить «Тадарус» (мусхаф и тафсир)</string>
 </resources>

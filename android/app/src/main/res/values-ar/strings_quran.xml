@@ -29,4 +29,6 @@
     <string name="pr_audio_note">يمكنك اختيار تسجيل موجود في هاتفك (مثل أذكار بصوت الشيخ مشاري العفاسي تملك نسخة منها) بدل صوت الهاتف.</string>
     <string name="pr_voice_male">صوت رجالي</string>
     <string name="pr_voice_female">صوت نسائي</string>
+    <string name="qr_tadarus_open">فتح في تدارس القرآن (المصحف والتفاسير)</string>
+    <string name="qr_tadarus_get">تثبيت تدارس القرآن (المصحف والتفاسير)</string>
 </resources>
