@@ -133,4 +133,7 @@
     <string name="home_tile_support_sub">Questions and reports</string>
     <string name="home_tile_share_sub">Send the download link</string>
     <string name="home_quick">Quick access</string>
+    <!-- HOG CarLink: CarConnectActivity -->
+    <string name="cc_title">Connecting to the car…</string>
+    <string name="cc_sub">Joining the car Wi-Fi. This closes by itself.</string>
 </resources>

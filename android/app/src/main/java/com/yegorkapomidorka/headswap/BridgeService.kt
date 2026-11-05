@@ -152,6 +152,9 @@ class BridgeService : Service() {
     /** HOG CarLink: повторы запроса сети машины в этом ожидании ([CarNetPolicy.retryDelayMs]). */
     private var carNetRetries = 0
     private var carNetKickAt = 0L
+    /** HOG CarLink: когда ушёл последний запрос сети машины и звали ли уже экран «Подключаюсь» в это появление машины. */
+    private var carNetRequestedAt = 0L
+    private var carNetFgAsked = false
     /** 6/6 получены, сессия вот-вот стартует: запрос сети машины уже не нужен. Только главная нить. */
     private var sixReady = false
     /** Ожидание сознательно прерывается ради нового маяка в сети машины: ветка отказа в startTcp6 это не сдача. Только главная нить. */
@@ -333,6 +336,13 @@ class BridgeService : Service() {
         }
         if (intent?.action == ACTION_WIFI_B_AUTO_OFF) {
             onCarAutoOff()
+            return
+        }
+        // HOG CarLink: экран CarConnectActivity на виду - сейчас запрос сети машины пройдёт
+        if (intent?.action == ACTION_CAR_NET_FG) {
+            WLog.ev(WLog.LINK, "car-net-fg", "waiting" to linkWaiting)
+            carNetKickAt = 0L
+            kickCarNet("foreground")
             return
         }
         if (session != null) {
@@ -528,6 +538,7 @@ class BridgeService : Service() {
             delayMs = CarNetPolicy.delayMs(sinceCarMs(), carBtNear, w.proven),
         )
         if (!ok) return
+        carNetRequestedAt = SystemClock.elapsedRealtime()
         carNet.request(ssid, w.pass, CAR_NET_TIMEOUT_MS, ::onCarNetAvailable, ::onCarNetUnavailable, ::onCarNetLost)
     }
 
@@ -539,6 +550,7 @@ class BridgeService : Service() {
      */
     private fun kickCarNet(why: String) {
         carNetRetries = 0
+        if (why != "foreground") carNetFgAsked = false
         if (!CarWifi(this).isSet || wifiDirectCar || sixReady || session != null) return
         val now = SystemClock.elapsedRealtime()
         if (now - carNetKickAt < CAR_NET_KICK_MS) return
@@ -609,6 +621,7 @@ class BridgeService : Service() {
 
     private fun onCarNetUnavailable(reason: String) {
         if (wifiDirectCar) return
+        maybeAskForeground()
         val retry = CarNetPolicy.retryDelayMs(carNetRetries, reason)
         if (retry != null && wifiBMode && linkWaiting && !stopRequested && session == null && !sixReady) {
             carNetRetries++
@@ -618,6 +631,27 @@ class BridgeService : Service() {
             return
         }
         if (autoMode && !hintShown) showWifiHint()      // сети машины не будет: пусть человек подключит Wi-Fi сам
+    }
+
+    /**
+     * HOG CarLink: Android отклоняет WifiNetworkSpecifier сразу, если приложение не на экране (лог 2026-11-05: машина по
+     * Bluetooth в 11:33, 27 мгновенных отказов, сеть - только в 11:45 после нажатия «Ждать»). Тогда раз за появление машины
+     * открываем маленький экран CarConnectActivity: пока он виден, запрос проходит. Запуск из фона разрешён приложению
+     * с привязкой CompanionDeviceManager (машина выбрана через CDM).
+     */
+    private fun maybeAskForeground() {
+        val instant = SystemClock.elapsedRealtime() - carNetRequestedAt < CAR_NET_INSTANT_MS
+        if (!instant || carNetFgAsked || !wifiBMode || stopRequested || session != null) return
+        val me = android.app.ActivityManager.RunningAppProcessInfo().also { android.app.ActivityManager.getMyMemoryState(it) }
+        if (me.importance <= android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) return
+        carNetFgAsked = true
+        WLog.ev(WLog.LINK, "car-net-fg-ask", "importance" to me.importance)
+        try {
+            startActivity(Intent(this, com.yegorkapomidorka.headswap.ui.CarConnectActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION))
+        } catch (e: Exception) {
+            WLog.ev(WLog.LINK, "car-net-fg-fail", "err" to e.javaClass.simpleName)
+        }
     }
 
     private fun onCarNetLost() {
@@ -1477,6 +1511,10 @@ class BridgeService : Service() {
         const val ACTION_WIFI_B_AUTO = "com.yegorkapomidorka.headswap.WIFI_B_AUTO"
         /** Машина отключилась по Bluetooth (ACL_DISCONNECTED): через debounce снять ожидание. */
         const val ACTION_WIFI_B_AUTO_OFF = "com.yegorkapomidorka.headswap.WIFI_B_AUTO_OFF"
+        /** HOG CarLink: экран «Подключаюсь к машине» на виду - запросить сеть машины сейчас. */
+        const val ACTION_CAR_NET_FG = "com.hog.carlink.CAR_NET_FG"
+        /** Отказ быстрее этого - не «сети нет», а «приложение не на экране». */
+        private const val CAR_NET_INSTANT_MS = 2000L
         private const val CHANNEL = "bridge"
         private const val IDR_SPLICE_MS = 2000L             // период своего IDR в passthrough
         private const val NOTIF_ID = 1

@@ -131,4 +131,7 @@
     <!-- HOG CarLink: недостающие переводы -->
     <string name="home_sub_ready_auto">Заведите машину: телефон подключится к её Wi-Fi, и Android Auto откроется сам.</string>
     <string name="home_stage_wait_car">Жду машину</string>
+    <!-- HOG CarLink: CarConnectActivity -->
+    <string name="cc_title">Подключаюсь к машине…</string>
+    <string name="cc_sub">Вхожу в Wi-Fi машины. Экран закроется сам.</string>
 </resources>

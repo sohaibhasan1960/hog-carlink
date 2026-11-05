@@ -156,6 +156,15 @@
                 android:resource="@xml/accessory_filter" />
         </activity>
 
+        <!-- HOG CarLink: «Подключаюсь к машине…» - пока виден, Android разрешает запрос Wi-Fi машины (BridgeService.maybeAskForeground) -->
+        <activity
+            android:name=".ui.CarConnectActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:noHistory="true"
+            android:taskAffinity="${applicationId}.carconnect"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
         <!-- раздача логов и отчётов через «Поделиться» (только чтение, без AndroidX FileProvider) -->
         <provider
             android:name=".ui.LogProvider"

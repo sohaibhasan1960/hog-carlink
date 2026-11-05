@@ -127,4 +127,7 @@
     <string name="home_tile_support_sub">الأسئلة والتقارير</string>
     <string name="home_tile_share_sub">أرسل رابط التحميل</string>
     <string name="home_quick">وصول سريع</string>
+    <!-- HOG CarLink: CarConnectActivity -->
+    <string name="cc_title">جارٍ الاتصال بالسيارة…</string>
+    <string name="cc_sub">يتصل الهاتف بشبكة واي فاي السيارة. ستُغلق هذه النافذة وحدها.</string>
 </resources>
