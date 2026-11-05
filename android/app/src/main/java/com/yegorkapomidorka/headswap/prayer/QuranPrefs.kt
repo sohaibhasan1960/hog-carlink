@@ -25,4 +25,9 @@ class QuranPrefs(ctx: Context) {
     var continuous: Boolean
         get() = sp.getBoolean("continuous", true)
         set(v) = sp.edit().putBoolean("continuous", v).apply()
+
+    /** Скорость чтения: 1, 1.5 или 2 ([Quran.SPEEDS]); чужое значение - ближайшее допустимое. */
+    var speed: Float
+        get() = Quran.snapSpeed(sp.getFloat("speed", 1f))
+        set(v) = sp.edit().putFloat("speed", Quran.snapSpeed(v)).apply()
 }

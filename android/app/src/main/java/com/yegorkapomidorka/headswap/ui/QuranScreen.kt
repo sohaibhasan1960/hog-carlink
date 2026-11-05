@@ -68,6 +68,17 @@ class QuranScreen(host: MainActivity) : Screen(host) {
         topBox.addView(ToggleRow(c, c.getString(R.string.qr_continuous), c.getString(R.string.qr_continuous_sub), prefs.continuous) {
             prefs.continuous = it
         }.view, lp(MATCH, WRAP))
+        // скорость ×1 / ×1.5 / ×2: та же настройка, что и кнопка на экране машины
+        topBox.addView(c.hbox(12).apply {
+            minimumHeight = c.dp(56)
+            pad(c, 16, 10, 16, 10)
+            gravity = Gravity.CENTER_VERTICAL
+            background = c.rippleBg(c.shape(c.clr(R.color.surf), 16), 16)
+            isClickable = true
+            setOnClickListener { pickSpeed() }
+            addView(c.text(c.getString(R.string.qr_speed), 16f, 500), lp(0, WRAP, 1f))
+            addView(c.text(Quran.speedLabel(prefs.speed), 15f, 600, c.clr(R.color.acc)))
+        }, lp(MATCH, WRAP))
         val last = prefs.lastSurah
         if (last in 1..Quran.SURAHS) {
             val pos = prefs.lastPosMs / 1000
@@ -101,6 +112,18 @@ class QuranScreen(host: MainActivity) : Screen(host) {
         AlertDialog.Builder(host).setTitle(R.string.qr_reciter)
             .setSingleChoiceItems(all.map { reciterName(it) }.toTypedArray(), all.indexOf(prefs.reciter)) { d, i ->
                 prefs.reciter = all[i]
+                d.dismiss()
+                buildTop()
+            }.show()
+    }
+
+    private fun pickSpeed() {
+        val all = Quran.SPEEDS
+        AlertDialog.Builder(host).setTitle(R.string.qr_speed)
+            .setSingleChoiceItems(all.map { Quran.speedLabel(it) }.toTypedArray(), all.indexOfFirst { it == prefs.speed }) { d, i ->
+                prefs.speed = all[i]
+                // играет сура - применить сразу
+                if (PrayerPlayer.quranActive) PrayerPlayer.control(ctx, PrayerPlayer.ACTION_Q_SPEED_SET)
                 d.dismiss()
                 buildTop()
             }.show()

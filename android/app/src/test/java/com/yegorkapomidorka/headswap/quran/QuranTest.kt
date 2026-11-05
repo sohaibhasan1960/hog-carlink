@@ -64,4 +64,25 @@ class QuranTest {
         }
         assertEquals(Quran.Reciter.ALAFASY, all.first())   // чтец по умолчанию первым в списке
     }
+
+    @Test
+    fun speedCycleAndLabels() {
+        assertEquals(1.5f, Quran.nextSpeed(1f))
+        assertEquals(2f, Quran.nextSpeed(1.5f))
+        assertEquals(1f, Quran.nextSpeed(2f))
+        assertEquals(1.5f, Quran.snapSpeed(1.3f))    // старое значение - ближайшее допустимое
+        assertEquals(1f, Quran.snapSpeed(0.5f))
+        assertEquals("×1", Quran.speedLabel(1f))
+        assertEquals("×1.5", Quran.speedLabel(1.5f))
+        assertEquals("×2", Quran.speedLabel(2f))
+    }
+
+    @Test
+    fun backGoesToStartThenPreviousSurah() {
+        assertEquals(18 to 0L, Quran.backTarget(18, 60_000))   // середина суры - в её начало
+        assertEquals(17 to 0L, Quran.backTarget(18, 1_000))    // начало суры - предыдущая
+        assertNull(Quran.backTarget(1, 1_000))                 // перед аль-Фатихой ничего нет
+        assertNull(Quran.prev(1))
+        assertEquals(113, Quran.prev(114))
+    }
 }

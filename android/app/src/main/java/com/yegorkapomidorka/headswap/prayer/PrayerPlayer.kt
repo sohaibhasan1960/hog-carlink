@@ -46,9 +46,14 @@ class PrayerPlayer : Service() {
     private var shortSpeech = false
     /** Играющая сура (QURAN); позиция сохраняется каждые 10 с и при остановке - «Продолжить». */
     private var quranSurah = 0
+    private var quranPrepared = false
+    private var quranPaused = false
+    /** Пауза из-за временной потери фокуса (звонок): по возврату фокуса чтение продолжается само. */
+    private var pausedByFocus = false
     private val savePos = object : Runnable {
         override fun run() {
             saveQuranPos()
+            quranState()
             main.postDelayed(this, 10_000)
         }
     }
@@ -58,6 +63,25 @@ class PrayerPlayer : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
             finish("кнопка Стоп")
+            return START_NOT_STICKY
+        }
+        if (intent?.action in QURAN_ACTIONS) {
+            if (current != What.QURAN || player == null) {
+                // сервис поднят только ради команды, а суры нет - не висеть
+                if (current == null) stopSelf()
+                return START_NOT_STICKY
+            }
+            when (intent!!.action) {
+                ACTION_Q_PAUSE -> pauseQuran(false)
+                ACTION_Q_RESUME -> resumeQuran()
+                ACTION_Q_SEEK -> seekQuran(intent.getLongExtra(EXTRA_POS, 0L))
+                ACTION_Q_SPEED -> setQuranSpeed(com.yegorkapomidorka.headswap.quran.Quran.nextSpeed(QuranPrefs(this).speed))
+                ACTION_Q_SPEED_SET -> setQuranSpeed(QuranPrefs(this).speed)
+                ACTION_Q_NEXT -> com.yegorkapomidorka.headswap.quran.Quran.next(quranSurah)?.let { switchSurah(it, 0) }
+                ACTION_Q_PREV -> com.yegorkapomidorka.headswap.quran.Quran.backTarget(quranSurah, quranPos())?.let { (s, p) ->
+                    if (s == quranSurah) seekQuran(p) else switchSurah(s, p)
+                }
+            }
             return START_NOT_STICKY
         }
         val what = intent?.getStringExtra(EXTRA_WHAT)?.let { w -> What.values().firstOrNull { it.name == w } }
@@ -132,6 +156,10 @@ class PrayerPlayer : Service() {
     private fun playQuran(surah0: Int, startMs: Long) {
         val surah = surah0.coerceIn(1, com.yegorkapomidorka.headswap.quran.Quran.SURAHS)
         quranSurah = surah
+        quranPrepared = false
+        quranPaused = false
+        pausedByFocus = false
+        quranActive = true
         if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) {
             finish("фокус звука не дан (звонок?)")
             return
@@ -141,29 +169,29 @@ class PrayerPlayer : Service() {
         val url = prefs.reciter.url(surah)
         val mp = MediaPlayer()
         player = mp
+        quranState(startMs)
         try {
             mp.setAudioAttributes(attrs(AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH))
             mp.setWakeMode(this, android.os.PowerManager.PARTIAL_WAKE_LOCK)
             mp.setDataSource(url)
             mp.setOnPreparedListener {
                 if (player !== it) return@setOnPreparedListener
+                quranPrepared = true
                 if (startMs > 0) it.seekTo(startMs.toInt())
                 it.start()
+                applySpeed(it)
                 main.removeCallbacks(savePos)
                 main.postDelayed(savePos, 10_000)
                 notify(title, "")
+                quranState()
             }
+            mp.setOnSeekCompleteListener { if (player === it) quranState() }
             mp.setOnCompletionListener {
                 prefs.lastPosMs = 0
                 val next = com.yegorkapomidorka.headswap.quran.Quran.next(surah)
                 if (next != null && prefs.continuous) {
                     // следующая сура тем же сервисом: foreground уже есть, фокус запросится заново
-                    main.removeCallbacks(savePos)
-                    it.release()
-                    player = null
-                    title = quranTitle(next)
-                    startSession()
-                    playQuran(next, 0)
+                    switchSurah(next, 0)
                 } else {
                     finish("сура дочитана")
                 }
@@ -183,7 +211,113 @@ class PrayerPlayer : Service() {
         }
     }
 
-    private fun saveQuranPos() {
+    /** Другая сура тем же сервисом (следующая по окончании, «вперёд»/«назад» в машине). */
+    private fun switchSurah(surah: Int, posMs: Long) {
+        main.removeCallbacks(savePos)
+        saveQuranPos()
+        player?.let {
+            try {
+                it.stop()
+            } catch (_: Exception) {
+            }
+            it.release()
+        }
+        player = null
+        title = quranTitle(surah)
+        playQuran(surah, posMs)
+    }
+
+    private fun quranPos(): Long = try {
+        if (quranPrepared) player?.currentPosition?.toLong() ?: 0L else 0L
+    } catch (_: Exception) {
+        0L
+    }
+
+    /** Состояние суры для машины и шторки: буферизация, игра или пауза, позиция, длительность, скорость. */
+    private fun quranState(posOverride: Long? = null) {
+        if (current != What.QURAN) return
+        val mp = player
+        val state = when {
+            !quranPrepared -> android.media.session.PlaybackState.STATE_BUFFERING
+            quranPaused -> android.media.session.PlaybackState.STATE_PAUSED
+            else -> android.media.session.PlaybackState.STATE_PLAYING
+        }
+        val dur = try {
+            if (quranPrepared) mp?.duration?.toLong()?.takeIf { it > 0 } ?: 0L else 0L
+        } catch (_: Exception) {
+            0L
+        }
+        val r = QuranPrefs(this).reciter
+        val sub = if (resources.configuration.locales[0].language == "ar") r.nameAr else r.nameEn
+        PrayerSession.quran(this, com.yegorkapomidorka.headswap.quran.Quran.name(quranSurah), sub, state,
+            posOverride ?: quranPos(), dur, QuranPrefs(this).speed)
+    }
+
+    private fun applySpeed(mp: MediaPlayer) {
+        val sp = QuranPrefs(this).speed
+        try {
+            // после start(): на паузе смена скорости запустила бы звук
+            if (mp.isPlaying) mp.playbackParams = mp.playbackParams.setSpeed(sp)
+        } catch (e: Exception) {
+            AppLog.i("Коран: скорость $sp не применилась: ${e.message}")
+        }
+    }
+
+    private fun pauseQuran(byFocus: Boolean) {
+        val mp = player ?: return
+        if (!quranPrepared || quranPaused) return
+        try {
+            mp.pause()
+        } catch (_: Exception) {
+        }
+        quranPaused = true
+        pausedByFocus = byFocus
+        saveQuranPos(force = true)
+        main.removeCallbacks(savePos)
+        notify(title, getString(R.string.qr_paused))
+        quranState()
+    }
+
+    private fun resumeQuran() {
+        val mp = player ?: return
+        if (!quranPaused) return
+        if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) return
+        quranPaused = false
+        pausedByFocus = false
+        try {
+            mp.start()
+            applySpeed(mp)
+        } catch (_: Exception) {
+        }
+        main.removeCallbacks(savePos)
+        main.postDelayed(savePos, 10_000)
+        notify(title, "")
+        quranState()
+    }
+
+    private fun seekQuran(posMs: Long) {
+        val mp = player ?: return
+        if (!quranPrepared) return
+        try {
+            mp.seekTo(posMs.coerceAtLeast(0).toInt())
+        } catch (_: Exception) {
+        }
+        quranState(posMs)
+    }
+
+    private fun setQuranSpeed(v: Float) {
+        QuranPrefs(this).speed = v
+        val mp = player
+        if (mp != null && quranPrepared && !quranPaused) applySpeed(mp)
+        AppLog.i("Коран: скорость ${com.yegorkapomidorka.headswap.quran.Quran.speedLabel(v)}")
+        quranState()
+    }
+
+    private fun saveQuranPos(force: Boolean = false) {
+        if (force) {
+            if (current == What.QURAN && quranPrepared) QuranPrefs(this).lastPosMs = quranPos()
+            return
+        }
         val mp = player ?: return
         if (current != What.QURAN) return
         try {
@@ -472,7 +606,14 @@ class PrayerPlayer : Service() {
             .setOnAudioFocusChangeListener { change ->
                 // долгая потеря (звонок, другой плеер по просьбе водителя) - замолкаем
                 // потеря (другой плеер по просьбе водителя) или временная (звонок) - замолкаем
-                if (change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) main.post { finish("фокус звука потерян ($change)") }
+                // Коран при звонке - пауза и продолжение после него
+                main.post {
+                    when {
+                        change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT && current == What.QURAN -> pauseQuran(true)
+                        change == AudioManager.AUDIOFOCUS_GAIN && current == What.QURAN && pausedByFocus -> resumeQuran()
+                        change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> finish("фокус звука потерян ($change)")
+                    }
+                }
             }
             .build()
         focus = req
@@ -492,6 +633,10 @@ class PrayerPlayer : Service() {
             it.release()
         }
         player = null
+        quranActive = false
+        quranPrepared = false
+        quranPaused = false
+        pausedByFocus = false
         humanGen++
         humanQueue = emptyList()
         pendingSpeech = null
@@ -544,6 +689,27 @@ class PrayerPlayer : Service() {
 
     companion object {
         const val ACTION_STOP = "com.hog.carlink.PRAYER_STOP"
+        const val ACTION_Q_PAUSE = "com.hog.carlink.QURAN_PAUSE"
+        const val ACTION_Q_RESUME = "com.hog.carlink.QURAN_RESUME"
+        const val ACTION_Q_SEEK = "com.hog.carlink.QURAN_SEEK"
+        const val ACTION_Q_SPEED = "com.hog.carlink.QURAN_SPEED"
+        const val ACTION_Q_NEXT = "com.hog.carlink.QURAN_NEXT"
+        const val ACTION_Q_PREV = "com.hog.carlink.QURAN_PREV"
+        /** Скорость уже выбрана на телефоне (QuranPrefs.speed) - применить к играющей суре. */
+        const val ACTION_Q_SPEED_SET = "com.hog.carlink.QURAN_SPEED_SET"
+        private val QURAN_ACTIONS = setOf(ACTION_Q_PAUSE, ACTION_Q_RESUME, ACTION_Q_SEEK, ACTION_Q_SPEED, ACTION_Q_NEXT, ACTION_Q_PREV, ACTION_Q_SPEED_SET)
+
+        /** Сура загружена (играет или на паузе): кнопки машины управляют ею, а не азкарами. */
+        @Volatile var quranActive = false
+
+        /** Команда играющей суре; сервис уже работает (foreground), поэтому обычный startService. */
+        fun control(ctx: Context, action: String, posMs: Long = 0) {
+            try {
+                ctx.startService(Intent(ctx, PrayerPlayer::class.java).setAction(action).putExtra(EXTRA_POS, posMs))
+            } catch (e: Exception) {
+                AppLog.i("Коран: команда $action не дошла: ${e.javaClass.simpleName}")
+            }
+        }
         const val EXTRA_WHAT = "what"
         const val EXTRA_PRAYER = "prayer"
         const val EXTRA_TEXT = "text"

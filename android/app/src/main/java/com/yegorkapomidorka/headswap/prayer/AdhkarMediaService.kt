@@ -99,6 +99,8 @@ object PrayerSession {
             }
 
             override fun onPlay() {
+                // сура на паузе - продолжить её
+                if (PrayerPlayer.quranActive) return PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_RESUME)
                 // «Играть» без выбора: азкары по времени суток
                 val morning = java.time.LocalTime.now().hour < 12
                 PrayerPlayer.start(app, if (morning) PrayerPlayer.What.MORNING else PrayerPlayer.What.EVENING)
@@ -117,7 +119,25 @@ object PrayerSession {
             }
 
             override fun onStop() = stopPlayer(app)
-            override fun onPause() = stopPlayer(app)
+
+            // Коран: настоящая пауза (позиция и полоса прокрутки остаются); азан и азкары - стоп, как раньше
+            override fun onPause() = if (PrayerPlayer.quranActive) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_PAUSE) else stopPlayer(app)
+
+            override fun onSeekTo(pos: Long) {
+                if (PrayerPlayer.quranActive) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_SEEK, pos)
+            }
+
+            override fun onSkipToNext() {
+                if (PrayerPlayer.quranActive) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_NEXT)
+            }
+
+            override fun onSkipToPrevious() {
+                if (PrayerPlayer.quranActive) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_PREV)
+            }
+
+            override fun onCustomAction(action: String, extras: Bundle?) {
+                if (action == CA_SPEED && PrayerPlayer.quranActive) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_SPEED)
+            }
         })
         stopped(s)
         session = s
@@ -164,6 +184,7 @@ object PrayerSession {
 
     fun playing(ctx: Context, title: String, text: String) {
         val s = get(ctx)
+        quranMetaKey = ""
         s.setMetadata(MediaMetadata.Builder()
             .putString(MediaMetadata.METADATA_KEY_TITLE, title)
             .putString(MediaMetadata.METADATA_KEY_ARTIST, text.take(120))
@@ -175,7 +196,37 @@ object PrayerSession {
         s.isActive = true
     }
 
+    const val CA_SPEED = "hog.quran.speed"
+    private var quranMetaKey = ""
+
+    /**
+     * Сура: длительность и точная позиция со скоростью - Android Auto рисует полосу прокрутки и сам ведёт её между
+     * обновлениями; перемотка, пауза, следующая/предыдущая сура и кнопка скорости (×1 -> ×1.5 -> ×2).
+     */
+    fun quran(ctx: Context, title: String, sub: String, state: Int, posMs: Long, durMs: Long, speed: Float) {
+        val s = get(ctx)
+        val key = "$title|$sub|$durMs"
+        if (key != quranMetaKey) {
+            quranMetaKey = key
+            s.setMetadata(MediaMetadata.Builder()
+                .putString(MediaMetadata.METADATA_KEY_TITLE, title)
+                .putString(MediaMetadata.METADATA_KEY_ARTIST, sub)
+                .apply { if (durMs > 0) putLong(MediaMetadata.METADATA_KEY_DURATION, durMs) }
+                .build())
+        }
+        val label = ctx.getString(R.string.qr_speed_btn, Quran.speedLabel(speed))
+        s.setPlaybackState(PlaybackState.Builder()
+            .setActions(PlaybackState.ACTION_STOP or PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_PLAY or
+                PlaybackState.ACTION_PLAY_PAUSE or PlaybackState.ACTION_SEEK_TO or PlaybackState.ACTION_SKIP_TO_NEXT or
+                PlaybackState.ACTION_SKIP_TO_PREVIOUS or PlaybackState.ACTION_PLAY_FROM_MEDIA_ID or PlaybackState.ACTION_PLAY_FROM_SEARCH)
+            .addCustomAction(PlaybackState.CustomAction.Builder(CA_SPEED, label, R.drawable.ic_speed).build())
+            .setState(state, posMs, if (state == PlaybackState.STATE_PLAYING) speed else 0f)
+            .build())
+        s.isActive = true
+    }
+
     fun stopped(s: MediaSession) {
+        quranMetaKey = ""
         s.setPlaybackState(PlaybackState.Builder()
             .setActions(PlaybackState.ACTION_PLAY or PlaybackState.ACTION_PLAY_FROM_MEDIA_ID or PlaybackState.ACTION_PLAY_FROM_SEARCH)
             .setState(PlaybackState.STATE_STOPPED, 0, 0f)

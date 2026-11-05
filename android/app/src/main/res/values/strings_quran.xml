@@ -31,4 +31,7 @@
     <string name="pr_voice_female">Female voice</string>
     <string name="qr_tadarus_open">Open in Tadarus (mushaf and tafsir)</string>
     <string name="qr_tadarus_get">Get Tadarus (mushaf and tafsir)</string>
+    <string name="qr_speed">Recitation speed</string>
+    <string name="qr_speed_btn">Speed %1$s</string>
+    <string name="qr_paused">Paused</string>
 </resources>

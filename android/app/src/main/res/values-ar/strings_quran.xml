@@ -31,4 +31,7 @@
     <string name="pr_voice_female">صوت نسائي</string>
     <string name="qr_tadarus_open">فتح في تدارس القرآن (المصحف والتفاسير)</string>
     <string name="qr_tadarus_get">تثبيت تدارس القرآن (المصحف والتفاسير)</string>
+    <string name="qr_speed">سرعة التلاوة</string>
+    <string name="qr_speed_btn">السرعة %1$s</string>
+    <string name="qr_paused">متوقف مؤقتًا</string>
 </resources>

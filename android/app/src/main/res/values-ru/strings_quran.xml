@@ -31,4 +31,7 @@
     <string name="pr_voice_female">Женский голос</string>
     <string name="qr_tadarus_open">Открыть в «Тадарус» (мусхаф и тафсир)</string>
     <string name="qr_tadarus_get">Установить «Тадарус» (мусхаф и тафсир)</string>
+    <string name="qr_speed">Скорость чтения</string>
+    <string name="qr_speed_btn">Скорость %1$s</string>
+    <string name="qr_paused">Пауза</string>
 </resources>

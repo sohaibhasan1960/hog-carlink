@@ -194,4 +194,21 @@ object Quran {
 
     /** Следующая сура для непрерывного чтения; после ан-Наса - конец. */
     fun next(surah: Int): Int? = if (surah < SURAHS) surah + 1 else null
+
+    /** Предыдущая сура; перед аль-Фатихой - нет. */
+    fun prev(surah: Int): Int? = if (surah > 1) surah - 1 else null
+
+    /** Скорости чтения (кнопка в машине перебирает по кругу). */
+    val SPEEDS = floatArrayOf(1f, 1.5f, 2f)
+
+    fun snapSpeed(v: Float): Float = SPEEDS.minByOrNull { kotlin.math.abs(it - v) } ?: 1f
+
+    fun nextSpeed(v: Float): Float = SPEEDS[(SPEEDS.indexOfFirst { it == snapSpeed(v) } + 1) % SPEEDS.size]
+
+    /** «×1.5», «×2», «×1». */
+    fun speedLabel(v: Float): String = "×" + snapSpeed(v).let { if (it % 1f == 0f) it.toInt().toString() else it.toString() }
+
+    /** «Назад»: в начале суры (первые 3 с) - предыдущая сура, иначе - в начало этой. */
+    fun backTarget(surah: Int, posMs: Long): Pair<Int, Long>? =
+        if (posMs > 3_000) surah to 0L else prev(surah)?.let { it to 0L }
 }
