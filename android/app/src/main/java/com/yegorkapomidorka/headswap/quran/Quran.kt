@@ -140,7 +140,34 @@ object Quran {
         MINSHAWI("محمد صديق المنشاوي", "Mohamed Siddiq Al-Minshawi", "https://cdn.mp3quran.net/audio/muhammad-minshawi/r1/"),
         SUDAIS("عبدالرحمن السديس", "Abdulrahman Al-Sudais", "https://cdn.mp3quran.net/audio/abdulrahman-sudais/r1/"),
         SHURAIM("سعود الشريم", "Saud Al-Shuraim", "https://cdn.mp3quran.net/audio/saud-shuraim/r1/"),
-        MUAIQLY("ماهر المعيقلي", "Maher Al-Muaiqly", "https://cdn.mp3quran.net/audio/maher-muaiqly/r1/");
+        MUAIQLY("ماهر المعيقلي", "Maher Al-Muaiqly", "https://cdn.mp3quran.net/audio/maher-muaiqly/r1/"),
+        // hog.26: чтецы из «تدارس القرآن» и самые известные; все - Хафс, муратталь, 114 сур (проверено по API mp3quran 2026-11-05)
+        DOSARI("ياسر الدوسري", "Yasser Al-Dosari", "https://cdn.mp3quran.net/audio/yasser-dosari/r1/"),
+        QATAMI("ناصر القطامي", "Nasser Al-Qatami", "https://cdn.mp3quran.net/audio/nasser-qatami/r1/"),
+        AJMI("أحمد بن علي العجمي", "Ahmad Al-Ajmi", "https://cdn.mp3quran.net/audio/ahmad-ajmi/r1/"),
+        GHAMDI("سعد الغامدي", "Saad Al-Ghamdi", "https://cdn.mp3quran.net/audio/saad-ghamdi/r1/"),
+        SHATRI("أبو بكر الشاطري", "Abu Bakr Al-Shatri", "https://cdn.mp3quran.net/audio/abubakr-shatri/r1/"),
+        FARES("فارس عباد", "Fares Abbad", "https://cdn.mp3quran.net/audio/fares-abbad/r1/"),
+        JUHANI("عبدالله عواد الجهني", "Abdullah Al-Juhani", "https://cdn.mp3quran.net/audio/abdullah-juhani/r1/"),
+        JALIL("خالد الجليل", "Khalid Al-Jalil", "https://cdn.mp3quran.net/audio/khalid-jalil/r1/"),
+        ABKAR("إدريس أبكر", "Idris Abkar", "https://cdn.mp3quran.net/audio/idrees-abkar/r1/"),
+        AYYUB("محمد أيوب", "Muhammad Ayyub", "https://cdn.mp3quran.net/audio/muhammad-ayyub/r1/"),
+        ALI_JABER("علي جابر", "Ali Jaber", "https://cdn.mp3quran.net/audio/ali-jaber/r1/"),
+        JIBREEL("محمد جبريل", "Muhammad Jibreel", "https://cdn.mp3quran.net/audio/muhammad-jibreel/r1/"),
+        RIFAI("هاني الرفاعي", "Hani Ar-Rifai", "https://cdn.mp3quran.net/audio/hani-rifai/r1/"),
+        BASFAR("عبدالله بصفر", "Abdullah Basfar", "https://cdn.mp3quran.net/audio/abdullah-basfar/r1/"),
+        BUKHATIR("صلاح بو خاطر", "Salah Bukhatir", "https://cdn.mp3quran.net/audio/salah-bukhatir/r1/"),
+        TABLAWI("محمد الطبلاوي", "Muhammad Al-Tablawi", "https://cdn.mp3quran.net/audio/muhammad-tablawi/r1/"),
+        NAUINA("أحمد نعينع", "Ahmad Nauina", "https://cdn.mp3quran.net/audio/ahmad-naina/r1/"),
+        AKHDAR("إبراهيم الأخضر", "Ibrahim Al-Akhdar", "https://cdn.mp3quran.net/audio/ibrahim-akhdar/r1/"),
+        QASIM("عبدالمحسن القاسم", "Abdulmohsen Al-Qasim", "https://cdn.mp3quran.net/audio/abdulmohsen-qasim/r1/"),
+        MOHANNA("خالد المهنا", "Khalid Al-Mohanna", "https://cdn.mp3quran.net/audio/khalid-mohanna/r1/"),
+        SHAHEEN("أحمد خليل شاهين", "Ahmad Shaheen", "https://cdn.mp3quran.net/audio/ahmad-shaheen/r1/"),
+        ALAQMI("أكرم العلاقمي", "Akram Al-Alaqmi", "https://cdn.mp3quran.net/audio/akram-alaqmi/r1/"),
+        SAHL("سهل ياسين", "Sahl Yassin", "https://cdn.mp3quran.net/audio/sahl-yassin/r1/"),
+        SOUISSI("علي حجاج السويسي", "Ali Hajjaj Al-Souissi", "https://cdn.mp3quran.net/audio/ali-souissi/r1/"),
+        IMAD_HAFEZ("عماد زهير حافظ", "Emad Hafez", "https://cdn.mp3quran.net/audio/imad-hafez/r1/"),
+        OOSI("عبدالرحمن العوسي", "Abdulrahman Al-Oosi", "https://cdn.mp3quran.net/audio/abdulrahman-oosi/r1/");
 
         fun url(surah: Int): String = server + "%03d.mp3".format(surah)
     }

@@ -51,4 +51,17 @@ class QuranTest {
         assertEquals(3, Quran.next(2))
         assertNull(Quran.next(114))
     }
+
+    @Test
+    fun recitersAreDistinctAndWellFormed() {
+        val all = Quran.Reciter.values()
+        assertEquals(33, all.size)
+        assertEquals(all.size, all.map { it.server }.toSet().size)
+        assertEquals(all.size, all.map { it.nameAr }.toSet().size)
+        for (r in all) {
+            assertTrue(r.name, r.server.startsWith("https://cdn.mp3quran.net/audio/") && r.server.endsWith("/"))
+            assertTrue(r.name, r.nameAr.isNotBlank() && r.nameEn.isNotBlank())
+        }
+        assertEquals(Quran.Reciter.ALAFASY, all.first())   // чтец по умолчанию первым в списке
+    }
 }
