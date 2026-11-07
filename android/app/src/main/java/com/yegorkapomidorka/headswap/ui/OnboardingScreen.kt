@@ -226,7 +226,7 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             lp(MATCH, WRAP).margins(c, 0, 4, 0, 0),
         )
         body.addView(
-            c.modeCard(R.drawable.ic_plug, c.getString(R.string.bm_own_launcher), c.getString(R.string.step_mode_own_body), listOf("Headswap", "CarDash"), launcher) { pickMode(BridgeMode.DESKTOP) },
+            c.modeCard(R.drawable.ic_plug, c.getString(R.string.bm_own_launcher), c.getString(R.string.step_mode_own_body), listOf("HOG CarLink", "CarDash"), launcher) { pickMode(BridgeMode.DESKTOP) },
             lp(MATCH, WRAP),
         )
         if (launcher) {

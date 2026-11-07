@@ -24,8 +24,8 @@
     <string name="home_sub_parked">Сервер ГУ остался работать в фоне. В следующей поездке просто подключите кабель.</string>
     <string name="home_sub_server_down">Android закрыл сервер ГУ. Включите его снова: Android Auto → ⋮ → «Вкл. сервер головного устр-ва».</string>
     <string name="home_sub_ready">Подключите телефон к магнитоле кабелем.</string>
-    <string name="home_sub_unknown">Headswap не смог проверить сервер. В Android Auto → ⋮: если есть «Остановить сервер ГУ» — он запущен, если «Вкл. сервер головного устр-ва» — включите.</string>
-    <string name="home_sub_checking">Пара секунд: Headswap коротко подключается к Android Auto.</string>
+    <string name="home_sub_unknown">HOG CarLink не смог проверить сервер. В Android Auto → ⋮: если есть «Остановить сервер ГУ» — он запущен, если «Вкл. сервер головного устр-ва» — включите.</string>
+    <string name="home_sub_checking">Пара секунд: HOG CarLink коротко подключается к Android Auto.</string>
     <string name="home_sub_parked_unknown">Следующая поездка — подключите кабель. Если Android Auto не появится, проверьте сервер ГУ: Android Auto → ⋮.</string>
 
     <!-- Главный экран: как запустить сервер ГУ (жирное - то, что нажать) -->

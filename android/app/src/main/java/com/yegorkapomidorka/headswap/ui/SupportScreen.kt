@@ -50,6 +50,10 @@ class SupportScreen(host: MainActivity) : Screen(host) {
         name = field(c.getString(R.string.sup_name), multi = false)
         phone = field(c.getString(R.string.sup_phone), multi = false).apply { inputType = InputType.TYPE_CLASS_PHONE }
         problem = field(c.getString(R.string.sup_problem), multi = true)
+        // HOG CarLink: имя и телефон из прошлого запроса (или имя из Google) - не вводить каждый раз
+        val form0 = c.getSharedPreferences(FORM_PREFS, android.content.Context.MODE_PRIVATE)
+        name.setText(form0.getString(K_FORM_NAME, null)?.ifBlank { null } ?: cloud.googleName)
+        phone.setText(form0.getString(K_FORM_PHONE, "") ?: "")
         formBox.addView(name, lp(MATCH, c.dp(52)))
         formBox.addView(phone, lp(MATCH, c.dp(52)))
         formBox.addView(problem, lp(MATCH, c.dp(120)))
@@ -187,6 +191,8 @@ class SupportScreen(host: MainActivity) : Screen(host) {
             }
             main.post {
                 if (ok) {
+                    c.getSharedPreferences(FORM_PREFS, android.content.Context.MODE_PRIVATE).edit()
+                        .putString(K_FORM_NAME, n).putString(K_FORM_PHONE, p).apply()
                     problem.setText("")
                     show(c.getString(R.string.sup_sent), R.color.ok)
                     SupportJob.schedule(c)
@@ -358,5 +364,11 @@ class SupportScreen(host: MainActivity) : Screen(host) {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .show()
+    }
+
+    companion object {
+        private const val FORM_PREFS = "support_form"
+        private const val K_FORM_NAME = "name"
+        private const val K_FORM_PHONE = "phone"
     }
 }

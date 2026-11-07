@@ -308,7 +308,7 @@ object Updater {
     private fun open(url: String, app: Context): HttpURLConnection = (URL(url).openConnection() as HttpURLConnection).apply {
         connectTimeout = 15_000
         readTimeout = 30_000
-        setRequestProperty("User-Agent", "Headswap/${installedVersion(app)} (Android ${Build.VERSION.RELEASE})")
+        setRequestProperty("User-Agent", "HOG-CarLink/${installedVersion(app)} (Android ${Build.VERSION.RELEASE})")
     }
 
     private fun fetchLatest(app: Context): UpdateLogic.Release {

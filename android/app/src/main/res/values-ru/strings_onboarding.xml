@@ -37,7 +37,7 @@
         <item>Нажмите «Разрешить» в окне Android «Разрешить приложению HOG CarLink отправлять уведомления?»</item>
     </string-array>
     <string name="step_notif_hint">В шторке будет видно, как идёт подключение, а Android не выгрузит HOG CarLink, пока экран погашен.</string>
-    <string name="step_notif_hint_launcher">Код для активации Headswap вводится прямо в уведомлении. Ещё в шторке видно, как идёт подключение к магнитоле.</string>
+    <string name="step_notif_hint_launcher">Код для активации HOG CarLink вводится прямо в уведомлении. Ещё в шторке видно, как идёт подключение к магнитоле.</string>
     <string name="step_notif_short">Уведомления</string>
 
     <!-- Пункты 3-4 (автозапуск) показываются только на Xiaomi -->
@@ -116,9 +116,9 @@
     <string name="step_mode_title">Выберите режим</string>
     <string name="step_mode_subtitle">Что показывать на магнитоле. Сменить можно в Настройках в любой момент.</string>
     <string name="step_mode_aa_body">Стандартный AA: карты, музыка и звонки из Android Auto. Работает через его сервер ГУ.</string>
-    <string name="step_mode_own_body">На магнитоле свой рабочий стол Headswap или автолаунчер с телефона.</string>
+    <string name="step_mode_own_body">На магнитоле свой рабочий стол HOG CarLink или автолаунчер с телефона.</string>
     <string name="step_mode_warn_title">Внимание</string>
-    <string name="step_mode_warn_body">Для этого режима понадобятся режим разработчика Android и активация Headswap через «Отладку по Wi-Fi».</string>
+    <string name="step_mode_warn_body">Для этого режима понадобятся режим разработчика Android и активация HOG CarLink через «Отладку по Wi-Fi».</string>
     <string name="step_mode_warn_risk">Это рискованные настройки. Включаете их на свой страх и риск.</string>
     <string name="step_mode_primary">Далее</string>
     <string name="step_mode_short">Режим</string>
@@ -139,8 +139,8 @@
         <item>Включите «Отладку по Wi-Fi» и нажмите «Подключить устройство с кодом сопряжения»</item>
         <item>Введите показанный код в уведомление Headswap</item>
     </string-array>
-    <string name="step_activate_hint">После перезагрузки телефона активация слетает. Headswap сам попросит повторить, это полминуты.</string>
-    <string name="step_activate_short">Активация Headswap</string>
+    <string name="step_activate_hint">После перезагрузки телефона активация слетает. HOG CarLink сам попросит повторить, это полминуты.</string>
+    <string name="step_activate_short">Активация HOG CarLink</string>
     <!-- HOG CarLink: недостающие переводы -->
     <string name="step_background_extra_honor">Настройки запуска приложений</string>
     <string name="step_car_wifi_title">Добавьте Wi-Fi машины</string>

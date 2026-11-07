@@ -24,8 +24,8 @@
     <string name="home_sub_parked">The head unit server kept running in the background. On the next trip, just connect the cable.</string>
     <string name="home_sub_server_down">Android closed the head unit server. Turn it on again: Android Auto → ⋮ → “Start head unit server”.</string>
     <string name="home_sub_ready">Connect the phone to the head unit with a USB cable.</string>
-    <string name="home_sub_unknown">Headswap could not check the server. In Android Auto → ⋮: if you see “Stop head unit server”, it is running; if you see “Start head unit server”, turn it on.</string>
-    <string name="home_sub_checking">A couple of seconds: Headswap briefly connects to Android Auto.</string>
+    <string name="home_sub_unknown">HOG CarLink could not check the server. In Android Auto → ⋮: if you see “Stop head unit server”, it is running; if you see “Start head unit server”, turn it on.</string>
+    <string name="home_sub_checking">A couple of seconds: HOG CarLink briefly connects to Android Auto.</string>
     <string name="home_sub_parked_unknown">Next trip: connect the cable. If Android Auto does not appear, check the head unit server: Android Auto → ⋮.</string>
 
     <!-- Home screen: how to start the head unit server (bold = what to tap) -->

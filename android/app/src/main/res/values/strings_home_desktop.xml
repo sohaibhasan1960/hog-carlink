@@ -12,7 +12,7 @@
     <string name="home_desk_st_needed_again">needed again</string>
     <string name="home_desk_st_error">error</string>
 
-    <string name="home_desk_title_activate">Activate Headswap</string>
+    <string name="home_desk_title_activate">Activate HOG CarLink</string>
     <string name="home_desk_title_error">The home screen did not start</string>
 
     <string name="home_desk_sub_activate">A one-time activation via “Wireless debugging” is needed.</string>

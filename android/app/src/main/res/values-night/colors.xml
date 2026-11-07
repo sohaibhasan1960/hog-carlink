@@ -30,4 +30,7 @@
     <color name="herolabel">#A9CDB8</color>
     <color name="herodot">#6FD59A</color>
     <color name="herowarn">#F2C36B</color>
+    <!-- HOG CarLink: шаблон логотипа - серый (запрос владельца 2026-11-06), буквы белые -->
+    <color name="logo_bg">#5A6168</color>
+    <color name="onlogo">#FFFFFF</color>
 </resources>

@@ -45,7 +45,7 @@ class DesktopInputs(
     /** Размер видео текущей сессии («1280×720»). */
     val videoRes: String = "1280×720",
     /** Подпись выбранного лаунчера на экране машины. */
-    val desktopName: String = "Headswap",
+    val desktopName: String = "HOG CarLink",
     /** Звук идёт по каналу CarLife (захват работает и в нём не тишина); иначе - Bluetooth магнитолы. */
     val usbAudio: Boolean = false,
 )
@@ -167,7 +167,7 @@ object DesktopHomeStatus {
     }.also { recoveringTexts = it }
 
     private fun desktopName(ctx: Context): String {
-        val component = DexPrefs(ctx).desktopComponent ?: return "Headswap"
+        val component = DexPrefs(ctx).desktopComponent ?: return "HOG CarLink"
         labelFor?.let { if (it.first == component) return it.second }
         val pkg = component.substringBefore('/')
         val label = runCatching {

@@ -90,7 +90,7 @@
     <string name="dev_open_failed">تعذّر الفتح: %1$s</string>
 
     <string name="dev_clear_title">مسح السجل؟</string>
-    <string name="dev_clear_message">ستُمسح الأسطر من الشاشة وستُحذف ملفات headswap-*.log القديمة. يبقى الملف الحالي.</string>
+    <string name="dev_clear_message">ستُمسح الأسطر من الشاشة وستُحذف ملفات hogcarlink-*.log القديمة. يبقى الملف الحالي.</string>
     <string name="dev_clear_confirm">مسح</string>
     <string name="dev_clear_cancel">إلغاء</string>
     <plurals name="dev_deleted_old_files">
