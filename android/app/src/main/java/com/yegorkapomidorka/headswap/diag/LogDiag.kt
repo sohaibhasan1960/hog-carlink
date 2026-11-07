@@ -16,8 +16,8 @@ object LogDiag {
 
     class Cond(val fact: String, val op: String, val value: Any?)
 
-    /** Шаг решения в правиле: текст ru/en и необязательное действие-кнопка (open_aa, video, ... см. DiagActions). */
-    class RuleStep(val text: String, val textEn: String?, val action: String?)
+    /** Шаг решения в правиле: текст ru/en/ar и необязательное действие-кнопка (open_aa, video, ... см. DiagActions). */
+    class RuleStep(val text: String, val textEn: String?, val action: String?, val textAr: String? = null)
 
     class Rule(
         val id: String,
@@ -39,6 +39,11 @@ object LogDiag {
         val askEn: String?,
         val fixedIn: String?,
         val suppresses: List<String>,
+        // HOG CarLink: арабские тексты (title_ar, what_ar, advice_ar, ask_ar)
+        val titleAr: String? = null,
+        val whatAr: String? = null,
+        val adviceAr: String? = null,
+        val askAr: String? = null,
     )
 
     class Rules(val latest: String, val markers: Map<String, Regex>, val rules: List<Rule>)
@@ -100,7 +105,7 @@ object LogDiag {
                 whatEn = r.optStr("what_en"),
                 steps = r.optJSONArray("steps")?.let { a ->
                     (0 until a.length()).map { j ->
-                        a.getJSONObject(j).let { s -> RuleStep(s.getString("text"), s.optStr("text_en"), s.optStr("action")) }
+                        a.getJSONObject(j).let { s -> RuleStep(s.getString("text"), s.optStr("text_en"), s.optStr("action"), s.optStr("text_ar")) }
                     }
                 } ?: emptyList(),
                 advice = r.getString("advice"),
@@ -109,6 +114,10 @@ object LogDiag {
                 askEn = r.optStr("ask_en"),
                 fixedIn = r.optStr("fixed_in"),
                 suppresses = strs(r.optJSONArray("suppresses")),
+                titleAr = r.optStr("title_ar"),
+                whatAr = r.optStr("what_ar"),
+                adviceAr = r.optStr("advice_ar"),
+                askAr = r.optStr("ask_ar"),
             )
         }
         return Rules(o.getString("latest"), markers, rules)
@@ -433,38 +442,49 @@ object LogDiag {
         }
     }
 
-    fun diagnose(f: Map<String, Any?>, found: Map<String, Marker>, rules: Rules, en: Boolean = false): List<Cause> {
+    fun diagnose(f: Map<String, Any?>, found: Map<String, Marker>, rules: Rules, en: Boolean = false, ar: Boolean = false): List<Cause> {
         val hits = ArrayList<Pair<Cause, List<String>>>()
         val myVer = vtuple(f["version"] as? String)
+        // язык текста: ar -> en -> ru, чего нет в правиле, берётся из следующего
+        fun pick(ru: String?, enText: String?, arText: String?): String? =
+            (if (ar) arText else null) ?: (if (en || ar) enText else null) ?: ru
         for (r in rules.rules) {
             if (!r.all.all { check(it, f) }) continue
             if (r.any.isNotEmpty() && !r.any.any { check(it, f) }) continue
             if (r.none.any { check(it, f) }) continue
             var score = r.score
             for ((c, add) in r.boost) if (check(c, f)) score += add
-            var advice = (if (en) r.adviceEn else null) ?: r.advice
-            var steps = r.steps.map { Step((if (en) it.textEn else null) ?: it.text, it.action) }
+            var advice = pick(r.advice, r.adviceEn, r.adviceAr)!!
+            var steps = r.steps.map { Step(pick(it.text, it.textEn, it.textAr)!!, it.action) }
             r.fixedIn?.let { fixed ->
                 val fv = vtuple(fixed)
                 if (myVer != null && fv != null && cmpVer(myVer, fv) >= 0) continue
                 // без шагов в правиле сам совет становится вторым шагом, иначе экран показал бы только «обновитесь»
                 if (steps.isEmpty()) steps = listOf(Step(advice, null))
-                steps = listOf(Step(if (en) "Update HOG CarLink to $fixed or newer" else "Обновите HOG CarLink до $fixed или новее", "update")) + steps
-                advice = (if (en) "Update HOG CarLink to $fixed or newer (latest ${rules.latest}): this is fixed there. "
-                else "Обновите HOG CarLink до $fixed или новее (последняя ${rules.latest}): там это исправлено. ") + advice
+                val upd = when {
+                    ar -> "حدّث HOG CarLink إلى $fixed أو أحدث"
+                    en -> "Update HOG CarLink to $fixed or newer"
+                    else -> "Обновите HOG CarLink до $fixed или новее"
+                }
+                steps = listOf(Step(upd, "update")) + steps
+                advice = when {
+                    ar -> "حدّث HOG CarLink إلى $fixed أو أحدث (آخر إصدار ${rules.latest})، ففيه إصلاح هذه المشكلة. "
+                    en -> "Update HOG CarLink to $fixed or newer (latest ${rules.latest}): this is fixed there. "
+                    else -> "Обновите HOG CarLink до $fixed или новее (последняя ${rules.latest}): там это исправлено. "
+                } + advice
             }
             val evidence = r.evidence.mapNotNull { k ->
                 found[k]?.takeIf { it.n > 0 }?.let { e -> "${e.first}" + if (e.n > 1) "  (×${e.n})" else "" }
             }
             val cause = Cause(
                 id = r.id,
-                title = (if (en) r.titleEn else null) ?: r.title,
+                title = pick(r.title, r.titleEn, r.titleAr)!!,
                 category = r.category,
                 score = minOf(score, 100),
                 advice = advice,
-                ask = (if (en) r.askEn else null) ?: r.ask,
+                ask = pick(r.ask, r.askEn, r.askAr),
                 evidence = evidence,
-                what = (if (en) r.whatEn else null) ?: r.what,
+                what = pick(r.what, r.whatEn, r.whatAr),
                 steps = steps,
             )
             hits.add(cause to r.suppresses)
@@ -473,9 +493,9 @@ object LogDiag {
         return hits.map { it.first }.filter { it.id !in suppressed }.sortedByDescending { it.score }
     }
 
-    fun run(logs: List<Pair<String, String>>, env: Env, rules: Rules, en: Boolean = false): Result {
+    fun run(logs: List<Pair<String, String>>, env: Env, rules: Rules, en: Boolean = false, ar: Boolean = false): Result {
         val (f, found) = facts(logs, env, rules)
-        return Result(f, diagnose(f, found, rules, en))
+        return Result(f, diagnose(f, found, rules, en, ar))
     }
 
     /** Причины для показа (без заметок, не ниже порога, не больше SHOW). */

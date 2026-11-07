@@ -106,4 +106,37 @@ class LogDiagTest {
         assertEquals(rules.rules.first { it.id == "aa_server_off" }.titleEn, enTop.title)
         assertTrue("заголовок не английский: ${enTop.title}", enTop.title != ruTop!!.title && enTop.title.none { it in 'а'..'я' || it in 'А'..'Я' })
     }
+
+    @Test
+    fun rulesHaveArabicAndNoOldName() {
+        for (r in rules.rules) {
+            assertTrue("${r.id}: нет title_ar", !r.titleAr.isNullOrEmpty())
+            assertTrue("${r.id}: нет advice_ar", !r.adviceAr.isNullOrEmpty())
+            assertTrue("${r.id}: нет what_ar", !r.whatAr.isNullOrEmpty())
+            assertEquals("${r.id}: ask_ar", r.askEn != null, r.askAr != null)
+            for (s in r.steps) assertTrue("${r.id}: нет text_ar", !s.textAr.isNullOrEmpty())
+            val all = listOfNotNull(r.titleEn, r.whatEn, r.adviceEn, r.askEn, r.titleAr, r.adviceAr) + r.steps.mapNotNull { it.textEn }
+            assertTrue("${r.id}: старое имя Headswap", all.none { it.contains("Headswap") })
+        }
+    }
+
+    @Test
+    fun arabicTexts() {
+        val r = LogDiag.run(
+            listOf("headswap-20261012-090000.log" to File(casesDir, "aa_server_off.log").readText(Charsets.UTF_8)),
+            LogDiag.Env("4.0.0", "Google Pixel 8", "16", 36), rules, en = true, ar = true,
+        )
+        val top = LogDiag.top(r.causes).first()
+        assertEquals("aa_server_off", top.id)
+        assertEquals(rules.rules.first { it.id == "aa_server_off" }.titleAr, top.title)
+        assertTrue(top.steps.all { s -> s.text.any { it in '؀'..'ۿ' } })
+        // обновление тоже по-арабски
+        val old = LogDiag.run(
+            listOf("headswap-20261012-090000.log" to File(casesDir, "vw_pause.log").readText(Charsets.UTF_8)),
+            LogDiag.Env("2.3.4", "Google Pixel 8", "16", 36), rules, en = true, ar = true,
+        )
+        val c = LogDiag.top(old.causes).first { it.id == "vw_pause_eio" }
+        assertEquals("update", c.steps.first().action)
+        assertTrue(c.steps.first().text.startsWith("حدّث"))
+    }
 }

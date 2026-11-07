@@ -39,40 +39,47 @@
       "id": "aoa_not_started",
       "title": "Машина не включила режим CarLife на кабеле",
       "title_en": "The car didn't switch the cable to CarLife mode",
+      "title_ar": "السيارة لم تحوّل الكيبل إلى وضع CarLife",
       "phase": "first_connect",
       "category": "user_setup",
       "score": 70,
       "all": [["n_sessions", "==", 0], ["m.attached", "==", 0], ["m.hu_proto", "==", 0], ["m.wifi_wait", "==", 0]],
       "advice": "Телефон ни разу не увидел машину как CarLife-аксессуар. Если лог сохранён до подключения к машине — подключите кабель, дождитесь ошибки и сразу сохраните лог снова. Если кабель был подключён: 1) Удалите с телефона оригинальный Baidu CarLife и другие CarLife-клиенты, если они стоят: ГУ отдаёт кабель им. 2) На экране магнитолы выберите CarLife (на VW/Skoda: плитку Baidu CarLife, не Android Auto) и примите разрешения, если ГУ их показывает. 3) Проверьте кабель: нужен кабель с передачей данных и порт USB с иконкой телефона, без хабов.",
       "advice_en": "The phone has never seen the car as a CarLife accessory. If the log was saved before you plugged into the car, connect the cable, wait for the error, and save the log again right away. If the cable was already connected: 1) Uninstall the original Baidu CarLife and any other CarLife clients from the phone, if installed: the head unit hands the cable to them. 2) On the head unit screen, pick CarLife (on VW/Skoda: the Baidu CarLife tile, not Android Auto) and accept the permissions if the head unit shows them. 3) Check the cable: it must be a data cable, plugged into a USB port with a phone icon, no hubs.",
+      "advice_ar": "الجوال لم يتعرّف على السيارة كجهاز CarLife إطلاقًا. إن حُفظ السجل قبل توصيل الكيبل بالسيارة، فوصّله وانتظر الخطأ ثم احفظ السجل فورًا. وإن كان الكيبل موصولًا: 1) احذف Baidu CarLife الأصلي وأي تطبيق CarLife آخر من الجوال، لأن الشاشة تسلّم الكيبل لها. 2) اختر CarLife على شاشة السيارة (في فولكس فاجن وسكودا: مربّع Baidu CarLife وليس Android Auto) ووافق على الأذونات إن ظهرت. 3) تأكد أن الكيبل لنقل البيانات، وموصول بمنفذ USB عليه رمز الجوال، بلا موزّع.",
       "what": "Телефон ни разу не увидел машину как CarLife-аксессуар.",
       "what_en": "The phone has never seen the car as a CarLife accessory.",
+      "what_ar": "الجوال لم يتعرّف على السيارة كجهاز CarLife إطلاقًا.",
       "steps": [
-        {"text": "Удалите оригинальный Baidu CarLife и другие CarLife-клиенты: ГУ отдаёт кабель им", "text_en": "Uninstall the original Baidu CarLife and other CarLife clients: they grab the cable"},
-        {"text": "На магнитоле выберите CarLife (на VW/Skoda — плитку Baidu CarLife) и примите разрешения", "text_en": "On the head unit pick CarLife (VW/Skoda: Baidu CarLife tile) and accept permissions"},
-        {"text": "Возьмите кабель с передачей данных, порт USB с иконкой телефона, без хабов", "text_en": "Use a data cable and a USB port with a phone icon, no hubs"},
-        {"text": "Если лог сохранён до подключения к машине — подключите кабель и сохраните лог снова", "text_en": "If the log was saved before connecting to the car, connect and save the log again"}
+        {"text": "Удалите оригинальный Baidu CarLife и другие CarLife-клиенты: ГУ отдаёт кабель им", "text_en": "Uninstall the original Baidu CarLife and other CarLife clients: they grab the cable", "text_ar": "احذف Baidu CarLife الأصلي وأي تطبيق CarLife آخر: فهي تستحوذ على الكيبل"},
+        {"text": "На магнитоле выберите CarLife (на VW/Skoda — плитку Baidu CarLife) и примите разрешения", "text_en": "On the head unit pick CarLife (VW/Skoda: Baidu CarLife tile) and accept permissions", "text_ar": "اختر CarLife على شاشة السيارة (فولكس فاجن وسكودا: مربّع Baidu CarLife) ووافق على الأذونات"},
+        {"text": "Возьмите кабель с передачей данных, порт USB с иконкой телефона, без хабов", "text_en": "Use a data cable and a USB port with a phone icon, no hubs", "text_ar": "استخدم كيبل بيانات ومنفذ USB عليه رمز الجوال، بلا موزّع"},
+        {"text": "Если лог сохранён до подключения к машине — подключите кабель и сохраните лог снова", "text_en": "If the log was saved before connecting to the car, connect and save the log again", "text_ar": "إن حُفظ السجل قبل التوصيل بالسيارة، فوصّل واحفظ السجل مرة أخرى"}
       ],
       "ask": "Установлен ли на телефоне Baidu CarLife? Что показывает магнитола при подключении (фото)?",
-      "ask_en": "Is Baidu CarLife installed on the phone? What does the head unit show when you connect (photo)?"
+      "ask_en": "Is Baidu CarLife installed on the phone? What does the head unit show when you connect (photo)?",
+      "ask_ar": "هل Baidu CarLife مثبّت على الجوال؟ وماذا تُظهر شاشة السيارة عند التوصيل (أرسل صورة)؟"
     },
     {
       "id": "usb_permission_not_granted",
       "title": "Не выдано разрешение на USB-аксессуар",
       "title_en": "USB accessory permission not granted",
+      "title_ar": "لم يُمنح إذن USB",
       "phase": "first_connect",
       "category": "user_setup",
       "score": 75,
       "all": [["m.acc_no_perm", ">=", 1], ["m.attached", "==", 0], ["n_sessions", "==", 0]],
       "evidence": ["acc_no_perm"],
-      "advice": "Телефон видит машину, но Headswap не получил доступ к USB. Отключите и снова подключите кабель и в появившемся окне выберите Headswap и «Всегда»/«ОК». Если окно открывает другое приложение (Baidu CarLife, Android Auto), удалите его или сбросьте у него «Открывать по умолчанию».",
-      "advice_en": "The phone sees the car, but Headswap has no access to USB. Unplug and replug the cable, and in the dialog that appears pick Headswap and \"Always\"/\"OK\". If the dialog opens another app (Baidu CarLife, Android Auto), uninstall it or reset its \"Open by default\" setting.",
-      "what": "Телефон видит машину, но Headswap не получил доступ к USB.",
-      "what_en": "The phone sees the car, but Headswap has no access to USB.",
+      "advice": "Телефон видит машину, но HOG CarLink не получил доступ к USB. Отключите и снова подключите кабель и в появившемся окне выберите HOG CarLink и «Всегда»/«ОК». Если окно открывает другое приложение (Baidu CarLife, Android Auto), удалите его или сбросьте у него «Открывать по умолчанию».",
+      "advice_en": "The phone sees the car, but HOG CarLink has no access to USB. Unplug and replug the cable, and in the dialog that appears pick HOG CarLink and \"Always\"/\"OK\". If the dialog opens another app (Baidu CarLife, Android Auto), uninstall it or reset its \"Open by default\" setting.",
+      "advice_ar": "الجوال يرى السيارة، لكن HOG CarLink لا تملك إذن الوصول إلى USB. افصل الكيبل وأعد وصله، وفي النافذة التي تظهر اختر HOG CarLink ثم «دائمًا» أو «موافق». إن فتحت النافذة تطبيقًا آخر (Baidu CarLife أو Android Auto) فاحذفه أو ألغِ إعداد «الفتح افتراضيًا» له.",
+      "what": "Телефон видит машину, но HOG CarLink не получил доступ к USB.",
+      "what_en": "The phone sees the car, but HOG CarLink has no access to USB.",
+      "what_ar": "الجوال يرى السيارة، لكن HOG CarLink لا تملك إذن الوصول إلى USB.",
       "steps": [
-        {"text": "Отключите и снова подключите кабель", "text_en": "Unplug and replug the cable"},
-        {"text": "В появившемся окне выберите Headswap и «Всегда»/«ОК»", "text_en": "In the dialog that appears pick Headswap and \"Always\"/\"OK\""},
-        {"text": "Если окно открывает другое приложение — удалите его или сбросьте «Открывать по умолчанию»", "text_en": "If another app opens the dialog, uninstall it or reset its \"Open by default\""}
+        {"text": "Отключите и снова подключите кабель", "text_en": "Unplug and replug the cable", "text_ar": "افصل الكيبل وأعد وصله"},
+        {"text": "В появившемся окне выберите HOG CarLink и «Всегда»/«ОК»", "text_en": "In the dialog that appears pick HOG CarLink and \"Always\"/\"OK\"", "text_ar": "في النافذة التي تظهر اختر HOG CarLink ثم «دائمًا» أو «موافق»"},
+        {"text": "Если окно открывает другое приложение — удалите его или сбросьте «Открывать по умолчанию»", "text_en": "If another app opens the dialog, uninstall it or reset its \"Open by default\"", "text_ar": "إن فتح النافذةَ تطبيقٌ آخر فاحذفه أو ألغِ «الفتح افتراضيًا» له"}
       ],
       "suppresses": ["aoa_not_started"]
     },
@@ -80,6 +87,7 @@
       "id": "accessory_not_carlife",
       "title": "Машина подключилась не в режиме CarLife",
       "title_en": "The car connected in a mode other than CarLife",
+      "title_ar": "السيارة اتصلت بوضع غير CarLife",
       "phase": "first_connect",
       "category": "user_setup",
       "score": 80,
@@ -87,11 +95,13 @@
       "evidence": ["acc_not_carlife"],
       "advice": "Магнитола открыла кабель в другом режиме (обычно Android Auto или CarPlay). На экране ГУ выберите Baidu CarLife (на VW/Skoda App-Connect — плитку Baidu CarLife), затем переподключите кабель.",
       "advice_en": "The head unit opened the cable in a different mode (usually Android Auto or CarPlay). On the head unit screen pick Baidu CarLife (on VW/Skoda App-Connect: the Baidu CarLife tile), then replug the cable.",
+      "advice_ar": "شاشة السيارة فتحت الكيبل بوضع آخر (غالبًا Android Auto أو CarPlay). اختر Baidu CarLife على شاشة السيارة (في فولكس فاجن وسكودا: مربّع Baidu CarLife)، ثم أعد وصل الكيبل.",
       "what": "Магнитола открыла кабель в другом режиме, обычно Android Auto или CarPlay.",
       "what_en": "The head unit opened the cable in a different mode, usually Android Auto or CarPlay.",
+      "what_ar": "شاشة السيارة فتحت الكيبل بوضع آخر، غالبًا Android Auto أو CarPlay.",
       "steps": [
-        {"text": "На экране магнитолы выберите Baidu CarLife (на VW/Skoda — плитку Baidu CarLife)", "text_en": "On the head unit screen pick Baidu CarLife (on VW/Skoda: the Baidu CarLife tile)"},
-        {"text": "Переподключите кабель", "text_en": "Replug the cable"}
+        {"text": "На экране магнитолы выберите Baidu CarLife (на VW/Skoda — плитку Baidu CarLife)", "text_en": "On the head unit screen pick Baidu CarLife (on VW/Skoda: the Baidu CarLife tile)", "text_ar": "اختر Baidu CarLife على شاشة السيارة (فولكس فاجن وسكودا: مربّع Baidu CarLife)"},
+        {"text": "Переподключите кабель", "text_en": "Replug the cable", "text_ar": "أعد وصل الكيبل"}
       ],
       "suppresses": ["aoa_not_started"]
     },
@@ -99,6 +109,7 @@
       "id": "open_accessory_failed",
       "title": "Android не открыл USB-аксессуар",
       "title_en": "Android failed to open the USB accessory",
+      "title_ar": "أندرويد لم يستطع فتح اتصال USB",
       "phase": "first_connect",
       "category": "phone_limit",
       "score": 65,
@@ -106,12 +117,14 @@
       "evidence": ["open_acc_fail"],
       "advice": "Аксессуар найден, но система отказала в открытии. Закройте другие автомобильные приложения (Baidu CarLife, Android Auto для машин), переподключите кабель; если повторяется — перезагрузите телефон.",
       "advice_en": "The accessory was found, but the system refused to open it. Close other car apps (Baidu CarLife, Android Auto for cars), replug the cable; if it keeps happening, restart the phone.",
+      "advice_ar": "عُثر على السيارة، لكن النظام رفض فتح الاتصال. أغلق تطبيقات السيارة الأخرى (Baidu CarLife، وAndroid Auto)، وأعد وصل الكيبل، وإن تكرّر فأعد تشغيل الجوال.",
       "what": "Аксессуар найден, но система отказала в его открытии.",
       "what_en": "The accessory was found, but the system refused to open it.",
+      "what_ar": "عُثر على السيارة، لكن النظام رفض فتح الاتصال.",
       "steps": [
-        {"text": "Закройте другие автомобильные приложения (Baidu CarLife, Android Auto для машин)", "text_en": "Close other car apps (Baidu CarLife, Android Auto for cars)"},
-        {"text": "Переподключите кабель", "text_en": "Replug the cable"},
-        {"text": "Если повторяется — перезагрузите телефон", "text_en": "If it keeps happening, restart the phone"}
+        {"text": "Закройте другие автомобильные приложения (Baidu CarLife, Android Auto для машин)", "text_en": "Close other car apps (Baidu CarLife, Android Auto for cars)", "text_ar": "أغلق تطبيقات السيارة الأخرى (Baidu CarLife، وAndroid Auto)"},
+        {"text": "Переподключите кабель", "text_en": "Replug the cable", "text_ar": "أعد وصل الكيبل"},
+        {"text": "Если повторяется — перезагрузите телефон", "text_en": "If it keeps happening, restart the phone", "text_ar": "إن تكرّر فأعد تشغيل الجوال"}
       ],
       "suppresses": ["aoa_not_started"]
     },
@@ -119,6 +132,7 @@
       "id": "hu_silent",
       "title": "Магнитола молчит после подключения",
       "title_en": "The head unit is silent after connecting",
+      "title_ar": "شاشة السيارة صامتة بعد التوصيل",
       "phase": "first_connect",
       "category": "hu_limit",
       "score": 70,
@@ -127,20 +141,24 @@
       "evidence": ["hu_silent"],
       "advice": "Кабель открылся, но ГУ не прислала ни байта. Перезапустите магнитолу (заглушите машину, откройте и закройте дверь, подождите пару минут, либо долгое нажатие на кнопку питания ГУ). Если не помогло — очистите данные Android Auto на телефоне и подключите снова. Проверьте, что на телефоне нет оригинального Baidu CarLife.",
       "advice_en": "The cable opened, but the head unit didn't send a single byte. Restart the head unit (turn off the car, open and close the door, wait a couple of minutes, or long-press the head unit power button). If that doesn't help, clear Android Auto data on the phone and connect again. Make sure the original Baidu CarLife isn't installed on the phone.",
+      "advice_ar": "فُتح الكيبل، لكن شاشة السيارة لم ترسل أي بيانات. أعد تشغيل الشاشة (أطفئ السيارة وافتح الباب وأغلقه وانتظر دقيقتين، أو اضغط زر تشغيل الشاشة مطوّلًا). إن لم يُفِد فامسح بيانات Android Auto على الجوال ووصّل مرة أخرى. وتأكد أن Baidu CarLife الأصلي غير مثبّت على الجوال.",
       "what": "Кабель открылся, но магнитола не прислала ни одного байта.",
       "what_en": "The cable opened, but the head unit didn't send a single byte.",
+      "what_ar": "فُتح الكيبل، لكن شاشة السيارة لم ترسل أي بيانات.",
       "steps": [
-        {"text": "Перезапустите магнитолу: заглушите машину на пару минут или зажмите кнопку питания ГУ", "text_en": "Restart the head unit: turn off the car for a few minutes or long-press its power button"},
-        {"text": "Если не помогло — очистите данные Android Auto на телефоне и подключитесь снова", "text_en": "If that doesn't help, clear Android Auto data on the phone and connect again"},
-        {"text": "Проверьте, что на телефоне нет оригинального Baidu CarLife", "text_en": "Make sure the original Baidu CarLife isn't installed on the phone"}
+        {"text": "Перезапустите магнитолу: заглушите машину на пару минут или зажмите кнопку питания ГУ", "text_en": "Restart the head unit: turn off the car for a few minutes or long-press its power button", "text_ar": "أعد تشغيل شاشة السيارة: أطفئ السيارة بضع دقائق أو اضغط زر تشغيل الشاشة مطوّلًا"},
+        {"text": "Если не помогло — очистите данные Android Auto на телефоне и подключитесь снова", "text_en": "If that doesn't help, clear Android Auto data on the phone and connect again", "text_ar": "إن لم يُفِد فامسح بيانات Android Auto على الجوال ووصّل مرة أخرى"},
+        {"text": "Проверьте, что на телефоне нет оригинального Baidu CarLife", "text_en": "Make sure the original Baidu CarLife isn't installed on the phone", "text_ar": "تأكد أن Baidu CarLife الأصلي غير مثبّت على الجوال"}
       ],
       "ask": "Работал ли раньше на этой машине Baidu CarLife или другой телефон?",
-      "ask_en": "Did Baidu CarLife or another phone ever work on this car before?"
+      "ask_en": "Did Baidu CarLife or another phone ever work on this car before?",
+      "ask_ar": "هل عمل Baidu CarLife أو جوال آخر على هذه السيارة من قبل؟"
     },
     {
       "id": "aa_server_off",
       "title": "Не запущен сервер ГУ Android Auto",
       "title_en": "Android Auto head unit server is not running",
+      "title_ar": "خادم Android Auto لا يعمل",
       "phase": "first_connect",
       "category": "user_setup",
       "score": 85,
@@ -148,39 +166,46 @@
       "evidence": ["aa_refused"],
       "advice": "Машина подключилась, но сервер ГУ в Android Auto не запущен (порт 5277 закрыт). Вероятные причины: сервер ещё ни разу не включали; Android закрыл Android Auto в фоне из-за экономии батареи; Android Auto обновился или телефон перезагружался. Включите сервер вручную: откройте Android Auto → ⋮ вверху справа → «Вкл. сервер головного устр-ва», затем переподключите кабель. Если в меню нет этого пункта — включите режим разработчика: 10 раз нажмите на строку «Версия» в настройках Android Auto.",
       "advice_en": "The car connected, but the head unit server in Android Auto is not running (port 5277 is closed). Likely causes: the server has never been started; Android closed Android Auto in the background to save battery; Android Auto was updated or the phone was restarted. Start the server manually: open Android Auto → ⋮ at the top right → \"Start head unit server\", then replug the cable. If the menu has no such item, enable developer mode: tap the \"Version\" row in Android Auto settings 10 times.",
+      "advice_ar": "السيارة اتصلت، لكن خادم الوحدة الرئيسية في Android Auto لا يعمل (المنفذ 5277 مغلق). الأسباب المحتملة: لم يُشغَّل الخادم من قبل، أو أغلق أندرويد تطبيق Android Auto في الخلفية لتوفير البطارية، أو تحدّث Android Auto أو أُعيد تشغيل الجوال. شغّل الخادم يدويًا: افتح Android Auto ← ⋮ أعلى الشاشة ← «بدء خادم الوحدة الرئيسية»، ثم أعد وصل الكيبل. وإن لم تجد هذا الخيار ففعّل وضع المطوّر: اضغط على سطر «الإصدار» في إعدادات Android Auto 10 مرات.",
       "what": "Машина подключилась, но сервер ГУ в Android Auto не запущен.",
       "what_en": "The car connected, but the head unit server in Android Auto is not running.",
+      "what_ar": "السيارة اتصلت، لكن خادم الوحدة الرئيسية في Android Auto لا يعمل.",
       "steps": [
-        {"text": "Откройте Android Auto", "text_en": "Open Android Auto", "action": "open_aa"},
-        {"text": "Нажмите ⋮ вверху справа и выберите «Вкл. сервер головного устр-ва»", "text_en": "Tap ⋮ at the top right and choose \"Start head unit server\""},
-        {"text": "Переподключите кабель", "text_en": "Replug the cable"},
-        {"text": "Нет такого пункта — 10 раз нажмите на строку «Версия» в настройках Android Auto", "text_en": "No such item - tap the \"Version\" row in Android Auto settings 10 times"}
+        {"text": "Откройте Android Auto", "text_en": "Open Android Auto", "text_ar": "افتح Android Auto", "action": "open_aa"},
+        {"text": "Нажмите ⋮ вверху справа и выберите «Вкл. сервер головного устр-ва»", "text_en": "Tap ⋮ at the top right and choose \"Start head unit server\"", "text_ar": "اضغط ⋮ أعلى الشاشة واختر «بدء خادم الوحدة الرئيسية»"},
+        {"text": "Переподключите кабель", "text_en": "Replug the cable", "text_ar": "أعد وصل الكيبل"},
+        {"text": "Нет такого пункта — 10 раз нажмите на строку «Версия» в настройках Android Auto", "text_en": "No such item - tap the \"Version\" row in Android Auto settings 10 times", "text_ar": "لا يوجد هذا الخيار؟ اضغط على سطر «الإصدار» في إعدادات Android Auto 10 مرات"}
       ],
       "ask": "Включали ли сервер ГУ в Android Auto после установки или обновления?",
-      "ask_en": "Did you start the head unit server in Android Auto after installing or updating it?"
+      "ask_en": "Did you start the head unit server in Android Auto after installing or updating it?",
+      "ask_ar": "هل شغّلت خادم الوحدة الرئيسية في Android Auto بعد تثبيته أو تحديثه؟"
     },
     {
       "id": "aa_server_off_partial",
       "title": "Сервер ГУ Android Auto часто не отвечает",
       "title_en": "Android Auto head unit server often doesn't respond",
+      "title_ar": "خادم Android Auto لا يستجيب أحيانًا",
       "phase": "no_video",
       "category": "user_setup",
       "score": 45,
       "all": [["m.aa_refused", ">=", 20], ["m.aa_tcp", ">=", 1], ["frames_max", "<", 30]],
       "evidence": ["aa_refused"],
-      "advice": "Android Auto то принимает, то отклоняет соединение. Причина обычно в том, что Android закрывает Android Auto в фоне: снимите для Android Auto и Headswap ограничения батареи (Настройки → Приложения → Батарея → «Без ограничений») и проверьте, что сервер включён: Android Auto → ⋮ → «Вкл. сервер головного устр-ва».",
-      "advice_en": "Android Auto sometimes accepts the connection and sometimes refuses it. Usually Android is closing Android Auto in the background: remove battery restrictions for Android Auto and Headswap (Settings → Apps → Battery → \"Unrestricted\") and check that the server is on: Android Auto → ⋮ → \"Start head unit server\".",
+      "advice": "Android Auto то принимает, то отклоняет соединение. Причина обычно в том, что Android закрывает Android Auto в фоне: снимите для Android Auto и HOG CarLink ограничения батареи (Настройки → Приложения → Батарея → «Без ограничений») и проверьте, что сервер включён: Android Auto → ⋮ → «Вкл. сервер головного устр-ва».",
+      "advice_en": "Android Auto sometimes accepts the connection and sometimes refuses it. Usually Android is closing Android Auto in the background: remove battery restrictions for Android Auto and HOG CarLink (Settings → Apps → Battery → \"Unrestricted\") and check that the server is on: Android Auto → ⋮ → \"Start head unit server\".",
+      "advice_ar": "Android Auto يقبل الاتصال أحيانًا ويرفضه أحيانًا. السبب عادةً أن أندرويد يغلقه في الخلفية: ارفع قيود البطارية عن Android Auto وHOG CarLink (الإعدادات ← التطبيقات ← البطارية ← «غير مقيّد»)، وتأكد أن الخادم يعمل: Android Auto ← ⋮ ← «بدء خادم الوحدة الرئيسية».",
       "what": "Android Auto то принимает соединение, то отклоняет его.",
       "what_en": "Android Auto sometimes accepts the connection and sometimes refuses it.",
+      "what_ar": "Android Auto يقبل الاتصال أحيانًا ويرفضه أحيانًا.",
       "steps": [
-        {"text": "Для Headswap и Android Auto выберите в настройках батареи «Без ограничений» — иначе Android закрывает Android Auto в фоне", "text_en": "Set Headswap and Android Auto to \"Unrestricted\" in battery settings, otherwise Android closes Android Auto in the background", "action": "battery"},
-        {"text": "Проверьте, что в Android Auto (⋮) включён пункт «Вкл. сервер головного устр-ва»", "text_en": "Check that \"Start head unit server\" is switched on in Android Auto (⋮)", "action": "open_aa"}
+        {"text": "Для HOG CarLink и Android Auto выберите в настройках батареи «Без ограничений» — иначе Android закрывает Android Auto в фоне", "text_en": "Set HOG CarLink and Android Auto to \"Unrestricted\" in battery settings, otherwise Android closes Android Auto in the background", "text_ar": "اجعل HOG CarLink وAndroid Auto «غير مقيّد» في إعدادات البطارية، وإلا أغلق أندرويد Android Auto في الخلفية", "action": "battery"},
+        {"text": "Проверьте, что в Android Auto (⋮) включён пункт «Вкл. сервер головного устр-ва»", "text_en": "Check that \"Start head unit server\" is switched on in Android Auto (⋮)", "text_ar": "تأكد من تشغيل «بدء خادم الوحدة الرئيسية» في Android Auto (⋮)", "action": "open_aa"}
       ]
     },
     {
       "id": "aa_silent",
       "title": "Android Auto на телефоне не отвечает",
       "title_en": "Android Auto on the phone isn't responding",
+      "title_ar": "Android Auto على الجوال لا يستجيب",
       "phase": "no_video",
       "category": "phone_limit",
       "score": 70,
@@ -188,20 +213,24 @@
       "evidence": ["aa_no_version"],
       "advice": "Соединение с Android Auto открывается, но он молчит. 1) Остановите Android Auto принудительно (Настройки → Приложения → Android Auto → Остановить) или перезагрузите телефон. 2) Проверьте, что установлены и включены Сервисы Google Play и сам Android Auto обновлён (на китайских прошивках Google-сервисов часто нет — тогда Android Auto не заработает).",
       "advice_en": "The connection to Android Auto opens, but it stays silent. 1) Force stop Android Auto (Settings → Apps → Android Auto → Force stop) or restart the phone. 2) Make sure Google Play services are installed and enabled and Android Auto itself is up to date (Chinese firmwares often have no Google services - then Android Auto won't work).",
+      "advice_ar": "الاتصال بـ Android Auto يُفتح، لكنه يبقى صامتًا. 1) أوقف Android Auto إجباريًا (الإعدادات ← التطبيقات ← Android Auto ← إيقاف إجباري) أو أعد تشغيل الجوال. 2) تأكد أن خدمات Google Play مثبّتة ومفعّلة، وأن Android Auto محدّث (كثير من الأنظمة الصينية بلا خدمات Google، وعندها لن يعمل Android Auto).",
       "what": "Соединение с Android Auto открывается, но он молчит.",
       "what_en": "The connection to Android Auto opens, but it stays silent.",
+      "what_ar": "الاتصال بـ Android Auto يُفتح، لكنه يبقى صامتًا.",
       "steps": [
-        {"text": "Остановите Android Auto принудительно (Настройки → Приложения) или перезагрузите телефон", "text_en": "Force stop Android Auto (Settings → Apps) or restart the phone"},
-        {"text": "Проверьте, что Сервисы Google Play установлены и включены", "text_en": "Make sure Google Play services are installed and enabled"},
-        {"text": "Обновите Android Auto", "text_en": "Update Android Auto"}
+        {"text": "Остановите Android Auto принудительно (Настройки → Приложения) или перезагрузите телефон", "text_en": "Force stop Android Auto (Settings → Apps) or restart the phone", "text_ar": "أوقف Android Auto إجباريًا (الإعدادات ← التطبيقات) أو أعد تشغيل الجوال"},
+        {"text": "Проверьте, что Сервисы Google Play установлены и включены", "text_en": "Make sure Google Play services are installed and enabled", "text_ar": "تأكد أن خدمات Google Play مثبّتة ومفعّلة"},
+        {"text": "Обновите Android Auto", "text_en": "Update Android Auto", "text_ar": "حدّث Android Auto"}
       ],
       "ask": "Есть ли на телефоне Google Play и Сервисы Google Play? Прошивка глобальная или китайская?",
-      "ask_en": "Does the phone have Google Play and Google Play services? Is the firmware global or Chinese?"
+      "ask_en": "Does the phone have Google Play and Google Play services? Is the firmware global or Chinese?",
+      "ask_ar": "هل في الجوال Google Play وخدمات Google Play؟ وهل نظامه عالمي أم صيني؟"
     },
     {
       "id": "no_gms",
       "title": "Похоже, на телефоне нет Сервисов Google Play",
       "title_en": "The phone seems to have no Google Play services",
+      "title_ar": "يبدو أن الجوال بلا خدمات Google Play",
       "phase": "no_video",
       "category": "phone_limit",
       "score": 80,
@@ -210,18 +239,22 @@
       "suppresses": ["aa_no_video", "aa_silent"],
       "advice": "Android Auto закрывает проекцию сразу после старта видео — так ведут себя телефоны без родных Сервисов Google Play (Huawei/Honor с GBox/microG, китайские прошивки). Мост это не обойдёт: нужен телефон с Google-сервисами.",
       "advice_en": "Android Auto closes the projection right after video starts - this is how phones without native Google Play services behave (Huawei/Honor with GBox/microG, Chinese firmwares). The bridge can't work around this: you need a phone with Google services.",
+      "advice_ar": "Android Auto يغلق العرض فور بدء الفيديو، وهذا سلوك الجوالات التي بلا خدمات Google Play أصلية (هواوي وهونر مع GBox أو microG، والأنظمة الصينية). لا يستطيع الجسر تجاوز ذلك: تحتاج جوالًا فيه خدمات Google.",
       "what": "Android Auto закрывает проекцию сразу после старта видео — так ведут себя телефоны без Сервисов Google Play.",
       "what_en": "Android Auto closes the projection right after video starts - how phones without Google Play services behave.",
+      "what_ar": "Android Auto يغلق العرض فور بدء الفيديو، وهذا سلوك الجوالات التي بلا خدمات Google Play.",
       "steps": [
-        {"text": "Используйте телефон с родными Сервисами Google Play — мост это не обойдёт", "text_en": "Use a phone with native Google Play services - the bridge can't work around this"}
+        {"text": "Используйте телефон с родными Сервисами Google Play — мост это не обойдёт", "text_en": "Use a phone with native Google Play services - the bridge can't work around this", "text_ar": "استخدم جوالًا فيه خدمات Google Play أصلية، فالجسر لا يستطيع تجاوز ذلك"}
       ],
       "ask": "Какая модель телефона, есть ли родной Google Play?",
-      "ask_en": "What phone model is it, and does it have native Google Play?"
+      "ask_en": "What phone model is it, and does it have native Google Play?",
+      "ask_ar": "ما طراز الجوال، وهل فيه Google Play أصلي؟"
     },
     {
       "id": "aa_no_video",
       "title": "Android Auto подключается, но не отдаёт картинку",
       "title_en": "Android Auto connects but sends no picture",
+      "title_ar": "Android Auto يتصل لكن بلا صورة",
       "phase": "no_video",
       "category": "phone_limit",
       "score": 55,
@@ -229,36 +262,42 @@
       "evidence": ["aa_established"],
       "advice": "Сессия с Android Auto устанавливается, но видео от него не приходит. Разблокируйте телефон и откройте Android Auto — возможно, он ждёт согласия или обновления. Затем остановите Android Auto принудительно и подключитесь снова. Проверьте, что Сервисы Google Play и Android Auto обновлены.",
       "advice_en": "The session with Android Auto is established, but no video comes from it. Unlock the phone and open Android Auto - it may be waiting for consent or an update. Then force stop Android Auto and connect again. Make sure Google Play services and Android Auto are up to date.",
+      "advice_ar": "الجلسة مع Android Auto قائمة، لكن لا يصل منه فيديو. افتح قفل الجوال وافتح Android Auto، فقد ينتظر موافقة أو تحديثًا. ثم أوقف Android Auto إجباريًا ووصّل مرة أخرى. وتأكد أن خدمات Google Play وAndroid Auto محدّثة.",
       "what": "Сессия с Android Auto установлена, но видео от него не приходит.",
       "what_en": "The session with Android Auto is established, but no video comes from it.",
+      "what_ar": "الجلسة مع Android Auto قائمة، لكن لا يصل منه فيديو.",
       "steps": [
-        {"text": "Разблокируйте телефон и откройте Android Auto — он может ждать согласия или обновления", "text_en": "Unlock the phone and open Android Auto - it may be waiting for consent or an update"},
-        {"text": "Остановите Android Auto принудительно и подключитесь снова", "text_en": "Force stop Android Auto and connect again"},
-        {"text": "Обновите Сервисы Google Play и Android Auto", "text_en": "Update Google Play services and Android Auto"}
+        {"text": "Разблокируйте телефон и откройте Android Auto — он может ждать согласия или обновления", "text_en": "Unlock the phone and open Android Auto - it may be waiting for consent or an update", "text_ar": "افتح قفل الجوال وافتح Android Auto، فقد ينتظر موافقة أو تحديثًا"},
+        {"text": "Остановите Android Auto принудительно и подключитесь снова", "text_en": "Force stop Android Auto and connect again", "text_ar": "أوقف Android Auto إجباريًا ووصّل مرة أخرى"},
+        {"text": "Обновите Сервисы Google Play и Android Auto", "text_en": "Update Google Play services and Android Auto", "text_ar": "حدّث خدمات Google Play وAndroid Auto"}
       ],
       "suppresses": ["hu_silent"]
     },
     {
       "id": "build_without_certs",
-      "title": "Сборка Headswap без сертификатов Android Auto",
-      "title_en": "Headswap build without Android Auto certificates",
+      "title": "Сборка HOG CarLink без сертификатов Android Auto",
+      "title_en": "HOG CarLink build without Android Auto certificates",
+      "title_ar": "نسخة بلا شهادات Android Auto",
       "phase": "first_connect",
       "category": "our_bug",
       "score": 95,
       "all": [["m.certs_missing", ">=", 1], ["frames_max", "<", 30]],
       "evidence": ["certs_missing"],
-      "advice": "Эта сборка Headswap собрана без сертификатов Android Auto и не может работать. Установите версию с сайта yegorkapomidorka.com/headswap или из Telegram-канала.",
-      "advice_en": "This Headswap build was made without Android Auto certificates and can't work. Install the version from yegorkapomidorka.com/headswap or from the Telegram channel.",
-      "what": "Эта сборка Headswap собрана без сертификатов Android Auto и не может работать.",
-      "what_en": "This Headswap build was made without Android Auto certificates and can't work.",
+      "advice": "Эта сборка HOG CarLink собрана без сертификатов Android Auto и не может работать. Установите версию с сайта yegorkapomidorka.com/headswap или из Telegram-канала.",
+      "advice_en": "This build was made without Android Auto certificates and can't work. Install the latest official HOG CarLink release.",
+      "advice_ar": "هذه النسخة بُنيت بلا شهادات Android Auto ولا يمكنها العمل. ثبّت آخر إصدار رسمي من HOG CarLink.",
+      "what": "Эта сборка HOG CarLink собрана без сертификатов Android Auto и не может работать.",
+      "what_en": "This HOG CarLink build was made without Android Auto certificates and can't work.",
+      "what_ar": "هذه النسخة بُنيت بلا شهادات Android Auto ولا يمكنها العمل.",
       "steps": [
-        {"text": "Установите версию с yegorkapomidorka.com/headswap или из Telegram-канала", "text_en": "Install the version from yegorkapomidorka.com/headswap or from the Telegram channel", "action": "update"}
+        {"text": "Установите версию с yegorkapomidorka.com/headswap или из Telegram-канала", "text_en": "Install the latest official HOG CarLink release", "text_ar": "ثبّت آخر إصدار رسمي من HOG CarLink", "action": "update"}
       ]
     },
     {
       "id": "auth_v2_old_version",
       "title": "Магнитола требует авторизацию CarLife 2.0",
       "title_en": "The head unit requires CarLife 2.0 authorization",
+      "title_ar": "شاشة السيارة تطلب توثيق CarLife 2.0",
       "phase": "drops",
       "category": "our_bug_fixed",
       "score": 90,
@@ -267,31 +306,36 @@
       "evidence": ["auth_v2"],
       "advice": "Магнитола рвёт связь через 30 с без ответа на авторизацию CarLife 2.0.",
       "advice_en": "The head unit drops the connection after 30 s without a reply to the CarLife 2.0 authorization.",
+      "advice_ar": "شاشة السيارة تقطع الاتصال بعد 30 ثانية لعدم الرد على توثيق CarLife 2.0.",
       "what": "Магнитола рвёт связь через 30 с без ответа на авторизацию CarLife 2.0.",
       "what_en": "The head unit drops the connection after 30 s without a reply to the CarLife 2.0 authorization.",
+      "what_ar": "شاشة السيارة تقطع الاتصال بعد 30 ثانية لعدم الرد على توثيق CarLife 2.0.",
       "steps": [
-        {"text": "Если после обновления связь рвётся — отправьте лог разработчикам", "text_en": "If the connection still drops after updating, send the log to the developers", "action": "share_log"}
+        {"text": "Если после обновления связь рвётся — отправьте лог разработчикам", "text_en": "If the connection still drops after updating, send the log to the developers", "text_ar": "إن استمر الانقطاع بعد التحديث فأرسل السجل إلى المطوّرين", "action": "share_log"}
       ]
     },
     {
       "id": "wifi_hu_never_came",
       "title": "По воздуху магнитола так и не подключилась",
       "title_en": "The head unit never connected over the air",
+      "title_ar": "شاشة السيارة لم تتصل لاسلكيًا",
       "phase": "first_connect",
       "category": "network",
       "score": 55,
       "all": [["n_sessions", "==", 0], ["m.wifi_wait", ">=", 1]],
       "boost": [[["m.tcp_timeout0", ">=", 1], 10]],
       "evidence": ["tcp_timeout0", "wifi_wait"],
-      "advice": "Headswap ждал магнитолу по Wi-Fi, но она не открыла ни одного соединения. Проверьте, что телефон и ГУ в одной сети (точка доступа телефона включена и ГУ к ней подключена, либо Wi-Fi Direct), что ГУ поддерживает CarLife по воздуху, и выдано разрешение «Устройства поблизости». Сначала добейтесь работы по кабелю.",
-      "advice_en": "Headswap waited for the head unit over Wi-Fi, but it didn't open a single connection. Check that the phone and head unit are on the same network (phone hotspot is on and the head unit is connected to it, or Wi-Fi Direct), that the head unit supports wireless CarLife, and that the \"Nearby devices\" permission is granted. First get it working over the cable.",
-      "what": "Headswap ждал магнитолу по Wi-Fi, но она не открыла ни одного соединения.",
-      "what_en": "Headswap waited for the head unit over Wi-Fi, but it didn't open a single connection.",
+      "advice": "HOG CarLink ждал магнитолу по Wi-Fi, но она не открыла ни одного соединения. Проверьте, что телефон и ГУ в одной сети (точка доступа телефона включена и ГУ к ней подключена, либо Wi-Fi Direct), что ГУ поддерживает CarLife по воздуху, и выдано разрешение «Устройства поблизости». Сначала добейтесь работы по кабелю.",
+      "advice_en": "HOG CarLink waited for the head unit over Wi-Fi, but it didn't open a single connection. Check that the phone and head unit are on the same network (phone hotspot is on and the head unit is connected to it, or Wi-Fi Direct), that the head unit supports wireless CarLife, and that the \"Nearby devices\" permission is granted. First get it working over the cable.",
+      "advice_ar": "HOG CarLink انتظرت شاشة السيارة عبر Wi-Fi، لكنها لم تفتح أي اتصال. تأكد أن الجوال والشاشة على الشبكة نفسها (نقطة اتصال الجوال تعمل والشاشة متصلة بها، أو Wi-Fi Direct)، وأن الشاشة تدعم CarLife اللاسلكي، وأن إذن «الأجهزة المجاورة» ممنوح. اجعله يعمل بالكيبل أولًا.",
+      "what": "HOG CarLink ждал магнитолу по Wi-Fi, но она не открыла ни одного соединения.",
+      "what_en": "HOG CarLink waited for the head unit over Wi-Fi, but it didn't open a single connection.",
+      "what_ar": "HOG CarLink انتظرت شاشة السيارة عبر Wi-Fi، لكنها لم تفتح أي اتصال.",
       "steps": [
-        {"text": "Включите точку доступа телефона и подключите к ней ГУ, либо используйте Wi-Fi Direct", "text_en": "Turn on the phone hotspot and connect the head unit to it, or use Wi-Fi Direct", "action": "hotspot"},
-        {"text": "Проверьте, что магнитола поддерживает CarLife по воздуху", "text_en": "Check that the head unit supports wireless CarLife"},
-        {"text": "Выдайте Headswap разрешение «Устройства поблизости»", "text_en": "Grant Headswap the \"Nearby devices\" permission", "action": "app_settings"},
-        {"text": "Сначала добейтесь работы по кабелю", "text_en": "First get it working over the cable"}
+        {"text": "Включите точку доступа телефона и подключите к ней ГУ, либо используйте Wi-Fi Direct", "text_en": "Turn on the phone hotspot and connect the head unit to it, or use Wi-Fi Direct", "text_ar": "شغّل نقطة اتصال الجوال ووصّل الشاشة بها، أو استخدم Wi-Fi Direct", "action": "hotspot"},
+        {"text": "Проверьте, что магнитола поддерживает CarLife по воздуху", "text_en": "Check that the head unit supports wireless CarLife", "text_ar": "تأكد أن الشاشة تدعم CarLife اللاسلكي"},
+        {"text": "Выдайте HOG CarLink разрешение «Устройства поблизости»", "text_en": "Grant HOG CarLink the \"Nearby devices\" permission", "text_ar": "امنح HOG CarLink إذن «الأجهزة المجاورة»", "action": "app_settings"},
+        {"text": "Сначала добейтесь работы по кабелю", "text_en": "First get it working over the cable", "text_ar": "اجعله يعمل بالكيبل أولًا"}
       ],
       "suppresses": ["aoa_not_started", "no_attempt"]
     },
@@ -299,23 +343,27 @@
       "id": "p2p_no_permission",
       "title": "Нет разрешения «Устройства поблизости» для Wi-Fi Direct",
       "title_en": "No \"Nearby devices\" permission for Wi-Fi Direct",
+      "title_ar": "لا يوجد إذن «الأجهزة المجاورة» لـ Wi-Fi Direct",
       "phase": "first_connect",
       "category": "user_setup",
       "score": 80,
       "all": [["m.p2p_no_perm", ">=", 1]],
       "evidence": ["p2p_no_perm"],
-      "advice": "Дайте Headswap разрешение «Устройства поблизости» (Настройки → Приложения → Headswap → Разрешения), иначе Wi-Fi Direct с магнитолой не поднимется.",
-      "advice_en": "Give Headswap the \"Nearby devices\" permission (Settings → Apps → Headswap → Permissions), otherwise Wi-Fi Direct with the head unit won't come up.",
+      "advice": "Дайте HOG CarLink разрешение «Устройства поблизости» (Настройки → Приложения → HOG CarLink → Разрешения), иначе Wi-Fi Direct с магнитолой не поднимется.",
+      "advice_en": "Give HOG CarLink the \"Nearby devices\" permission (Settings → Apps → HOG CarLink → Permissions), otherwise Wi-Fi Direct with the head unit won't come up.",
+      "advice_ar": "امنح HOG CarLink إذن «الأجهزة المجاورة» (الإعدادات ← التطبيقات ← HOG CarLink ← الأذونات)، وإلا لن يعمل Wi-Fi Direct مع شاشة السيارة.",
       "what": "Без разрешения «Устройства поблизости» Wi-Fi Direct с магнитолой не поднимется.",
       "what_en": "Without the \"Nearby devices\" permission Wi-Fi Direct with the head unit won't come up.",
+      "what_ar": "بدون إذن «الأجهزة المجاورة» لن يعمل Wi-Fi Direct مع شاشة السيارة.",
       "steps": [
-        {"text": "Выдайте Headswap разрешение «Устройства поблизости»", "text_en": "Grant Headswap the \"Nearby devices\" permission", "action": "app_settings"}
+        {"text": "Выдайте HOG CarLink разрешение «Устройства поблизости»", "text_en": "Grant HOG CarLink the \"Nearby devices\" permission", "text_ar": "امنح HOG CarLink إذن «الأجهزة المجاورة»", "action": "app_settings"}
       ]
     },
     {
       "id": "p2p_hotspot_busy",
       "title": "Wi-Fi Direct занят точкой доступа телефона",
       "title_en": "Wi-Fi Direct is blocked by the phone hotspot",
+      "title_ar": "نقطة اتصال الجوال تمنع Wi-Fi Direct",
       "phase": "first_connect",
       "category": "user_setup",
       "score": 75,
@@ -324,16 +372,19 @@
       "evidence": ["p2p_busy", "p2p_busy_reason", "hotspot_iface"],
       "advice": "Для подключения по Wi-Fi Direct выключите на телефоне точку доступа: телефон не может держать их одновременно.",
       "advice_en": "To connect over Wi-Fi Direct, turn off the hotspot on the phone: it can't run both at the same time.",
+      "advice_ar": "للاتصال عبر Wi-Fi Direct أطفئ نقطة الاتصال في الجوال، فلا يستطيع تشغيلهما معًا.",
       "what": "Телефон не может держать точку доступа и Wi-Fi Direct одновременно.",
       "what_en": "The phone can't run a hotspot and Wi-Fi Direct at the same time.",
+      "what_ar": "الجوال لا يستطيع تشغيل نقطة الاتصال وWi-Fi Direct معًا.",
       "steps": [
-        {"text": "Выключите на телефоне точку доступа", "text_en": "Turn off the hotspot on the phone", "action": "hotspot"}
+        {"text": "Выключите на телефоне точку доступа", "text_en": "Turn off the hotspot on the phone", "text_ar": "أطفئ نقطة الاتصال في الجوال", "action": "hotspot"}
       ]
     },
     {
       "id": "p2p_wifi_off",
       "title": "Wi-Fi на телефоне выключен",
       "title_en": "Wi-Fi is turned off on the phone",
+      "title_ar": "Wi-Fi مطفأ في الجوال",
       "phase": "first_connect",
       "category": "user_setup",
       "score": 70,
@@ -341,16 +392,19 @@
       "evidence": ["p2p_wifi_off"],
       "advice": "Для подключения по воздуху включите Wi-Fi на телефоне (подключаться к сети не нужно).",
       "advice_en": "To connect over the air, turn on Wi-Fi on the phone (you don't need to join a network).",
+      "advice_ar": "للاتصال اللاسلكي شغّل Wi-Fi في الجوال (لا داعي للاتصال بشبكة).",
       "what": "Wi-Fi на телефоне выключен, по воздуху не подключиться.",
       "what_en": "Wi-Fi is off on the phone, so it can't connect over the air.",
+      "what_ar": "Wi-Fi مطفأ في الجوال، فلا يمكنه الاتصال لاسلكيًا.",
       "steps": [
-        {"text": "Включите Wi-Fi на телефоне (подключаться к сети не нужно)", "text_en": "Turn on Wi-Fi on the phone (you don't need to join a network)", "action": "wifi"}
+        {"text": "Включите Wi-Fi на телефоне (подключаться к сети не нужно)", "text_en": "Turn on Wi-Fi on the phone (you don't need to join a network)", "text_ar": "شغّل Wi-Fi في الجوال (لا داعي للاتصال بشبكة)", "action": "wifi"}
       ]
     },
     {
       "id": "p2p_join_fail",
       "title": "Телефон не может войти в Wi-Fi Direct группу магнитолы",
       "title_en": "The phone can't join the head unit's Wi-Fi Direct group",
+      "title_ar": "الجوال لا يستطيع الانضمام إلى Wi-Fi Direct الخاص بالشاشة",
       "phase": "first_connect",
       "category": "hu_limit",
       "score": 55,
@@ -359,40 +413,47 @@
       "evidence": ["p2p_join_timeout", "p2p_group_lost"],
       "advice": "Магнитола приглашает телефон в Wi-Fi Direct, но войти не получается. Перезагрузите ГУ (заглушите машину на 5–10 минут), на телефоне в Wi-Fi → Wi-Fi Direct удалите запомненные группы и пару Bluetooth с машиной, затем свяжите заново. Если не помогает — используйте кабель.",
       "advice_en": "The head unit invites the phone over Wi-Fi Direct, but joining fails. Restart the head unit (turn off the car for 5-10 minutes), on the phone go to Wi-Fi → Wi-Fi Direct and remove saved groups and the Bluetooth pairing with the car, then pair again. If that doesn't help, use the cable.",
+      "advice_ar": "شاشة السيارة تدعو الجوال عبر Wi-Fi Direct، لكن الانضمام يفشل. أعد تشغيل الشاشة (أطفئ السيارة 5 إلى 10 دقائق)، وفي الجوال اذهب إلى Wi-Fi ← Wi-Fi Direct واحذف المجموعات المحفوظة واحذف اقتران البلوتوث مع السيارة، ثم اقترن من جديد. وإن لم يُفِد فاستخدم الكيبل.",
       "what": "Магнитола приглашает телефон в Wi-Fi Direct, но войти в группу не получается.",
       "what_en": "The head unit invites the phone over Wi-Fi Direct, but joining the group fails.",
+      "what_ar": "شاشة السيارة تدعو الجوال عبر Wi-Fi Direct، لكن الانضمام يفشل.",
       "steps": [
-        {"text": "Перезагрузите магнитолу: заглушите машину на 5–10 минут", "text_en": "Restart the head unit: turn off the car for 5-10 minutes"},
-        {"text": "В Wi-Fi → Wi-Fi Direct удалите запомненные группы", "text_en": "In Wi-Fi → Wi-Fi Direct remove saved groups", "action": "wifi"},
-        {"text": "Удалите пару Bluetooth с машиной и свяжите заново", "text_en": "Remove the Bluetooth pairing with the car and pair again", "action": "bluetooth"},
-        {"text": "Если не помогает — используйте кабель", "text_en": "If that doesn't help, use the cable"}
+        {"text": "Перезагрузите магнитолу: заглушите машину на 5–10 минут", "text_en": "Restart the head unit: turn off the car for 5-10 minutes", "text_ar": "أعد تشغيل الشاشة: أطفئ السيارة 5 إلى 10 دقائق"},
+        {"text": "В Wi-Fi → Wi-Fi Direct удалите запомненные группы", "text_en": "In Wi-Fi → Wi-Fi Direct remove saved groups", "text_ar": "في Wi-Fi ← Wi-Fi Direct احذف المجموعات المحفوظة", "action": "wifi"},
+        {"text": "Удалите пару Bluetooth с машиной и свяжите заново", "text_en": "Remove the Bluetooth pairing with the car and pair again", "text_ar": "احذف اقتران البلوتوث مع السيارة واقترن من جديد", "action": "bluetooth"},
+        {"text": "Если не помогает — используйте кабель", "text_en": "If that doesn't help, use the cable", "text_ar": "إن لم يُفِد فاستخدم الكيبل"}
       ]
     },
     {
       "id": "wifi_vpn_abort",
       "title": "Соединение по воздуху обрывает телефон",
       "title_en": "The phone is dropping the wireless connection",
+      "title_ar": "الجوال يقطع الاتصال اللاسلكي",
       "phase": "drops",
       "category": "network",
       "score": 50,
       "all": [["abort_no_iface", ">=", 2]],
       "evidence": ["abort"],
-      "advice": "Система телефона сама закрывает сокеты («Software caused connection abort»), при этом Wi-Fi не пропадает. Чаще всего это VPN/прокси: исключите Headswap из VPN или выключайте его в машине. Также снимите для Headswap ограничения батареи. Если не помогает — подключайтесь кабелем.",
-      "advice_en": "The phone's system closes the sockets itself (\"Software caused connection abort\") while Wi-Fi stays up. Most often it's a VPN/proxy: exclude Headswap from the VPN or turn it off in the car. Also remove battery restrictions for Headswap. If that doesn't help, connect with the cable.",
+      "advice": "Система телефона сама закрывает сокеты («Software caused connection abort»), при этом Wi-Fi не пропадает. Чаще всего это VPN/прокси: исключите HOG CarLink из VPN или выключайте его в машине. Также снимите для HOG CarLink ограничения батареи. Если не помогает — подключайтесь кабелем.",
+      "advice_en": "The phone's system closes the sockets itself (\"Software caused connection abort\") while Wi-Fi stays up. Most often it's a VPN/proxy: exclude HOG CarLink from the VPN or turn it off in the car. Also remove battery restrictions for HOG CarLink. If that doesn't help, connect with the cable.",
+      "advice_ar": "نظام الجوال يغلق الاتصالات بنفسه («Software caused connection abort») مع بقاء Wi-Fi يعمل. السبب الأكثر شيوعًا VPN أو بروكسي: استثنِ HOG CarLink من VPN أو أطفئه في السيارة. وارفع قيود البطارية عن HOG CarLink. وإن لم يُفِد فوصّل بالكيبل.",
       "what": "Система телефона сама закрывает сокеты, хотя Wi-Fi не пропадает.",
       "what_en": "The phone's system closes the sockets itself while Wi-Fi stays up.",
+      "what_ar": "نظام الجوال يغلق الاتصالات بنفسه مع بقاء Wi-Fi يعمل.",
       "steps": [
-        {"text": "Исключите Headswap из VPN или выключайте VPN в машине", "text_en": "Exclude Headswap from the VPN or turn the VPN off in the car"},
-        {"text": "Снимите для Headswap ограничения батареи", "text_en": "Remove battery restrictions for Headswap", "action": "battery"},
-        {"text": "Если не помогает — подключайтесь кабелем", "text_en": "If that doesn't help, connect with the cable"}
+        {"text": "Исключите HOG CarLink из VPN или выключайте VPN в машине", "text_en": "Exclude HOG CarLink from the VPN or turn the VPN off in the car", "text_ar": "استثنِ HOG CarLink من VPN أو أطفئ VPN في السيارة"},
+        {"text": "Снимите для HOG CarLink ограничения батареи", "text_en": "Remove battery restrictions for HOG CarLink", "text_ar": "ارفع قيود البطارية عن HOG CarLink", "action": "battery"},
+        {"text": "Если не помогает — подключайтесь кабелем", "text_en": "If that doesn't help, connect with the cable", "text_ar": "إن لم يُفِد فوصّل بالكيبل"}
       ],
       "ask": "Включён ли на телефоне VPN?",
-      "ask_en": "Is a VPN turned on on the phone?"
+      "ask_en": "Is a VPN turned on on the phone?",
+      "ask_ar": "هل VPN يعمل على الجوال؟"
     },
     {
       "id": "mazda_g6s_air_p2p_lost",
       "title": "Mazda G6S по воздуху: магнитола снимает Wi-Fi Direct",
       "title_en": "Mazda G6S over the air: the head unit drops Wi-Fi Direct",
+      "title_ar": "مازدا G6S لاسلكيًا: الشاشة تُسقط Wi-Fi Direct",
       "phase": "drops",
       "category": "our_bug",
       "score": 65,
@@ -400,11 +461,13 @@
       "evidence": ["p2p_group_lost", "abort"],
       "advice": "Эта магнитола снимает Wi-Fi Direct группу после паузы видео (задний ход, меню) и сама не возвращается. Исправление в тестовой сборке. Пока: выключите и включите Bluetooth на телефоне либо подключайтесь кабелем.",
       "advice_en": "This head unit drops the Wi-Fi Direct group after a video pause (reverse gear, menu) and doesn't come back on its own. A fix is in a test build. For now: turn Bluetooth off and on on the phone, or connect with the cable.",
+      "advice_ar": "هذه الشاشة تُسقط مجموعة Wi-Fi Direct بعد إيقاف الفيديو مؤقتًا (الرجوع للخلف أو القائمة) ولا تعود وحدها. الإصلاح في نسخة تجريبية. حاليًا: أطفئ البلوتوث في الجوال وشغّله، أو وصّل بالكيبل.",
       "what": "Магнитола снимает группу Wi-Fi Direct после паузы видео и сама не возвращается.",
       "what_en": "The head unit drops the Wi-Fi Direct group after a video pause and doesn't come back on its own.",
+      "what_ar": "الشاشة تُسقط مجموعة Wi-Fi Direct بعد إيقاف الفيديو مؤقتًا ولا تعود وحدها.",
       "steps": [
-        {"text": "Выключите и включите Bluetooth на телефоне", "text_en": "Turn Bluetooth off and on on the phone", "action": "bluetooth"},
-        {"text": "Или подключайтесь кабелем", "text_en": "Or connect with the cable"}
+        {"text": "Выключите и включите Bluetooth на телефоне", "text_en": "Turn Bluetooth off and on on the phone", "text_ar": "أطفئ البلوتوث في الجوال وشغّله", "action": "bluetooth"},
+        {"text": "Или подключайтесь кабелем", "text_en": "Or connect with the cable", "text_ar": "أو وصّل بالكيبل"}
       ],
       "suppresses": ["wifi_vpn_abort"]
     },
@@ -412,6 +475,7 @@
       "id": "vw_id_idr_limit",
       "title": "VW ID рвёт кабель на больших ключевых кадрах",
       "title_en": "VW ID drops the cable on large keyframes",
+      "title_ar": "فولكس فاجن ID تقطع الكيبل مع الإطارات الكبيرة",
       "phase": "drops",
       "category": "our_bug_fixed",
       "score": 75,
@@ -419,11 +483,13 @@
       "all": [["channel", "~", "^20082138$"], ["hu", "~", "1538"], ["eio_sessions", ">=", 2]],
       "advice": "Магнитола рвёт USB на ключевых кадрах больше ~600 КиБ. Используйте перекодирование; в «Мой автомобиль» выберите свою модель VW ID.",
       "advice_en": "The head unit drops USB on keyframes larger than ~600 KiB. Use Transcoding; in \"My car\" pick your VW ID model.",
+      "advice_ar": "شاشة السيارة تقطع USB مع الإطارات الرئيسية الأكبر من نحو 600 كيلوبايت. استخدم وضع «إعادة الترميز»، واختر طراز ID الخاص بك في «سيارتي».",
       "what": "Магнитола рвёт USB на ключевых кадрах больше ~600 КиБ.",
       "what_en": "The head unit drops USB on keyframes larger than ~600 KiB.",
+      "what_ar": "شاشة السيارة تقطع USB مع الإطارات الرئيسية الأكبر من نحو 600 كيلوبايت.",
       "steps": [
-        {"text": "Включите перекодирование", "text_en": "Turn on Transcoding", "action": "video"},
-        {"text": "В «Мой автомобиль» выберите свою модель VW ID", "text_en": "In \"My car\" pick your VW ID model", "action": "video"}
+        {"text": "Включите перекодирование", "text_en": "Turn on Transcoding", "text_ar": "شغّل وضع «إعادة الترميز»", "action": "video"},
+        {"text": "В «Мой автомобиль» выберите свою модель VW ID", "text_en": "In \"My car\" pick your VW ID model", "text_ar": "اختر طراز فولكس فاجن ID الخاص بك في «سيارتي»", "action": "video"}
       ],
       "suppresses": ["usb_unstable"]
     },
@@ -431,6 +497,7 @@
       "id": "vw_id_any_idr_limit",
       "title": "VW ID рвёт кабель на больших ключевых кадрах",
       "title_en": "VW ID drops the cable on large keyframes",
+      "title_ar": "فولكس فاجن ID تقطع الكيبل مع الإطارات الكبيرة",
       "phase": "drops",
       "category": "our_bug_fixed",
       "score": 75,
@@ -438,10 +505,12 @@
       "all": [["channel", "~", "^20082138$"], ["hu", "~", "VW BT (?!1420|1538)\\d"], ["eio_sessions", ">=", 2]],
       "advice": "Магнитола рвёт USB на ключевых кадрах больше ~600 КиБ (режимы «Широкий 976» и 1080p). До обновления выберите разрешение 720p.",
       "advice_en": "The head unit drops USB on keyframes larger than ~600 KiB (Wide 976 and 1080p modes). Until you update, choose the 720p resolution.",
+      "advice_ar": "شاشة السيارة تقطع USB مع الإطارات الرئيسية الأكبر من نحو 600 كيلوبايت (وضعا Wide 976 و1080p). إلى أن تحدّث، اختر دقة 720p.",
       "what": "Магнитола рвёт USB на ключевых кадрах больше ~600 КиБ.",
       "what_en": "The head unit drops USB on keyframes larger than ~600 KiB.",
+      "what_ar": "شاشة السيارة تقطع USB مع الإطارات الرئيسية الأكبر من نحو 600 كيلوبايت.",
       "steps": [
-        {"text": "Выберите в Headswap разрешение 720p", "text_en": "In Headswap choose the 720p resolution", "action": "video"}
+        {"text": "Выберите в HOG CarLink разрешение 720p", "text_en": "In HOG CarLink choose the 720p resolution", "text_ar": "اختر دقة 720p في HOG CarLink", "action": "video"}
       ],
       "suppresses": ["usb_unstable"]
     },
@@ -449,6 +518,7 @@
       "id": "vw_id6_idr_limit",
       "title": "VW ID.6 рвёт кабель на больших ключевых кадрах",
       "title_en": "VW ID.6 drops the cable on large keyframes",
+      "title_ar": "فولكس فاجن ID.6 تقطع الكيبل مع الإطارات الكبيرة",
       "phase": "drops",
       "category": "our_bug_fixed",
       "score": 75,
@@ -456,10 +526,12 @@
       "all": [["channel", "~", "^20082128$"], ["hu", "~", "9491"], ["eio_sessions", ">=", 2]],
       "advice": "Магнитола «VW BT 9491» рвёт USB на ключевых кадрах больше ~600 КиБ (режимы «Широкий 976» и 1080p). До обновления выберите разрешение 720p.",
       "advice_en": "The \"VW BT 9491\" head unit drops USB on keyframes larger than ~600 KiB (Wide 976 and 1080p modes). Until you update, choose the 720p resolution.",
+      "advice_ar": "شاشة «VW BT 9491» تقطع USB مع الإطارات الرئيسية الأكبر من نحو 600 كيلوبايت (وضعا Wide 976 و1080p). إلى أن تحدّث، اختر دقة 720p.",
       "what": "Магнитола рвёт USB на ключевых кадрах больше ~600 КиБ.",
       "what_en": "The head unit drops USB on keyframes larger than ~600 KiB.",
+      "what_ar": "شاشة السيارة تقطع USB مع الإطارات الرئيسية الأكبر من نحو 600 كيلوبايت.",
       "steps": [
-        {"text": "Выберите в Headswap разрешение 720p", "text_en": "In Headswap choose the 720p resolution", "action": "video"}
+        {"text": "Выберите в HOG CarLink разрешение 720p", "text_en": "In HOG CarLink choose the 720p resolution", "text_ar": "اختر دقة 720p في HOG CarLink", "action": "video"}
       ],
       "suppresses": ["usb_unstable"]
     },
@@ -467,6 +539,7 @@
       "id": "wifi_iface_drop",
       "title": "Телефон теряет Wi-Fi связь с магнитолой",
       "title_en": "The phone loses its Wi-Fi link to the head unit",
+      "title_ar": "الجوال يفقد اتصال Wi-Fi بالشاشة",
       "phase": "drops",
       "category": "network",
       "score": 55,
@@ -475,19 +548,22 @@
       "evidence": ["iface_down", "abort"],
       "advice": "Во время поездки у телефона пропадает Wi-Fi-интерфейс (энергосбережение, звонок по Bluetooth, слабый сигнал). Отключите автовыключение точки доступа и энергосбережение Wi-Fi, переведите точку на 5 ГГц, не держите телефон в закрытом бардачке. Самый надёжный вариант — кабель.",
       "advice_en": "During the trip the phone's Wi-Fi interface goes down (power saving, a call over Bluetooth, weak signal). Turn off hotspot auto-off and Wi-Fi power saving, switch the hotspot to 5 GHz, and don't keep the phone in a closed glovebox. The most reliable option is the cable.",
+      "advice_ar": "أثناء الرحلة ينقطع Wi-Fi في الجوال (توفير الطاقة، أو مكالمة عبر البلوتوث، أو إشارة ضعيفة). أطفئ الإيقاف التلقائي لنقطة الاتصال وتوفير طاقة Wi-Fi، واجعل نقطة الاتصال على 5 GHz، ولا تضع الجوال في درج مغلق. الخيار الأكثر ثباتًا هو الكيبل.",
       "what": "Во время поездки у телефона пропадает Wi-Fi-интерфейс.",
       "what_en": "During the trip the phone's Wi-Fi interface goes down.",
+      "what_ar": "أثناء الرحلة ينقطع Wi-Fi في الجوال.",
       "steps": [
-        {"text": "Отключите автовыключение точки доступа и энергосбережение Wi-Fi", "text_en": "Turn off hotspot auto-off and Wi-Fi power saving", "action": "hotspot"},
-        {"text": "Переведите точку доступа на 5 ГГц", "text_en": "Switch the hotspot to 5 GHz", "action": "hotspot"},
-        {"text": "Не держите телефон в закрытом бардачке", "text_en": "Don't keep the phone in a closed glovebox"},
-        {"text": "Самый надёжный вариант — подключение кабелем", "text_en": "The most reliable option is the cable"}
+        {"text": "Отключите автовыключение точки доступа и энергосбережение Wi-Fi", "text_en": "Turn off hotspot auto-off and Wi-Fi power saving", "text_ar": "أطفئ الإيقاف التلقائي لنقطة الاتصال وتوفير طاقة Wi-Fi", "action": "hotspot"},
+        {"text": "Переведите точку доступа на 5 ГГц", "text_en": "Switch the hotspot to 5 GHz", "text_ar": "اجعل نقطة الاتصال على 5 GHz", "action": "hotspot"},
+        {"text": "Не держите телефон в закрытом бардачке", "text_en": "Don't keep the phone in a closed glovebox", "text_ar": "لا تضع الجوال في درج مغلق"},
+        {"text": "Самый надёжный вариант — подключение кабелем", "text_en": "The most reliable option is the cable", "text_ar": "الخيار الأكثر ثباتًا هو الكيبل"}
       ]
     },
     {
       "id": "wifi_hu_closes",
       "title": "Магнитола сама закрывает соединение по воздуху",
       "title_en": "The head unit closes the wireless connection itself",
+      "title_ar": "شاشة السيارة تغلق الاتصال اللاسلكي بنفسها",
       "phase": "drops",
       "category": "network",
       "score": 40,
@@ -495,56 +571,65 @@
       "evidence": ["hu_closed_sock"],
       "advice": "ГУ периодически закрывает Wi-Fi-соединение — обычно из-за задержек в радиоканале. Переведите точку доступа на 5 ГГц, уберите телефон из бардачка/металлического держателя, сравните с работой по кабелю.",
       "advice_en": "The head unit periodically closes the Wi-Fi connection - usually because of delays on the radio channel. Switch the hotspot to 5 GHz, take the phone out of the glovebox/metal holder, and compare with the cable.",
+      "advice_ar": "الشاشة تغلق اتصال Wi-Fi بين حين وآخر، عادةً بسبب تأخر الإشارة. اجعل نقطة الاتصال على 5 GHz، وأخرج الجوال من الدرج أو الحامل المعدني، وقارن بالكيبل.",
       "what": "Магнитола периодически сама закрывает Wi-Fi-соединение, обычно из-за задержек радиоканала.",
       "what_en": "The head unit periodically closes the Wi-Fi connection itself, usually due to radio channel delays.",
+      "what_ar": "الشاشة تغلق اتصال Wi-Fi بين حين وآخر، عادةً بسبب تأخر الإشارة.",
       "steps": [
-        {"text": "Переведите точку доступа на 5 ГГц", "text_en": "Switch the hotspot to 5 GHz", "action": "hotspot"},
-        {"text": "Уберите телефон из бардачка и металлического держателя", "text_en": "Take the phone out of the glovebox and metal holder"},
-        {"text": "Сравните с работой по кабелю", "text_en": "Compare with the cable"}
+        {"text": "Переведите точку доступа на 5 ГГц", "text_en": "Switch the hotspot to 5 GHz", "text_ar": "اجعل نقطة الاتصال على 5 GHz", "action": "hotspot"},
+        {"text": "Уберите телефон из бардачка и металлического держателя", "text_en": "Take the phone out of the glovebox and metal holder", "text_ar": "أخرج الجوال من الدرج أو الحامل المعدني"},
+        {"text": "Сравните с работой по кабелю", "text_en": "Compare with the cable", "text_ar": "قارن بالكيبل"}
       ]
     },
     {
       "id": "process_killed",
-      "title": "Система убивает Headswap в фоне",
-      "title_en": "The system kills Headswap in the background",
+      "title": "Система убивает HOG CarLink в фоне",
+      "title_en": "The system kills HOG CarLink in the background",
+      "title_ar": "النظام يغلق HOG CarLink في الخلفية",
       "phase": "drops",
       "category": "user_setup",
       "score": 33,
       "all": [["m.low_memory", ">=", 1]],
       "evidence": ["low_memory"],
-      "advice": "Android завершал Headswap (нехватка памяти или агрессивное энергосбережение). Поставьте Headswap и Android Auto «Без ограничений» в настройках батареи, включите автозапуск (Xiaomi/HyperOS, vivo, Honor), закрепите Headswap замком в списке недавних приложений.",
-      "advice_en": "Android was terminating Headswap (low memory or aggressive power saving). Set Headswap and Android Auto to \"Unrestricted\" in battery settings, enable autostart (Xiaomi/HyperOS, vivo, Honor), and pin Headswap with the lock in the recent apps list.",
-      "what": "Android завершал Headswap из-за нехватки памяти или агрессивного энергосбережения.",
-      "what_en": "Android was terminating Headswap due to low memory or aggressive power saving.",
+      "advice": "Android завершал HOG CarLink (нехватка памяти или агрессивное энергосбережение). Поставьте HOG CarLink и Android Auto «Без ограничений» в настройках батареи, включите автозапуск (Xiaomi/HyperOS, vivo, Honor), закрепите HOG CarLink замком в списке недавних приложений.",
+      "advice_en": "Android was terminating HOG CarLink (low memory or aggressive power saving). Set HOG CarLink and Android Auto to \"Unrestricted\" in battery settings, enable autostart (Xiaomi/HyperOS, vivo, Honor), and pin HOG CarLink with the lock in the recent apps list.",
+      "advice_ar": "أندرويد كان يغلق HOG CarLink (نقص الذاكرة أو توفير الطاقة الصارم). اجعل HOG CarLink وAndroid Auto «غير مقيّد» في إعدادات البطارية، وفعّل التشغيل التلقائي (شاومي، فيفو، هونر)، وثبّت HOG CarLink بالقفل في قائمة التطبيقات الأخيرة.",
+      "what": "Android завершал HOG CarLink из-за нехватки памяти или агрессивного энергосбережения.",
+      "what_en": "Android was terminating HOG CarLink due to low memory or aggressive power saving.",
+      "what_ar": "أندرويد كان يغلق HOG CarLink بسبب نقص الذاكرة أو توفير الطاقة الصارم.",
       "steps": [
-        {"text": "Поставьте Headswap и Android Auto «Без ограничений» в настройках батареи", "text_en": "Set Headswap and Android Auto to \"Unrestricted\" in battery settings", "action": "battery"},
-        {"text": "Включите автозапуск (Xiaomi/HyperOS, vivo, Honor)", "text_en": "Enable autostart (Xiaomi/HyperOS, vivo, Honor)", "action": "autostart"},
-        {"text": "Закрепите Headswap замком в списке недавних приложений", "text_en": "Pin Headswap with the lock in the recent apps list"}
+        {"text": "Поставьте HOG CarLink и Android Auto «Без ограничений» в настройках батареи", "text_en": "Set HOG CarLink and Android Auto to \"Unrestricted\" in battery settings", "text_ar": "اجعل HOG CarLink وAndroid Auto «غير مقيّد» في إعدادات البطارية", "action": "battery"},
+        {"text": "Включите автозапуск (Xiaomi/HyperOS, vivo, Honor)", "text_en": "Enable autostart (Xiaomi/HyperOS, vivo, Honor)", "text_ar": "فعّل التشغيل التلقائي (شاومي، فيفو، هونر)", "action": "autostart"},
+        {"text": "Закрепите HOG CarLink замком в списке недавних приложений", "text_en": "Pin HOG CarLink with the lock in the recent apps list", "text_ar": "ثبّت HOG CarLink بالقفل في قائمة التطبيقات الأخيرة"}
       ]
     },
     {
       "id": "phone_encoder_fail",
       "title": "Кодек телефона не справляется с перекодированием",
       "title_en": "The phone's codec can't handle transcoding",
+      "title_ar": "مُرمِّز الجوال لا يتحمّل إعادة الترميز",
       "phase": "no_video",
       "category": "phone_limit",
       "score": 55,
       "all": [["m.codec_fail", ">=", 2]],
       "any": [["frames_max", "<", 300]],
       "evidence": ["codec_fail"],
-      "advice": "Аппаратный кодек телефона не принимает настройки перекодирования. Выберите в Headswap разрешение 720p и 15 FPS; если не помогло — режим «Прямой проброс».",
-      "advice_en": "The phone's hardware codec doesn't accept the transcoding settings. In Headswap choose 720p and 15 FPS; if that doesn't help, use Passthrough mode.",
+      "advice": "Аппаратный кодек телефона не принимает настройки перекодирования. Выберите в HOG CarLink разрешение 720p и 15 FPS; если не помогло — режим «Прямой проброс».",
+      "advice_en": "The phone's hardware codec doesn't accept the transcoding settings. In HOG CarLink choose 720p and 15 FPS; if that doesn't help, use Passthrough mode.",
+      "advice_ar": "مُرمِّز الفيديو في الجوال لا يقبل إعدادات إعادة الترميز. اختر 720p و15 إطارًا في الثانية، وإن لم يُفِد فاستخدم وضع «التمرير المباشر».",
       "what": "Аппаратный кодек телефона не принимает настройки перекодирования.",
       "what_en": "The phone's hardware codec doesn't accept the transcoding settings.",
+      "what_ar": "مُرمِّز الفيديو في الجوال لا يقبل إعدادات إعادة الترميز.",
       "steps": [
-        {"text": "Выберите в Headswap разрешение 720p и 15 FPS", "text_en": "In Headswap choose 720p and 15 FPS", "action": "video"},
-        {"text": "Если не помогло — включите режим «Прямой проброс»", "text_en": "If that doesn't help, use Passthrough mode", "action": "video"}
+        {"text": "Выберите в HOG CarLink разрешение 720p и 15 FPS", "text_en": "In HOG CarLink choose 720p and 15 FPS", "text_ar": "اختر 720p و15 إطارًا في الثانية في HOG CarLink", "action": "video"},
+        {"text": "Если не помогло — включите режим «Прямой проброс»", "text_en": "If that doesn't help, use Passthrough mode", "text_ar": "إن لم يُفِد فاستخدم وضع «التمرير المباشر»", "action": "video"}
       ]
     },
     {
       "id": "two_frames_hu",
       "title": "Магнитола принимает два кадра и останавливается",
       "title_en": "The head unit accepts two frames and stops",
+      "title_ar": "الشاشة تستقبل إطارين ثم تتوقف",
       "phase": "no_video",
       "category": "our_bug_fixed",
       "score": 80,
@@ -552,16 +637,19 @@
       "all": [["two_frame_sessions", ">=", 3]],
       "advice": "Магнитола (Mazda 3 Китай и похожие 1280x480) не принимает крупные видеопакеты. В режиме «Мой автомобиль» выберите Mazda 3 (2025, Китай).",
       "advice_en": "This head unit (Mazda 3 China and similar 1280x480 ones) doesn't accept large video packets. In \"My car\" choose Mazda 3 (2025, China).",
+      "advice_ar": "هذه الشاشة (مازدا 3 الصينية والشاشات المشابهة 1280×480) لا تقبل حزم الفيديو الكبيرة. اختر في «سيارتي»: Mazda 3 (2025، الصين).",
       "what": "Магнитола (Mazda 3 Китай и похожие 1280x480) не принимает крупные видеопакеты.",
       "what_en": "This head unit (Mazda 3 China and similar 1280x480 ones) doesn't accept large video packets.",
+      "what_ar": "هذه الشاشة (مازدا 3 الصينية والشاشات المشابهة 1280×480) لا تقبل حزم الفيديو الكبيرة.",
       "steps": [
-        {"text": "В «Мой автомобиль» выберите Mazda 3 (2025, Китай)", "text_en": "In \"My car\" choose Mazda 3 (2025, China)", "action": "video"}
+        {"text": "В «Мой автомобиль» выберите Mazda 3 (2025, Китай)", "text_en": "In \"My car\" choose Mazda 3 (2025, China)", "text_ar": "اختر في «سيارتي»: Mazda 3 (2025، الصين)", "action": "video"}
       ]
     },
     {
       "id": "mobis_short_loop",
       "title": "Hyundai/Kia Mobis CCNC рвёт кабель каждые 8–12 с",
       "title_en": "Hyundai/Kia Mobis CCNC drops the cable every 8-12 s",
+      "title_ar": "شاشة هيونداي/كيا Mobis CCNC تقطع الكيبل كل 8 إلى 12 ثانية",
       "phase": "drops",
       "category": "unresolved",
       "score": 75,
@@ -569,11 +657,13 @@
       "any": [["hu", "~", "Mobis|NX4"], ["channel", "~", "^20022188$"]],
       "advice": "Известная проблема этой магнитолы: она повторяет команду старта видео и рвёт USB через 8–12 с. Причина пока не найдена. Попробуйте другой кабель и другой телефон и пришлите лог разработчику.",
       "advice_en": "A known issue with this head unit: it repeats the video start command and drops USB after 8-12 s. The cause hasn't been found yet. Try a different cable and a different phone, and send the log to the developer.",
+      "advice_ar": "مشكلة معروفة في هذه الشاشة: تكرّر أمر بدء الفيديو وتقطع USB بعد 8 إلى 12 ثانية. السبب لم يُعرف بعد. جرّب كيبلًا آخر وجوالًا آخر، وأرسل السجل إلى المطوّرين.",
       "what": "Магнитола повторяет команду старта видео и рвёт USB через 8–12 с, причина пока не найдена.",
       "what_en": "The head unit repeats the video start command and drops USB after 8-12 s; the cause isn't found yet.",
+      "what_ar": "الشاشة تكرّر أمر بدء الفيديو وتقطع USB بعد 8 إلى 12 ثانية، والسبب لم يُعرف بعد.",
       "steps": [
-        {"text": "Попробуйте другой кабель и другой телефон", "text_en": "Try a different cable and a different phone"},
-        {"text": "Отправьте лог разработчикам", "text_en": "Send the log to the developers", "action": "share_log"}
+        {"text": "Попробуйте другой кабель и другой телефон", "text_en": "Try a different cable and a different phone", "text_ar": "جرّب كيبلًا آخر وجوالًا آخر"},
+        {"text": "Отправьте лог разработчикам", "text_en": "Send the log to the developers", "text_ar": "أرسل السجل إلى المطوّرين", "action": "share_log"}
       ],
       "suppresses": ["usb_unstable"]
     },
@@ -581,6 +671,7 @@
       "id": "vw_pause_eio",
       "title": "VW/Skoda рвёт кабель после выхода в меню магнитолы",
       "title_en": "VW/Skoda drops the cable after leaving to the head unit menu",
+      "title_ar": "فولكس فاجن/سكودا تقطع الكيبل بعد الانتقال إلى قائمة الشاشة",
       "phase": "drops",
       "category": "our_bug_fixed",
       "score": 75,
@@ -588,10 +679,12 @@
       "all": [["pause_eio", ">=", 2], ["channel", "~", "^200821(20|22|34)$"]],
       "advice": "Магнитола рвёт USB через 5–8 с после паузы видео (выход в меню ГУ, камера).",
       "advice_en": "The head unit drops USB 5-8 s after a video pause (leaving to the head unit menu, camera).",
+      "advice_ar": "الشاشة تقطع USB بعد 5 إلى 8 ثوانٍ من إيقاف الفيديو مؤقتًا (الانتقال إلى قائمة الشاشة أو الكاميرا).",
       "what": "Магнитола рвёт USB через 5–8 с после паузы видео (выход в меню ГУ, камера).",
       "what_en": "The head unit drops USB 5-8 s after a video pause (leaving to the head unit menu, camera).",
+      "what_ar": "الشاشة تقطع USB بعد 5 إلى 8 ثوانٍ من إيقاف الفيديو مؤقتًا (الانتقال إلى قائمة الشاشة أو الكاميرا).",
       "steps": [
-        {"text": "Если после обновления обрывы остались — отправьте лог разработчикам", "text_en": "If the drops remain after updating, send the log to the developers", "action": "share_log"}
+        {"text": "Если после обновления обрывы остались — отправьте лог разработчикам", "text_en": "If the drops remain after updating, send the log to the developers", "text_ar": "إن استمر الانقطاع بعد التحديث فأرسل السجل إلى المطوّرين", "action": "share_log"}
       ],
       "suppresses": ["usb_unstable", "pause_eio_other"]
     },
@@ -599,16 +692,19 @@
       "id": "vw_cns2_pause_eio",
       "title": "VW Tharu CNS2 рвёт кабель после выхода в меню магнитолы",
       "title_en": "VW Tharu CNS2 drops the cable after leaving to the head unit menu",
+      "title_ar": "فولكس فاجن Tharu CNS2 تقطع الكيبل بعد الانتقال إلى قائمة الشاشة",
       "phase": "drops",
       "category": "our_bug",
       "score": 75,
       "all": [["pause_eio", ">=", 1], ["channel", "~", "^20082114$"]],
       "advice": "Известная проблема этой магнитолы (Delphi CNS2): после паузы видео (меню ГУ, камера) она рвёт USB и сама не возвращается. Исправление готовится в ближайшей версии; пока после выхода из меню нажмите CarLife на магнитоле заново.",
       "advice_en": "A known issue with this head unit (Delphi CNS2): after a video pause (head unit menu, camera) it drops USB and doesn't come back on its own. A fix is coming in the next version; for now, after leaving the menu, tap CarLife on the head unit again.",
+      "advice_ar": "مشكلة معروفة في هذه الشاشة (Delphi CNS2): بعد إيقاف الفيديو مؤقتًا (قائمة الشاشة أو الكاميرا) تقطع USB ولا تعود وحدها. الإصلاح في الإصدار القادم، وحاليًا: بعد الخروج من القائمة اضغط CarLife على الشاشة مرة أخرى.",
       "what": "Магнитола (Delphi CNS2) после паузы видео рвёт USB и сама не возвращается.",
       "what_en": "This head unit (Delphi CNS2) drops USB after a video pause and doesn't come back on its own.",
+      "what_ar": "هذه الشاشة (Delphi CNS2) تقطع USB بعد إيقاف الفيديو مؤقتًا ولا تعود وحدها.",
       "steps": [
-        {"text": "После выхода из меню нажмите CarLife на магнитоле заново", "text_en": "After leaving the menu, tap CarLife on the head unit again"}
+        {"text": "После выхода из меню нажмите CarLife на магнитоле заново", "text_en": "After leaving the menu, tap CarLife on the head unit again", "text_ar": "بعد الخروج من القائمة اضغط CarLife على الشاشة مرة أخرى"}
       ],
       "suppresses": ["usb_unstable", "pause_eio_other"]
     },
@@ -616,16 +712,19 @@
       "id": "pause_eio_other",
       "title": "Магнитола рвёт кабель после паузы видео",
       "title_en": "The head unit drops the cable after a video pause",
+      "title_ar": "الشاشة تقطع الكيبل بعد إيقاف الفيديو مؤقتًا",
       "phase": "drops",
       "category": "hu_limit",
       "score": 55,
       "all": [["pause_eio", ">=", 2]],
       "advice": "Обрыв USB приходит через 5–8 с после того, как магнитола приостановила видео (выход в меню ГУ, камера заднего вида). Пришлите лог разработчику с моделью машины — для таких ГУ делается отдельный обход.",
       "advice_en": "The USB drop comes 5-8 s after the head unit paused the video (leaving to the head unit menu, rear-view camera). Send the log to the developer along with the car model - a separate workaround is made for such head units.",
+      "advice_ar": "ينقطع USB بعد 5 إلى 8 ثوانٍ من إيقاف الشاشة للفيديو مؤقتًا (الانتقال إلى قائمة الشاشة أو كاميرا الرجوع). أرسل السجل إلى المطوّرين مع طراز السيارة، فلمثل هذه الشاشات حلٌّ خاص.",
       "what": "USB обрывается через 5–8 с после того, как магнитола приостановила видео.",
       "what_en": "USB drops 5-8 s after the head unit paused the video.",
+      "what_ar": "ينقطع USB بعد 5 إلى 8 ثوانٍ من إيقاف الشاشة للفيديو مؤقتًا.",
       "steps": [
-        {"text": "Отправьте лог разработчикам и укажите модель машины", "text_en": "Send the log to the developers and state the car model", "action": "share_log"}
+        {"text": "Отправьте лог разработчикам и укажите модель машины", "text_en": "Send the log to the developers and state the car model", "text_ar": "أرسل السجل إلى المطوّرين واذكر طراز السيارة", "action": "share_log"}
       ],
       "suppresses": ["usb_unstable"]
     },
@@ -633,6 +732,7 @@
       "id": "pioneer_bitrate",
       "title": "Pioneer RM56E8B не тянет битрейт",
       "title_en": "Pioneer RM56E8B can't handle the bitrate",
+      "title_ar": "شاشة Pioneer RM56E8B لا تتحمّل معدل البيانات",
       "phase": "drops",
       "category": "our_bug_fixed",
       "score": 85,
@@ -640,10 +740,12 @@
       "all": [["hu", "~", "RM56E8B"], ["ep_EIO", ">=", 2]],
       "advice": "Эта магнитола рвёт USB уже от ~2 Мбит/с. В «Мой автомобиль» выберите Dongfeng DF6 2023 (720p/1024, 800 кбит/с, ≤10 FPS).",
       "advice_en": "This head unit drops USB from about 2 Mbit/s. In \"My car\" choose Dongfeng DF6 2023 (720p/1024, 800 kbit/s, ≤10 FPS).",
+      "advice_ar": "هذه الشاشة تقطع USB من نحو 2 ميغابت في الثانية. اختر في «سيارتي»: Dongfeng DF6 2023 (720p/1024، 800 كيلوبت، 10 إطارات أو أقل).",
       "what": "Эта магнитола рвёт USB уже от ~2 Мбит/с.",
       "what_en": "This head unit drops USB from about 2 Mbit/s.",
+      "what_ar": "هذه الشاشة تقطع USB من نحو 2 ميغابت في الثانية.",
       "steps": [
-        {"text": "В «Мой автомобиль» выберите Dongfeng DF6 2023", "text_en": "In \"My car\" choose Dongfeng DF6 2023", "action": "video"}
+        {"text": "В «Мой автомобиль» выберите Dongfeng DF6 2023", "text_en": "In \"My car\" choose Dongfeng DF6 2023", "text_ar": "اختر في «سيارتي»: Dongfeng DF6 2023", "action": "video"}
       ],
       "suppresses": ["usb_unstable"]
     },
@@ -651,22 +753,26 @@
       "id": "fixed_window_hu",
       "title": "Магнитола показывает картинку в фиксированном окне",
       "title_en": "The head unit shows the picture in a fixed window",
+      "title_ar": "الشاشة تعرض الصورة في نافذة ثابتة",
       "phase": "feature",
       "category": "hu_limit",
       "score": 30,
       "all": [["requested", "~", "960x540|1120x630"]],
       "advice": "ГУ сама задаёт окно (960x540 или 1120x630) и вписывает картинку в него; широкий и портретный режимы не помогут. Оптимально — режим R720 (16:9).",
       "advice_en": "The head unit sets the window itself (960x540 or 1120x630) and fits the picture into it; wide and portrait modes won't help. The best option is R720 mode (16:9).",
+      "advice_ar": "الشاشة تحدّد النافذة بنفسها (960×540 أو 1120×630) وتضع الصورة فيها، فلن تفيد الأوضاع العريضة ولا العمودية. الخيار الأفضل وضع R720 (16:9).",
       "what": "Магнитола сама задаёт окно (960x540 или 1120x630) и вписывает в него картинку.",
       "what_en": "The head unit sets the window (960x540 or 1120x630) itself and fits the picture into it.",
+      "what_ar": "الشاشة تحدّد النافذة بنفسها (960×540 أو 1120×630) وتضع الصورة فيها.",
       "steps": [
-        {"text": "Выберите в Headswap режим R720 (16:9)", "text_en": "In Headswap choose R720 mode (16:9)", "action": "video"}
+        {"text": "Выберите в HOG CarLink режим R720 (16:9)", "text_en": "In HOG CarLink choose R720 mode (16:9)", "text_ar": "اختر وضع R720 (16:9) في HOG CarLink", "action": "video"}
       ]
     },
     {
       "id": "usb_unstable",
       "title": "Обрывы кабельного соединения (EIO)",
       "title_en": "Cable connection drops (EIO)",
+      "title_ar": "انقطاع اتصال الكيبل (EIO)",
       "phase": "drops",
       "category": "hu_limit",
       "score": 35,
@@ -674,41 +780,48 @@
       "evidence": ["eio"],
       "advice": "Связь по USB рвётся со стороны магнитолы или кабеля. 1) Оригинальный короткий кабель с данными, без хабов и переходников, порт с иконкой телефона. 2) Перекодирование 720p, 15 FPS — меньший поток. 3) Если обрывы в момент запуска двигателя или выхода в меню ГУ — сообщите, что делали в момент обрыва.",
       "advice_en": "The USB link breaks on the head unit's or the cable's side. 1) Use the original short data cable, no hubs or adapters, in a port with a phone icon. 2) Transcoding at 720p, 15 FPS - a smaller stream. 3) If the drops happen when starting the engine or leaving to the head unit menu, tell us what you were doing at the moment of the drop.",
+      "advice_ar": "اتصال USB ينقطع من جهة الشاشة أو الكيبل. 1) استخدم كيبل بيانات أصليًا قصيرًا، بلا موزّع أو محوّل، في منفذ عليه رمز الجوال. 2) إعادة الترميز بدقة 720p و15 إطارًا، لتقليل حجم البث. 3) إن حدث الانقطاع عند تشغيل المحرك أو الانتقال إلى قائمة الشاشة، فأخبرنا ماذا كنت تفعل لحظة الانقطاع.",
       "what": "Связь по USB рвётся со стороны магнитолы или кабеля.",
       "what_en": "The USB link breaks on the head unit's or the cable's side.",
+      "what_ar": "اتصال USB ينقطع من جهة الشاشة أو الكيبل.",
       "steps": [
-        {"text": "Возьмите оригинальный короткий кабель с данными, без хабов и переходников", "text_en": "Use the original short data cable, no hubs or adapters"},
-        {"text": "Подключайте в порт USB с иконкой телефона", "text_en": "Plug into a USB port with a phone icon"},
-        {"text": "Включите перекодирование 720p, 15 FPS — меньший поток", "text_en": "Use Transcoding at 720p, 15 FPS - a smaller stream", "action": "video"},
-        {"text": "Если обрывы при запуске двигателя или выходе в меню — отправьте лог и опишите момент", "text_en": "If drops happen at engine start or leaving the menu, send the log and describe the moment", "action": "share_log"}
+        {"text": "Возьмите оригинальный короткий кабель с данными, без хабов и переходников", "text_en": "Use the original short data cable, no hubs or adapters", "text_ar": "استخدم كيبل بيانات أصليًا قصيرًا، بلا موزّع أو محوّل"},
+        {"text": "Подключайте в порт USB с иконкой телефона", "text_en": "Plug into a USB port with a phone icon", "text_ar": "وصّل بمنفذ USB عليه رمز الجوال"},
+        {"text": "Включите перекодирование 720p, 15 FPS — меньший поток", "text_en": "Use Transcoding at 720p, 15 FPS - a smaller stream", "text_ar": "استخدم إعادة الترميز بدقة 720p و15 إطارًا لتقليل حجم البث", "action": "video"},
+        {"text": "Если обрывы при запуске двигателя или выходе в меню — отправьте лог и опишите момент", "text_en": "If drops happen at engine start or leaving the menu, send the log and describe the moment", "text_ar": "إن حدث الانقطاع عند تشغيل المحرك أو الخروج إلى القائمة، فأرسل السجل وصِف اللحظة", "action": "share_log"}
       ]
     },
     {
       "id": "usb_drop_before_video",
       "title": "Магнитола рвёт кабель до начала видео",
       "title_en": "The head unit drops the cable before video starts",
+      "title_ar": "الشاشة تقطع الكيبل قبل بدء الفيديو",
       "phase": "no_video",
       "category": "hu_limit",
       "score": 50,
       "all": [["eio_sessions", ">=", 3], ["frames_max", "<", 30]],
       "evidence": ["eio"],
-      "advice": "Связь с ГУ устанавливается, но рвётся по USB раньше, чем пошла картинка. Обновите Headswap до последней версии, выберите перекодирование 720p и 15 FPS, попробуйте другой кабель с передачей данных и другой USB-порт машины.",
-      "advice_en": "The link with the head unit is established, but USB drops before the picture appears. Update Headswap to the latest version, choose Transcoding at 720p and 15 FPS, and try a different data cable and a different USB port in the car.",
+      "advice": "Связь с ГУ устанавливается, но рвётся по USB раньше, чем пошла картинка. Обновите HOG CarLink до последней версии, выберите перекодирование 720p и 15 FPS, попробуйте другой кабель с передачей данных и другой USB-порт машины.",
+      "advice_en": "The link with the head unit is established, but USB drops before the picture appears. Update HOG CarLink to the latest version, choose Transcoding at 720p and 15 FPS, and try a different data cable and a different USB port in the car.",
+      "advice_ar": "الاتصال بالشاشة قائم، لكن USB ينقطع قبل ظهور الصورة. حدّث HOG CarLink إلى آخر إصدار، واختر إعادة الترميز بدقة 720p و15 إطارًا، وجرّب كيبل بيانات آخر ومنفذ USB آخر في السيارة.",
       "what": "Связь с магнитолой устанавливается, но USB рвётся раньше, чем пошла картинка.",
       "what_en": "The link with the head unit is established, but USB drops before the picture appears.",
+      "what_ar": "الاتصال بالشاشة قائم، لكن USB ينقطع قبل ظهور الصورة.",
       "steps": [
-        {"text": "Обновите Headswap до последней версии", "text_en": "Update Headswap to the latest version", "action": "update"},
-        {"text": "Выберите перекодирование 720p и 15 FPS", "text_en": "Choose Transcoding at 720p and 15 FPS", "action": "video"},
-        {"text": "Попробуйте другой кабель с передачей данных", "text_en": "Try a different data cable"},
-        {"text": "Попробуйте другой USB-порт машины", "text_en": "Try a different USB port in the car"}
+        {"text": "Обновите HOG CarLink до последней версии", "text_en": "Update HOG CarLink to the latest version", "text_ar": "حدّث HOG CarLink إلى آخر إصدار", "action": "update"},
+        {"text": "Выберите перекодирование 720p и 15 FPS", "text_en": "Choose Transcoding at 720p and 15 FPS", "text_ar": "اختر إعادة الترميز بدقة 720p و15 إطارًا", "action": "video"},
+        {"text": "Попробуйте другой кабель с передачей данных", "text_en": "Try a different data cable", "text_ar": "جرّب كيبل بيانات آخر"},
+        {"text": "Попробуйте другой USB-порт машины", "text_en": "Try a different USB port in the car", "text_ar": "جرّب منفذ USB آخر في السيارة"}
       ],
       "ask": "Что видно на магнитоле в момент обрыва? Работает ли на этой машине оригинальный Baidu CarLife?",
-      "ask_en": "What does the head unit show at the moment of the drop? Does the original Baidu CarLife work on this car?"
+      "ask_en": "What does the head unit show at the moment of the drop? Does the original Baidu CarLife work on this car?",
+      "ask_ar": "ماذا تُظهر الشاشة لحظة الانقطاع؟ وهل يعمل Baidu CarLife الأصلي على هذه السيارة؟"
     },
     {
       "id": "usb_rare_drop",
       "title": "Единичный обрыв по кабелю",
       "title_en": "A single cable drop",
+      "title_ar": "انقطاع واحد في الكيبل",
       "phase": "drops",
       "category": "hu_limit",
       "score": 32,
@@ -716,17 +829,20 @@
       "evidence": ["eio"],
       "advice": "Видео шло, затем один-два обрыва USB. Если это было при запуске двигателя, выключении машины или при задевании кабеля — это нормально. Если повторяется в поездке: оригинальный короткий кабель с данными, без хабов, другой USB-порт.",
       "advice_en": "Video was running, then one or two USB drops. If it happened when starting the engine, turning off the car, or bumping the cable, that's normal. If it keeps happening on trips: original short data cable, no hubs, a different USB port.",
+      "advice_ar": "كان الفيديو يعمل ثم انقطع USB مرة أو مرتين. إن حدث ذلك عند تشغيل المحرك أو إطفاء السيارة أو تحريك الكيبل فهو طبيعي. وإن تكرّر أثناء الرحلات: كيبل بيانات أصلي قصير، بلا موزّع، ومنفذ USB آخر.",
       "what": "Видео шло, затем один-два обрыва USB; при запуске двигателя или задевании кабеля это нормально.",
       "what_en": "Video was running, then one or two USB drops; at engine start or a bumped cable that's normal.",
+      "what_ar": "كان الفيديو يعمل ثم انقطع USB مرة أو مرتين، وهذا طبيعي عند تشغيل المحرك أو تحريك الكيبل.",
       "steps": [
-        {"text": "Если повторяется в поездке — возьмите оригинальный короткий кабель с данными, без хабов", "text_en": "If it keeps happening on trips, use the original short data cable, no hubs"},
-        {"text": "Попробуйте другой USB-порт", "text_en": "Try a different USB port"}
+        {"text": "Если повторяется в поездке — возьмите оригинальный короткий кабель с данными, без хабов", "text_en": "If it keeps happening on trips, use the original short data cable, no hubs", "text_ar": "إن تكرّر أثناء الرحلات فاستخدم كيبل بيانات أصليًا قصيرًا بلا موزّع"},
+        {"text": "Попробуйте другой USB-порт", "text_en": "Try a different USB port", "text_ar": "جرّب منفذ USB آخر"}
       ]
     },
     {
       "id": "usb_stream_desync",
       "title": "Поток с магнитолой рассинхронизировался",
       "title_en": "The stream with the head unit went out of sync",
+      "title_ar": "اختلّ تزامن البث مع الشاشة",
       "phase": "drops",
       "category": "hu_limit",
       "score": 35,
@@ -734,43 +850,51 @@
       "evidence": ["stream_desync"],
       "advice": "Данные от ГУ пришли в неожиданном формате. Часто это значит, что ГУ открыла кабель не в режиме CarLife (выберите на ГУ Baidu CarLife) или помехи по кабелю — замените кабель.",
       "advice_en": "The data from the head unit arrived in an unexpected format. Often this means the head unit opened the cable not in CarLife mode (pick Baidu CarLife on the head unit) or there is interference on the cable - replace the cable.",
+      "advice_ar": "وصلت البيانات من الشاشة بصيغة غير متوقعة. غالبًا يعني ذلك أن الشاشة فتحت الكيبل بغير وضع CarLife (اختر Baidu CarLife على الشاشة)، أو أن في الكيبل تشويشًا، فاستبدله.",
       "what": "Данные от магнитолы пришли в неожиданном формате.",
       "what_en": "The data from the head unit arrived in an unexpected format.",
+      "what_ar": "وصلت البيانات من الشاشة بصيغة غير متوقعة.",
       "steps": [
-        {"text": "Выберите на магнитоле Baidu CarLife", "text_en": "Pick Baidu CarLife on the head unit"},
-        {"text": "Замените кабель — возможны помехи", "text_en": "Replace the cable - there may be interference"}
+        {"text": "Выберите на магнитоле Baidu CarLife", "text_en": "Pick Baidu CarLife on the head unit", "text_ar": "اختر Baidu CarLife على شاشة السيارة"},
+        {"text": "Замените кабель — возможны помехи", "text_en": "Replace the cable - there may be interference", "text_ar": "استبدل الكيبل، فقد يكون فيه تشويش"}
       ]
     },
     {
       "id": "old_version",
-      "title": "Устаревшая версия Headswap",
-      "title_en": "Outdated Headswap version",
+      "title": "Устаревшая версия HOG CarLink",
+      "title_en": "Outdated HOG CarLink version",
+      "title_ar": "إصدار HOG CarLink قديم",
       "phase": "any",
       "category": "note",
       "score": 30,
       "all": [["version", "<v", "2.4.0"]],
-      "advice": "У вас старая версия Headswap, многие проблемы подключения уже исправлены. Обновите приложение до последней версии.",
-      "advice_en": "You have an old Headswap version, and many connection problems have already been fixed. Update the app to the latest version.",
-      "what": "У вас старая версия Headswap, многие проблемы подключения уже исправлены.",
-      "what_en": "You have an old Headswap version, and many connection problems have already been fixed.",
+      "advice": "У вас старая версия HOG CarLink, многие проблемы подключения уже исправлены. Обновите приложение до последней версии.",
+      "advice_en": "You have an old HOG CarLink version, and many connection problems have already been fixed. Update the app to the latest version.",
+      "advice_ar": "لديك إصدار قديم من HOG CarLink، وكثير من مشاكل الاتصال أُصلحت بعده. حدّث التطبيق إلى آخر إصدار.",
+      "what": "У вас старая версия HOG CarLink, многие проблемы подключения уже исправлены.",
+      "what_en": "You have an old HOG CarLink version, and many connection problems have already been fixed.",
+      "what_ar": "لديك إصدار قديم من HOG CarLink، وكثير من مشاكل الاتصال أُصلحت بعده.",
       "steps": [
-        {"text": "Обновите Headswap до последней версии", "text_en": "Update Headswap to the latest version", "action": "update"}
+        {"text": "Обновите HOG CarLink до последней версии", "text_en": "Update HOG CarLink to the latest version", "text_ar": "حدّث HOG CarLink إلى آخر إصدار", "action": "update"}
       ]
     },
     {
       "id": "works",
       "title": "Подключение работало",
       "title_en": "The connection worked",
+      "title_ar": "الاتصال كان يعمل",
       "phase": "ok",
       "category": "note",
       "score": 30,
       "all": [["frames_max", ">=", 300], ["aa_video_max", "!=", 0], ["eio_sessions", "==", 0], ["m.abort", "<=", 1]],
       "advice": "Явных сбоев подключения в логе нет: видео шло. Если проблема в звуке, навигации, тач-управлении или картинке — опишите её словами и приложите фото экрана магнитолы.",
       "advice_en": "No obvious connection failures in the log: video was running. If the problem is with sound, navigation, touch control, or the picture, describe it in words and attach a photo of the head unit screen.",
+      "advice_ar": "لا أعطال واضحة في الاتصال في السجل: كان الفيديو يعمل. إن كانت المشكلة في الصوت أو الملاحة أو اللمس أو الصورة، فصِفها بالكلمات وأرفق صورة لشاشة السيارة.",
       "what": "Явных сбоев подключения в логе нет: видео шло.",
       "what_en": "No obvious connection failures in the log: video was running.",
+      "what_ar": "لا أعطال واضحة في الاتصال في السجل: كان الفيديو يعمل.",
       "steps": [
-        {"text": "Опишите проблему словами и приложите фото экрана магнитолы", "text_en": "Describe the problem in words and attach a photo of the head unit screen", "action": "share_log"}
+        {"text": "Опишите проблему словами и приложите фото экрана магнитолы", "text_en": "Describe the problem in words and attach a photo of the head unit screen", "text_ar": "صِف المشكلة بالكلمات وأرفق صورة لشاشة السيارة", "action": "share_log"}
       ]
     }
   ]

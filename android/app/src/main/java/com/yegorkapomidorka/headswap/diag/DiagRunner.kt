@@ -35,8 +35,8 @@ object DiagRunner {
             null
         }
         val env = LogDiag.Env(ver, "${Build.MANUFACTURER} ${Build.MODEL}", Build.VERSION.RELEASE, Build.VERSION.SDK_INT)
-        val en = ctx.resources.configuration.locales[0].language != "ru"
-        return LogDiag.run(logs, env, rules, en)
+        val lang = ctx.resources.configuration.locales[0].language
+        return LogDiag.run(logs, env, rules, en = lang != "ru", ar = lang == "ar")
     }
 
     /** Файл целиком или последние MAX_FILE_BYTES: без неполной первой строки, с пометкой в начале (как в zip отчёта). */
