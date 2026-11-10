@@ -28,7 +28,13 @@ class AdhkarMediaService : MediaBrowserService() {
         sessionToken = PrayerSession.get(this).sessionToken
     }
 
-    override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot = BrowserRoot(ROOT, null)
+    /** Подсказка Android Auto: списки, а не сетка - длинные арабские названия сур и глав в сетке обрезаются. */
+    override fun onGetRoot(clientPackageName: String, clientUid: Int, rootHints: Bundle?): BrowserRoot =
+        BrowserRoot(ROOT, Bundle().apply {
+            putBoolean(CONTENT_STYLE_SUPPORTED, true)
+            putInt(CONTENT_STYLE_BROWSABLE_HINT, CONTENT_STYLE_LIST)
+            putInt(CONTENT_STYLE_PLAYABLE_HINT, CONTENT_STYLE_LIST)
+        })
 
     override fun onLoadChildren(parentId: String, result: Result<MutableList<MediaBrowser.MediaItem>>) {
         val out = ArrayList<MediaBrowser.MediaItem>()
@@ -89,6 +95,11 @@ class AdhkarMediaService : MediaBrowserService() {
             if (playable) MediaBrowser.MediaItem.FLAG_PLAYABLE else MediaBrowser.MediaItem.FLAG_BROWSABLE)
 
     companion object {
+        // ключи androidx.media.utils.MediaConstants (без зависимости от androidx.media)
+        private const val CONTENT_STYLE_SUPPORTED = "android.media.browse.CONTENT_STYLE_SUPPORTED"
+        private const val CONTENT_STYLE_BROWSABLE_HINT = "android.media.browse.CONTENT_STYLE_BROWSABLE_HINT"
+        private const val CONTENT_STYLE_PLAYABLE_HINT = "android.media.browse.CONTENT_STYLE_PLAYABLE_HINT"
+        private const val CONTENT_STYLE_LIST = 1
         private const val ROOT = "root"
         private const val TIMES = "times"
         private const val QURAN = "quran"
