@@ -44,4 +44,26 @@
     <string name="ab_from_start">تشغيل من البداية</string>
     <string name="ab_pick_chapter">اختيار مقطع</string>
     <string name="ab_remove">إزالة من المكتبة (يبقى الملف في الهاتف)</string>
+    <!-- HOG: план заучивания по страницам (prayer/HifzPrefs, quran/QuranPages) -->
+    <string name="hf_title">خطة الحفظ</string>
+    <string name="hf_page">الصفحة الحالية</string>
+    <string name="hf_page_sum">الصفحة %1$d من 604 · %2$s · الجزء %3$d</string>
+    <string name="hf_repeat">تكرار كل صفحة</string>
+    <string name="hf_times">%d مرات</string>
+    <string name="hf_repeat_inf">بلا توقف</string>
+    <string name="hf_pages">عدد الصفحات في كل جلسة</string>
+    <string name="hf_voice">القارئ (آية آية)</string>
+    <string name="hf_play">استمع: الصفحة %d</string>
+    <string name="hf_prev">الصفحة السابقة</string>
+    <string name="hf_next">الصفحة التالية</string>
+    <string name="hf_progress">صفحات مكتملة: %d</string>
+    <string name="hf_note">الصفحات حسب مصحف المدينة (604 صفحات). التلاوة آية آية من everyayah.com، وتُحفظ على الهاتف بعد أول استماع، فلا يستهلك التكرار ولا الاستماع التالي الإنترنت. عند انتهاء الجلسة تنتقل الخطة إلى الصفحة التالية. في السيارة: زرّا التالي والسابق يغيّران الصفحة.</string>
+    <string name="hf_page_title">الصفحة %1$d · %2$s</string>
+    <string name="hf_rep">التكرار %1$d من %2$d</string>
+    <string name="hf_rep_inf">التكرار %1$d</string>
+    <string name="hf_ayah">الآية %d</string>
+    <string name="hf_basmala">البسملة</string>
+    <string name="hf_done">اكتملت الصفحات %1$d–%2$d. في المرة القادمة: الصفحة %3$d</string>
+    <string name="hf_car_listen">استمع: الصفحة %1$d · %2$s</string>
+    <string name="hf_car_sub">التكرار: %s</string>
 </resources>

@@ -44,4 +44,26 @@
     <string name="ab_from_start">С начала</string>
     <string name="ab_pick_chapter">Выбрать часть</string>
     <string name="ab_remove">Убрать из аудиотеки (файл остаётся на телефоне)</string>
+    <!-- HOG: план заучивания по страницам (prayer/HifzPrefs, quran/QuranPages) -->
+    <string name="hf_title">План заучивания</string>
+    <string name="hf_page">Текущая страница</string>
+    <string name="hf_page_sum">Страница %1$d из 604 · %2$s · джуз %3$d</string>
+    <string name="hf_repeat">Повторять каждую страницу</string>
+    <string name="hf_times">%d раз</string>
+    <string name="hf_repeat_inf">Без остановки</string>
+    <string name="hf_pages">Страниц за раз</string>
+    <string name="hf_voice">Чтец (по аятам)</string>
+    <string name="hf_play">Слушать: страница %d</string>
+    <string name="hf_prev">Предыдущая страница</string>
+    <string name="hf_next">Следующая страница</string>
+    <string name="hf_progress">Пройдено страниц: %d</string>
+    <string name="hf_note">Страницы по мусхафу Медины (604). Звук по аятам с everyayah.com, после первого прослушивания хранится на телефоне: повторы и следующий раз без интернета. После сессии план переходит на следующую страницу. В машине «вперёд» и «назад» меняют страницу.</string>
+    <string name="hf_page_title">Страница %1$d · %2$s</string>
+    <string name="hf_rep">Повтор %1$d из %2$d</string>
+    <string name="hf_rep_inf">Повтор %1$d</string>
+    <string name="hf_ayah">Аят %d</string>
+    <string name="hf_basmala">Басмала</string>
+    <string name="hf_done">Страницы %1$d–%2$d пройдены. В следующий раз: страница %3$d</string>
+    <string name="hf_car_listen">Слушать: страница %1$d · %2$s</string>
+    <string name="hf_car_sub">Повтор: %s</string>
 </resources>

@@ -11,6 +11,7 @@ import android.os.Bundle
 import android.service.media.MediaBrowserService
 import com.yegorkapomidorka.headswap.R
 import com.yegorkapomidorka.headswap.quran.Quran
+import com.yegorkapomidorka.headswap.quran.QuranPages
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
@@ -43,6 +44,8 @@ class AdhkarMediaService : MediaBrowserService() {
                 out.add(item(PrayerPlayer.What.MORNING.name, getString(R.string.pr_morning), null, playable = true))
                 out.add(item(PrayerPlayer.What.EVENING.name, getString(R.string.pr_evening), null, playable = true))
                 out.add(item(QURAN, getString(R.string.qr_title), QuranPrefs(this).reciter.nameAr, playable = false))
+                val hp = HifzPrefs(this).page
+                out.add(item(HIFZ, getString(R.string.hf_title), getString(R.string.hf_page_title, hp, hifzNames(hp)), playable = false))
                 val books = AudioBook.Library(this).books()
                 // одна книга - сразу её главы, несколько - список книг
                 if (books.size == 1) out.add(item(BOOK + books[0].id, AudioBook.displayName(books[0].name), getString(R.string.ab_chapters, books[0].chapters.size), playable = false))
@@ -55,6 +58,15 @@ class AdhkarMediaService : MediaBrowserService() {
                     out.add(item("QURAN:${q.lastSurah}:${q.lastPosMs}", getString(R.string.qr_continue, Quran.name(q.lastSurah)), null, playable = true))
                 }
                 for (n in 1..Quran.SURAHS) out.add(item("QURAN:$n:0", "$n. ${Quran.name(n)}", null, playable = true))
+            }
+            HIFZ -> {
+                // текущая страница плана, затем соседние: в машине без клавиатуры номер не набрать
+                val h = HifzPrefs(this)
+                val rep = if (h.repeat == 0) getString(R.string.hf_repeat_inf) else getString(R.string.hf_times, h.repeat)
+                val sub = getString(R.string.hf_car_sub, rep)
+                for (pg in listOf(h.page, h.page + 1, h.page - 1).filter { it in 1..QuranPages.PAGES }) {
+                    out.add(item("HIFZ:$pg", getString(R.string.hf_car_listen, pg, hifzNames(pg)), sub, playable = true))
+                }
             }
             LIBRARY -> for (b in AudioBook.Library(this).books()) {
                 out.add(item(BOOK + b.id, AudioBook.displayName(b.name), getString(R.string.ab_chapters, b.chapters.size), playable = false))
@@ -90,6 +102,8 @@ class AdhkarMediaService : MediaBrowserService() {
         result.sendResult(out)
     }
 
+    private fun hifzNames(page: Int) = QuranPages.surahs(page).joinToString("، ") { Quran.name(it) }
+
     private fun item(id: String, title: String, sub: String?, playable: Boolean): MediaBrowser.MediaItem =
         MediaBrowser.MediaItem(MediaDescription.Builder().setMediaId(id).setTitle(title).setSubtitle(sub).build(),
             if (playable) MediaBrowser.MediaItem.FLAG_PLAYABLE else MediaBrowser.MediaItem.FLAG_BROWSABLE)
@@ -104,6 +118,7 @@ class AdhkarMediaService : MediaBrowserService() {
         private const val TIMES = "times"
         private const val QURAN = "quran"
         private const val LIBRARY = "library"
+        private const val HIFZ = "hifz"
         private const val BOOK = "book:"
     }
 }
@@ -119,6 +134,10 @@ object PrayerSession {
         val s = MediaSession(app, "hog-prayer")
         s.setCallback(object : MediaSession.Callback() {
             override fun onPlayFromMediaId(mediaId: String, extras: Bundle?) {
+                if (mediaId.startsWith("HIFZ:")) {
+                    PrayerPlayer.hifz(app, mediaId.substringAfter(':').toIntOrNull() ?: HifzPrefs(app).page)
+                    return
+                }
                 if (mediaId.startsWith("BOOK:")) {
                     val p = mediaId.split(':')
                     PrayerPlayer.book(app, p.getOrNull(1) ?: return, p.getOrNull(2)?.toLongOrNull() ?: -1)
@@ -146,6 +165,8 @@ object PrayerSession {
             override fun onPlayFromSearch(query: String?, extras: Bundle?) {
                 // «شغّل أذكار النوم»: файл из аудиотеки по имени важнее встроенных азкаров
                 AudioBook.Library(app).books().let { books -> AudioBook.match(books.map { it.name }, query)?.let { return PrayerPlayer.book(app, books[it].id) } }
+                // «خطة الحفظ» / «الصفحة 23»: план заучивания (номер из запроса или текущая страница плана)
+                hifzPage(query)?.let { return PrayerPlayer.hifz(app, if (it == 0) HifzPrefs(app).page else it) }
                 // «أذان الفجر» - азан, а не сура аль-Фаджр: ключевые слова азана/азкаров важнее названий сур
                 val kw = keyword(query)
                 val surah = if (kw == null) surahFor(query) else null
@@ -186,6 +207,20 @@ object PrayerSession {
         try {
             ctx.startService(Intent(ctx, PrayerPlayer::class.java).setAction(PrayerPlayer.ACTION_STOP))
         } catch (_: Exception) {
+        }
+    }
+
+    /** Голосом: «خطة الحفظ», «الحفظ» -> 0 (текущая страница плана); «الصفحة 23», «صفحة ٢٣» -> 23. Иначе null. */
+    fun hifzPage(query: String?): Int? {
+        val q = query?.lowercase() ?: return null
+        val digits = q.map { ch -> if (ch in '٠'..'٩') '0' + (ch - '٠') else ch }.joinToString("")
+        val n = Regex("\\d{1,3}").find(digits)?.value?.toIntOrNull()
+        val page = listOf("صفحة", "صفحه", "page", "страниц").any { it in q }
+        val plan = listOf("حفظ", "memoriz", "заучив").any { it in q }
+        return when {
+            page && n != null && n in 1..QuranPages.PAGES -> n
+            plan -> 0
+            else -> null
         }
     }
 

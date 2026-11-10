@@ -44,4 +44,26 @@
     <string name="ab_from_start">Play from the start</string>
     <string name="ab_pick_chapter">Choose a part</string>
     <string name="ab_remove">Remove from the library (the file stays on the phone)</string>
+    <!-- HOG: план заучивания по страницам (prayer/HifzPrefs, quran/QuranPages) -->
+    <string name="hf_title">Memorization plan</string>
+    <string name="hf_page">Current page</string>
+    <string name="hf_page_sum">Page %1$d of 604 · %2$s · juz %3$d</string>
+    <string name="hf_repeat">Repeat each page</string>
+    <string name="hf_times">%d times</string>
+    <string name="hf_repeat_inf">Non-stop</string>
+    <string name="hf_pages">Pages per session</string>
+    <string name="hf_voice">Reciter (verse by verse)</string>
+    <string name="hf_play">Listen: page %d</string>
+    <string name="hf_prev">Previous page</string>
+    <string name="hf_next">Next page</string>
+    <string name="hf_progress">Pages completed: %d</string>
+    <string name="hf_note">Pages follow the Madani mushaf (604 pages). Audio is streamed verse by verse from everyayah.com and kept on the phone, so repeats and the next listen need no data. When a session ends the plan moves on to the next page. In the car: next and previous change the page.</string>
+    <string name="hf_page_title">Page %1$d · %2$s</string>
+    <string name="hf_rep">Repeat %1$d of %2$d</string>
+    <string name="hf_rep_inf">Repeat %1$d</string>
+    <string name="hf_ayah">Verse %d</string>
+    <string name="hf_basmala">Basmala</string>
+    <string name="hf_done">Pages %1$d–%2$d done. Next time: page %3$d</string>
+    <string name="hf_car_listen">Listen: page %1$d · %2$s</string>
+    <string name="hf_car_sub">Repeat: %s</string>
 </resources>

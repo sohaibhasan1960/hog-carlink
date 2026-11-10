@@ -22,6 +22,7 @@ import android.speech.tts.UtteranceProgressListener
 import com.yegorkapomidorka.headswap.AppLog
 import com.yegorkapomidorka.headswap.MainActivity
 import com.yegorkapomidorka.headswap.R
+import com.yegorkapomidorka.headswap.quran.QuranPages
 import java.util.Locale
 
 /**
@@ -31,7 +32,7 @@ import java.util.Locale
  * Азкары читает синтез речи (арабский голос телефона); нет голоса - текст остаётся в уведомлении.
  */
 class PrayerPlayer : Service() {
-    enum class What { ADHAN, IQAMA, MORNING, EVENING, DHIKR, TEST_ADHAN, QURAN, BOOK }
+    enum class What { ADHAN, IQAMA, MORNING, EVENING, DHIKR, TEST_ADHAN, QURAN, BOOK, HIFZ }
 
     private val main = Handler(Looper.getMainLooper())
     private var player: MediaPlayer? = null
@@ -72,7 +73,7 @@ class PrayerPlayer : Service() {
     }
 
     /** Коран или аудиокнига: пауза, перемотка, скорость и «вперёд/назад» вместо стопа. */
-    private val longForm get() = current == What.QURAN || current == What.BOOK
+    private val longForm get() = current == What.QURAN || current == What.BOOK || current == What.HIFZ
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -99,9 +100,11 @@ class PrayerPlayer : Service() {
                 ACTION_Q_SEEK -> seekQuran(intent.getLongExtra(EXTRA_POS, 0L) + bookChapterStart())
                 ACTION_Q_SPEED -> setQuranSpeed(com.yegorkapomidorka.headswap.quran.Quran.nextSpeed(QuranPrefs(this).speed))
                 ACTION_Q_SPEED_SET -> setQuranSpeed(QuranPrefs(this).speed)
-                ACTION_Q_NEXT -> if (current == What.BOOK) book?.let { b -> AudioBook.nextStart(b.chapters, quranPos())?.let { seekQuran(it) } }
+                ACTION_Q_NEXT -> if (current == What.HIFZ) hifzSwitch(hifzPage + 1)
+                    else if (current == What.BOOK) book?.let { b -> AudioBook.nextStart(b.chapters, quranPos())?.let { seekQuran(it) } }
                     else com.yegorkapomidorka.headswap.quran.Quran.next(quranSurah)?.let { switchSurah(it, 0) }
-                ACTION_Q_PREV -> if (current == What.BOOK) book?.let { b -> seekQuran(AudioBook.backTarget(b.chapters, quranPos())) }
+                ACTION_Q_PREV -> if (current == What.HIFZ) hifzBack()
+                    else if (current == What.BOOK) book?.let { b -> seekQuran(AudioBook.backTarget(b.chapters, quranPos())) }
                     else com.yegorkapomidorka.headswap.quran.Quran.backTarget(quranSurah, quranPos())?.let { (s, p) ->
                         if (s == quranSurah) seekQuran(p) else switchSurah(s, p)
                     }
@@ -137,6 +140,7 @@ class PrayerPlayer : Service() {
             What.DHIKR -> playShortDhikr(text ?: "")
             What.QURAN -> playQuran(surah, intent.getLongExtra(EXTRA_POS, 0L))
             What.BOOK -> playBook(intent.getLongExtra(EXTRA_POS, -1L))
+            What.HIFZ -> playHifz(intent.getIntExtra(EXTRA_PAGE, HifzPrefs(this).page))
             What.MORNING, What.EVENING -> {
                 // своя запись азкаров (файл с телефона) вместо синтеза речи
                 val file = PrayerPrefs(this).adhkarUri(what == What.MORNING)
@@ -171,6 +175,7 @@ class PrayerPlayer : Service() {
         What.DHIKR -> getString(R.string.pr_dhikr)
         What.QURAN -> quranTitle(quranSurah)
         What.BOOK -> book?.let { AudioBook.displayName(it.name) } ?: getString(R.string.ab_title)
+        What.HIFZ -> getString(R.string.hf_title)
     }
 
     private fun quranTitle(surah: Int): String =
@@ -263,6 +268,7 @@ class PrayerPlayer : Service() {
     /** Состояние суры для машины и шторки: буферизация, игра или пауза, позиция, длительность, скорость. */
     private fun quranState(posOverride: Long? = null) {
         if (current == What.BOOK) return bookState(posOverride)
+        if (current == What.HIFZ) return hifzState(posOverride)
         if (current != What.QURAN) return
         val mp = player
         val state = when {
@@ -363,6 +369,139 @@ class PrayerPlayer : Service() {
             if (mp.isPlaying) QuranPrefs(this).lastPosMs = mp.currentPosition.toLong()
         } catch (_: Exception) {
         }
+    }
+
+    // ---------------- заучивание по страницам (план حفظ) ----------------
+
+    private var hifzQueue: List<QuranPages.Item> = emptyList()
+    private var hifzPage = 1
+    private var hifzShown = -1
+
+    @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
+    private fun playHifz(page0: Int) {
+        val prefs = HifzPrefs(this)
+        val page = page0.coerceIn(1, QuranPages.PAGES)
+        hifzPage = page
+        prefs.page = page
+        quranPrepared = false
+        quranPaused = false
+        pausedByFocus = false
+        quranActive = true
+        hifzShown = -1
+        if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) {
+            finish("фокус звука не дан (звонок?)")
+            return
+        }
+        val voice = prefs.voice
+        val repeat = prefs.repeat
+        val queue = QuranPages.queue(page, prefs.pagesPerSession, repeat)
+        hifzQueue = queue
+        try {
+            val e = androidx.media3.exoplayer.ExoPlayer.Builder(this)
+                .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(HifzCache.dataSource(this)))
+                .build()
+            exo = e
+            e.setAudioAttributes(androidx.media3.common.AudioAttributes.Builder().setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_SPEECH).build(), false)
+            e.setWakeMode(androidx.media3.common.C.WAKE_MODE_NETWORK)
+            e.addListener(object : androidx.media3.common.Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (exo !== e) return
+                    when (state) {
+                        androidx.media3.common.Player.STATE_READY -> if (!quranPrepared) {
+                            quranPrepared = true
+                            main.removeCallbacks(savePos)
+                            main.postDelayed(savePos, 10_000)
+                            hifzState()
+                        }
+                        androidx.media3.common.Player.STATE_ENDED -> {
+                            // ورد дослушан: план идёт дальше со следующей страницы
+                            val pages = queue.map { it.page }.distinct()
+                            val p = HifzPrefs(this@PrayerPlayer)
+                            p.done = p.done + pages.size
+                            p.page = (pages.last() + 1).coerceAtMost(QuranPages.PAGES)
+                            AppLog.i("حفظ: страницы ${pages.first()}-${pages.last()} дослушаны, дальше ${p.page}")
+                            finish("حفظ: ورد дослушан")
+                            notify(getString(R.string.hf_title), getString(R.string.hf_done, pages.first(), pages.last(), p.page), ongoing = false)
+                        }
+                    }
+                }
+
+                override fun onMediaItemTransition(item: androidx.media3.common.MediaItem?, reason: Int) {
+                    if (exo === e && quranPrepared) hifzState()
+                }
+
+                override fun onPositionDiscontinuity(old: androidx.media3.common.Player.PositionInfo, new: androidx.media3.common.Player.PositionInfo, reason: Int) {
+                    if (exo === e && quranPrepared) hifzState()
+                }
+
+                override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                    if (exo !== e) return
+                    AppLog.i("حفظ: ошибка ${error.errorCodeName}: ${error.message}")
+                    finish("حفظ: ошибка потока")
+                    notify(getString(R.string.hf_title), getString(R.string.qr_net_error), ongoing = false)
+                }
+            })
+            e.setMediaItems(queue.map { androidx.media3.common.MediaItem.fromUri(voice.url(it.file)) })
+            // «без конца»: одна страница по кругу
+            e.repeatMode = if (repeat == 0) androidx.media3.common.Player.REPEAT_MODE_ALL else androidx.media3.common.Player.REPEAT_MODE_OFF
+            e.setPlaybackSpeed(QuranPrefs(this).speed)
+            e.playWhenReady = true
+            e.prepare()
+            hifzState(0)
+            notify(title, getString(R.string.qr_loading))
+            AppLog.i("حفظ: страница $page, страниц ${prefs.pagesPerSession}, повторов $repeat, ${voice.folder}, файлов ${queue.size}")
+        } catch (e: Exception) {
+            AppLog.e("حفظ: поток не запустился", e)
+            finish("حفظ: поток не запустился")
+        }
+    }
+
+    /** Другая страница тем же сервисом («следующая/предыдущая» в машине); план запоминает её. */
+    private fun hifzSwitch(page: Int) {
+        if (page !in 1..QuranPages.PAGES) return
+        main.removeCallbacks(savePos)
+        exo?.release()
+        exo = null
+        playHifz(page)
+    }
+
+    /** «Назад»: дальше 3 с от начала текущего повтора страницы - в его начало, иначе предыдущая страница. */
+    private fun hifzBack() {
+        val e = exo ?: return
+        val i = e.currentMediaItemIndex
+        val first = QuranPages.blockStart(hifzQueue, i)
+        if (i > first || e.currentPosition > 3_000) {
+            e.seekTo(first, 0)
+            hifzState(0)
+        } else {
+            hifzSwitch(hifzPage - 1)
+        }
+    }
+
+    /** Машина и шторка: «صفحة N · السورة», ниже повтор и аят; полоса прокрутки - текущий аят. */
+    private fun hifzState(posOverride: Long? = null) {
+        val e = exo ?: return
+        val q = hifzQueue
+        if (q.isEmpty()) return
+        val i = e.currentMediaItemIndex.coerceIn(0, q.size - 1)
+        val item = q[i]
+        val state = when {
+            !quranPrepared -> android.media.session.PlaybackState.STATE_BUFFERING
+            quranPaused -> android.media.session.PlaybackState.STATE_PAUSED
+            else -> android.media.session.PlaybackState.STATE_PLAYING
+        }
+        val repeat = HifzPrefs(this).repeat
+        val names = QuranPages.surahs(item.page).joinToString("، ") { com.yegorkapomidorka.headswap.quran.Quran.name(it) }
+        val head = getString(R.string.hf_page_title, item.page, names)
+        val rep = if (repeat == 0) getString(R.string.hf_rep_inf, item.rep) else getString(R.string.hf_rep, item.rep, repeat)
+        val ayah = if (item.ayah == 0) getString(R.string.hf_basmala) else getString(R.string.hf_ayah, item.ayah % 1000)
+        if (i != hifzShown) {
+            hifzShown = i
+            notify(head, "$rep · $ayah")
+        }
+        val dur = if (quranPrepared) e.duration.takeIf { it > 0 } ?: 0L else 0L
+        PrayerSession.quran(this, head, "$rep · $ayah", state, posOverride ?: quranPos(), dur, QuranPrefs(this).speed)
     }
 
     // ---------------- аудиокнига (файл с главами) ----------------
@@ -1003,6 +1142,17 @@ class PrayerPlayer : Service() {
         const val EXTRA_SURAH = "surah"
         const val EXTRA_POS = "pos"
         const val EXTRA_BOOK = "book"
+        const val EXTRA_PAGE = "page"
+
+        /** План заучивания: страница [page] мусхафа (повторы и число страниц - из [HifzPrefs]). */
+        fun hifz(ctx: Context, page: Int) {
+            val i = Intent(ctx, PrayerPlayer::class.java).putExtra(EXTRA_WHAT, What.HIFZ.name).putExtra(EXTRA_PAGE, page)
+            try {
+                ctx.startForegroundService(i)
+            } catch (e: Exception) {
+                AppLog.i("حفظ: не запущен: ${e.javaClass.simpleName}: ${e.message}")
+            }
+        }
         const val CH_PLAY = "prayer_play"
         const val CH_INFO = "prayer_info"
         const val CH_ADHAN = "prayer_adhan"
