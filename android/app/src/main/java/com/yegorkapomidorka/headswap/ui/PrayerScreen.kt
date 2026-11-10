@@ -169,12 +169,14 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
     /** Город вручную: если геолокации нет (выключена, нет сети и спутников). */
     private fun askCity() {
         val c = ctx
-        val input = android.widget.EditText(c).apply {
+        val builder = AlertDialog.Builder(host)
+        // контекст диалога: текст и подсказка в цветах тёмного диалога, а не светлого экрана
+        val input = android.widget.EditText(builder.context).apply {
             hint = c.getString(R.string.pr_city_hint)
             isSingleLine = true
             pad(c, 20, 12, 20, 12)
         }
-        AlertDialog.Builder(host).setTitle(R.string.pr_city).setView(input)
+        builder.setTitle(R.string.pr_city).setView(input)
             .setPositiveButton(android.R.string.ok) { _, _ ->
                 val name = input.text.toString().trim()
                 if (name.isEmpty()) return@setPositiveButton
@@ -288,15 +290,17 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
     }
 
     private fun pickNumber(title: String, min: Int, max: Int, value: Int, set: (Int) -> Unit) {
-        // NumberPicker не умеет отрицательные: сдвиг на min
-        val np = NumberPicker(ctx).apply {
+        // NumberPicker не умеет отрицательные: сдвиг на min. Контекст диалога (тёмная тема): с контекстом экрана
+        // цифры колеса берут тёмный цвет светлой темы и не видны на тёмном фоне диалога
+        val builder = AlertDialog.Builder(host)
+        val np = NumberPicker(builder.context).apply {
             minValue = 0
             maxValue = max - min
             this.value = value - min
             displayedValues = Array(max - min + 1) { (it + min).toString() }
             wrapSelectorWheel = false
         }
-        AlertDialog.Builder(host).setTitle(title).setView(np)
+        builder.setTitle(title).setView(np)
             .setPositiveButton(android.R.string.ok) { _, _ -> set(np.value + min); changed() }
             .setNegativeButton(android.R.string.cancel, null).show()
     }
