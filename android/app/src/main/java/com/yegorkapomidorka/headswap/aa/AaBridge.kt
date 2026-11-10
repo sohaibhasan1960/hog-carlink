@@ -2205,6 +2205,13 @@ class AaBridgeCore(
             peer?.requestKeyFrame()
         }
         if (gotIdr || !aaVideoSeen) return
+        // HOG: ГУ на своём экране (PAUSE) кадры не берёт - ключевой кадр просить незачем. Каждый запрос - цикл
+        // VideoFocus NATIVE -> PROJECTED, AA перезапускает кодер (лог 10.11: 38 перезапусков за 2.5 мин звонка
+        // на экране ГУ). START сам попросит кадр (onCarlifeStart), ожидание считаем заново.
+        if (carlifePaused) {
+            waitSince = 0L
+            return
+        }
         if (waitSince == 0L) waitSince = now
         if (now - waitSince >= KEYFRAME_WAIT_MS && now - lastKeyframeRequest >= KEYFRAME_RETRY_MS) {
             lastKeyframeRequest = now

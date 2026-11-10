@@ -295,6 +295,29 @@ class AaBridgeCoreTest {
     }
 
     @Test
+    fun noKeyframeRequestsWhileHeadUnitIsPaused() {
+        val peer = FakePeer()
+        core.peer = peer
+        core.onCarlifeStart()
+        core.onCodecConfig(cfg)
+        core.onFrame(idr, 1)
+        now = 60_000
+        core.tick()                                           // разовый повтор первого IDR сессии
+        val before = peer.keyframes
+        core.onCarlifePause()                                 // ГУ на своём экране: кадры не принимает
+        link.accept = false
+        core.onFrame(idr, 2)                                  // кадр не принят -> ждём IDR
+        for (i in 1..300) {                                   // 2.5 мин тиков по 0.5 с
+            now += 500
+            core.tick()
+        }
+        assertEquals("на паузе ГУ ключевой кадр не просим", before, peer.keyframes)
+        link.accept = true
+        core.onCarlifeStart()
+        assertEquals("START просит кадр сам", before + 1, peer.keyframes)
+    }
+
+    @Test
     fun repeatedKeyframeAgainOnNewCarlifeSession() {
         val peer = FakePeer()
         core.peer = peer
