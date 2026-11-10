@@ -637,6 +637,11 @@ class PrayerPlayer : Service() {
             val rest = humanQueue.drop(humanIndex).map { it.first }
             val full = PrayerPrefs(this).fullRepeat
             humanQueue = emptyList()
+            // дальше синтез речи: кнопки машины снова «стоп», а не пауза мёртвого плеера
+            adhkarActive = false
+            adhkarPaused = false
+            player?.release()
+            player = null
             speak(rest.flatMap { i -> Adhkar.utterances(i, full).map { i.text to it } }, short = false)
             return
         }
