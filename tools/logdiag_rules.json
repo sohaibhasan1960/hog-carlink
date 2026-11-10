@@ -32,7 +32,9 @@
     "iface_down": "WL net iface-down",
     "stream_desync": "РАССИНХРОН потока",
     "pause": "VIDEO_ENCODER_PAUSE",
-    "eio": "EIO \\(I/O error\\)|ENODEV"
+    "eio": "EIO \\(I/O error\\)|ENODEV",
+    "cert_rejected": "AA TLS handshake не прошёл|AA TLS ошибка",
+    "cert_switched": "СЕРТИФИКАТ: автопереключение"
   },
   "rules": [
     {
@@ -292,6 +294,29 @@
       "steps": [
         {"text": "Установите версию с yegorkapomidorka.com/headswap или из Telegram-канала", "text_en": "Install the latest official HOG CarLink release", "text_ar": "ثبّت آخر إصدار رسمي من HOG CarLink", "action": "update"}
       ]
+    },
+    {
+      "id": "aa_cert_rejected",
+      "title": "Android Auto отверг сертификат магнитолы",
+      "title_en": "Android Auto rejected the head unit certificate",
+      "title_ar": "Android Auto رفض شهادة الشاشة",
+      "phase": "first_connect",
+      "category": "unresolved",
+      "score": 90,
+      "all": [["m.cert_rejected", ">=", 2], ["m.aa_established", "==", 0]],
+      "evidence": ["cert_rejected", "cert_switched"],
+      "advice": "Android Auto на телефоне отвергает сертификат магнитолы в TLS-рукопожатии. HOG CarLink после двух отказов подряд сам переходит на другой встроенный сертификат. Если отказы продолжаются, Google мог отозвать оба сертификата: обновите HOG CarLink и отправьте отчёт в поддержку.",
+      "advice_en": "Android Auto on the phone rejects the head unit certificate during the TLS handshake. After two rejections in a row HOG CarLink switches to the other built-in certificate by itself. If rejections continue, Google may have revoked both certificates: update HOG CarLink and send a report to support.",
+      "advice_ar": "Android Auto على الجوال يرفض شهادة الشاشة أثناء الاتصال المشفّر. بعد رفضين متتاليين ينتقل HOG CarLink تلقائيًا إلى الشهادة الأخرى المضمّنة فيه. إن استمر الرفض فقد تكون Google ألغت الشهادتين: حدّث HOG CarLink وأرسل تقريرًا إلى الدعم.",
+      "what": "Android Auto отвергает сертификат магнитолы в TLS-рукопожатии.",
+      "what_en": "Android Auto rejects the head unit certificate during the TLS handshake.",
+      "what_ar": "Android Auto يرفض شهادة الشاشة أثناء الاتصال المشفّر.",
+      "steps": [
+        {"text": "Переподключитесь: после второго отказа HOG CarLink сам переходит на другой сертификат", "text_en": "Reconnect: after the second rejection HOG CarLink switches to the other certificate by itself", "text_ar": "أعد الاتصال: بعد الرفض الثاني ينتقل HOG CarLink إلى الشهادة الأخرى تلقائيًا"},
+        {"text": "Обновите HOG CarLink", "text_en": "Update HOG CarLink", "text_ar": "حدّث HOG CarLink", "action": "update"},
+        {"text": "Отправьте отчёт в поддержку", "text_en": "Send a report to support", "text_ar": "أرسل تقريرًا إلى الدعم"}
+      ],
+      "suppresses": ["aa_silent", "aa_no_video"]
     },
     {
       "id": "auth_v2_old_version",

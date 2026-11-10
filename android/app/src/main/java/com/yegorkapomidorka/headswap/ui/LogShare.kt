@@ -227,6 +227,9 @@ object LogShare {
             appendLine("الوقت: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(Date())}")
             appendLine("الجهاز: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT}), ${Build.DISPLAY}")
             appendLine("مدة التشغيل: ${SystemClock.elapsedRealtime() / 1000} ث")
+            // HOG: أول ما يُسأل عنه عند انقطاع الاتصال في الخلفية (Honor وXiaomi)
+            val battery = try { if (Readiness.batteryOk(ctx)) "مستثنى (جيد)" else "غير مستثنى: النظام قد يغلق التطبيق في الخلفية" } catch (_: Exception) { "?" }
+            appendLine("تحسين البطارية: $battery")
             appendLine()
             appendLine("إعدادات الجسر")
             appendLine("  الفيديو: ${if (aa.transcode) "إعادة ترميز" else "تمرير مباشر"}")

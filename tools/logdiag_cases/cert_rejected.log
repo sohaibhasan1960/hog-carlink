@@ -1,0 +1,12 @@
+09:00:00.000 сканирование (старт activity)
+09:00:05.000 == USB_ACCESSORY_ATTACHED, в intent: manufacturer="Baidu" model="CarLife"
+09:00:05.100 сессия: старт
+09:00:05.200 == ВЕРСИЯ ПРОТОКОЛА ГУ: major=2 minor=0
+09:00:05.300 WL hs STATISTIC_INFO channel=20082128 t=1
+09:00:08.000 AA TCP подключено 127.0.0.1:5277
+09:00:08.200 AA TLS handshake не прошёл: SSLHandshakeException: Received fatal alert: bad_certificate
+09:00:11.000 AA TCP подключено 127.0.0.1:5277
+09:00:11.200 AA TLS handshake не прошёл: SSLHandshakeException: Received fatal alert: bad_certificate
+09:00:11.300 BRIDGE СЕРТИФИКАТ: автопереключение 'jvc' -> 'hur': телефон 2 раза подряд отверг его в TLS
+09:00:14.000 AA TCP подключено 127.0.0.1:5277
+09:00:14.200 AA TLS handshake не прошёл: SSLHandshakeException: Received fatal alert: bad_certificate

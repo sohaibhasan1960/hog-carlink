@@ -3292,9 +3292,16 @@ class AaConnector(
     private val options: () -> AapOptions = { AapOptions() },
     private val retryMs: Long = 3000,
     private val failures: ServerFailures = AaState.serverFailures,
-    private val sessionFactory: (AaVideoSink, AapOptions, (String, Boolean) -> Unit, (String, Boolean) -> Unit) -> AapSession =
-        { sink, o, lg, end -> AapSession(creds, sink, o, lg, onEnd = end) },
+    private val sessionFactory: ((AaVideoSink, AapOptions, (String, Boolean) -> Unit, (String, Boolean) -> Unit) -> AapSession)? = null,
+    /** HOG: смена набора сертификатов после отказов в TLS ([CertFailover]); null - не переключаем. */
+    private val failover: CertFailover? = null,
+    /** Загрузить другой встроенный набор; null - не загрузился, остаёмся на текущем. */
+    private val credsFor: (String) -> AapCredentials? = { null },
+    /** Набор сменился: сохранить выбор и показать пользователю. */
+    private val onCertSwitched: (String) -> Unit = {},
 ) : AaLifecycle {
+    @Volatile private var activeCreds = creds
+    private val factory = sessionFactory ?: { sink, o, lg, end -> AapSession(activeCreds, sink, o, lg, onEnd = end) }
     @Volatile private var stopping = false
     @Volatile private var current: AapSession? = null
     private var thread: Thread? = null
@@ -3359,7 +3366,7 @@ class AaConnector(
             var endReason = ""
             core.onAaConnecting()
             attempts++
-            val s = sessionFactory(core, options(), log) { reason, _ ->
+            val s = factory(core, options(), log) { reason, _ ->
                 endReason = reason
                 ended.countDown()
             }
@@ -3380,6 +3387,16 @@ class AaConnector(
             }
             core.peer = null
             current = null
+            failover?.onResult(s.established, endReason)?.let { set ->
+                val next = credsFor(set)
+                if (next == null) {
+                    log("BRIDGE СЕРТИФИКАТ: телефон отверг '${activeCreds.certSet}', а набор '$set' не загрузился - остаюсь", true)
+                } else {
+                    log("BRIDGE СЕРТИФИКАТ: автопереключение '${activeCreds.certSet}' -> '$set': телефон ${CertFailover.REJECTS} раза подряд отверг его в TLS ($endReason)", true)
+                    activeCreds = next
+                    onCertSwitched(set)
+                }
+            }
             when {
                 s.established -> {
                     if (!establishedNoted) failures.onEstablished()

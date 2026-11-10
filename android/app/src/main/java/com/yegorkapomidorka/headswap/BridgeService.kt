@@ -24,6 +24,8 @@ import android.os.SystemClock
 import android.provider.Settings
 import com.yegorkapomidorka.headswap.aa.AaBridgeCore
 import com.yegorkapomidorka.headswap.aa.AaShadowNav
+import com.yegorkapomidorka.headswap.aa.AapCerts
+import com.yegorkapomidorka.headswap.aa.CertFailover
 import com.yegorkapomidorka.headswap.aa.DesktopNavHints
 import com.yegorkapomidorka.headswap.carapp.CarAppHost
 import com.yegorkapomidorka.headswap.aa.AaConnector
@@ -1392,6 +1394,13 @@ class BridgeService : Service() {
             val conn = AaConnector(
                 core, loaded.creds, log,
                 options = { AapOptions(sdProvider = { mode.sdOptions(fullAudio = core.audioViaUsb, densityOverride = densityOverride, carMake = aaPrefs.carMake, marginsAtBottom = bottom) }) },
+                // HOG: телефон отвергает сертификат ГУ - переходим на другой встроенный набор и запоминаем выбор
+                failover = CertFailover(AapCerts.SETS, loaded.creds.certSet),
+                credsFor = { set -> try { AapCerts.load({ assets.open(it) }, set) } catch (e: Exception) { null } },
+                onCertSwitched = { set ->
+                    aaPrefs.certSet = set
+                    AaState.cert = "$set (تبديل تلقائي)"
+                },
             )
             AppLog.i("BRIDGE звук по USB: ${if (aaPrefs.usbAudio) "включён (решение по FEATURE_CONFIG ГУ)" else "выключен в UI"}")
             AppLog.i("BRIDGE: AA cert=${loaded.creds.certSet}, grace=${BridgeHost.GRACE_MS} мс")
