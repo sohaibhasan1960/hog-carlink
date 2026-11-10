@@ -508,7 +508,10 @@ class AaTranscodeCoreTest {
     /** Только вызовы подачи (config/frame:*) из журнала - порядок, в котором транскодер увидит данные AA. */
     private fun feedLog(t: FakeTranscoder) = t.journal.filter { it == "config" || it.startsWith("frame:") }
 
-    /** Две нити одновременно, обе должны завершиться за 2 с (иначе зависание/взаимоблокировка). */
+    /**
+     * Две нити одновременно, обе должны завершиться за 10 с (иначе зависание/взаимоблокировка). HOG: было 2 с, но на
+     * Windows Thread.sleep(1) спит ~15 мс (шаг системного таймера), и 200 итераций - уже ~3 с: ложные «зависания».
+     */
     private fun runConcurrently(a: () -> Unit, b: () -> Unit) {
         val errors = CopyOnWriteArrayList<Throwable>()
         val go = CountDownLatch(1)
@@ -520,7 +523,7 @@ class AaTranscodeCoreTest {
         }
         go.countDown()
         val t0 = System.currentTimeMillis()
-        threads.forEach { it.join(maxOf(1, 2000 - (System.currentTimeMillis() - t0))) }
+        threads.forEach { it.join(maxOf(1, 10_000 - (System.currentTimeMillis() - t0))) }
         threads.forEach { assertFalse("нить ${it.name} зависла", it.isAlive) }
         assertTrue("исключения в нитях: $errors", errors.isEmpty())
     }
