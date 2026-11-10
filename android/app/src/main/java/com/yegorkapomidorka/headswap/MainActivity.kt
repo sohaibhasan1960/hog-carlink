@@ -187,6 +187,10 @@ class MainActivity : Activity() {
             CarPairing.onResult(this, resultCode, data)
             current()?.onActivityResultDone()
         }
+        if (requestCode == com.yegorkapomidorka.headswap.ui.PrayerScreen.REQ_BOOK_FILE) {
+            com.yegorkapomidorka.headswap.ui.PrayerScreen.onBookPicked(this, resultCode, data)
+            current()?.onActivityResultDone()
+        }
         if (requestCode == com.yegorkapomidorka.headswap.ui.PrayerScreen.REQ_ADHAN_FILE) {
             com.yegorkapomidorka.headswap.ui.PrayerScreen.onAdhanPicked(this, resultCode, data)
             current()?.onActivityResultDone()

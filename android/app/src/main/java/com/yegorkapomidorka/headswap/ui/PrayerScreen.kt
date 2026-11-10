@@ -246,6 +246,14 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
         box.addView(valueRow(c.getString(R.string.pr_evening_audio), prefs.adhkarName(false).ifBlank { c.getString(if (prefs.adhkarHuman) R.string.pr_audio_human else R.string.pr_audio_tts) }) { pickAdhkarAudio(false) })
         box.addView(c.text(c.getString(R.string.pr_audio_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
 
+        // аудиокниги: файлы с главами с телефона (в машине - список глав, «вперёд/назад» по главам)
+        box.addView(c.sectionTitle(c.getString(R.string.ab_title)))
+        for (b in com.yegorkapomidorka.headswap.prayer.AudioBook.Library(c).books()) {
+            box.addView(valueRow(com.yegorkapomidorka.headswap.prayer.AudioBook.displayName(b.name), c.getString(R.string.ab_chapters, b.chapters.size)) { bookMenu(b) })
+        }
+        box.addView(valueRow(c.getString(R.string.ab_add), "+") { pickBook() })
+        box.addView(c.text(c.getString(R.string.ab_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
+
         box.addView(c.sectionTitle(c.getString(R.string.pr_sec_calc)))
         box.addView(valueRow(c.getString(R.string.pr_method), prefs.methodOverride?.let { methodName(it) } ?: c.getString(R.string.pr_method_auto, methodName(prefs.method))) { pickMethod() })
         box.addView(valueRow(c.getString(R.string.pr_madhab), madhabLabel(prefs.madhabOverride)) { pickMadhab() })
@@ -493,6 +501,43 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
         voiceTts = tts
     }
 
+    private fun pickBook() {
+        // можно выбрать сразу несколько файлов: каждый станет отдельным списком
+        val pick = Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType("audio/*")
+            .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        try {
+            host.startActivityForResult(pick, REQ_BOOK_FILE)
+        } catch (e: Exception) {
+            AppLog.i("книга: выбор файла не открылся: ${e.message}")
+        }
+    }
+
+    private fun bookMenu(b: com.yegorkapomidorka.headswap.prayer.AudioBook.Book) {
+        val ab = com.yegorkapomidorka.headswap.prayer.AudioBook
+        val label = ctx.getString(R.string.ab_chapter)
+        val resume = if (b.lastPosMs > 0) b.chapterAt(b.lastPosMs).let { i -> ctx.getString(R.string.qr_continue, b.title(i, label)) }
+            else ctx.getString(R.string.ab_from_start)
+        AlertDialog.Builder(host).setTitle(ab.displayName(b.name))
+            .setItems(arrayOf(resume, ctx.getString(R.string.ab_pick_chapter), ctx.getString(R.string.ab_remove))) { _, i ->
+                when (i) {
+                    0 -> PrayerPlayer.book(ctx, b.id)
+                    1 -> AlertDialog.Builder(host).setTitle(ab.displayName(b.name))
+                        .setItems(b.chapters.indices.map { k -> b.title(k, label) + (b.length(k).takeIf { it > 0 }?.let { "  ·  " + ab.clock(it) } ?: "") }.toTypedArray()) { _, k ->
+                            PrayerPlayer.book(ctx, b.id, b.start(k))
+                        }.show()
+                    2 -> {
+                        // только из списка: файл на телефоне остаётся
+                        com.yegorkapomidorka.headswap.prayer.AudioBook.Library(ctx).remove(b.id)
+                        try {
+                            ctx.contentResolver.releasePersistableUriPermission(android.net.Uri.parse(b.uri), Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        } catch (_: Exception) {
+                        }
+                        buildSettings()
+                    }
+                }
+            }.show()
+    }
+
     private fun pickAdhkarAudio(morning: Boolean) {
         AlertDialog.Builder(host).setTitle(if (morning) R.string.pr_morning_audio else R.string.pr_evening_audio)
             .setItems(arrayOf(ctx.getString(R.string.pr_audio_tts), ctx.getString(R.string.pr_adhan_file))) { _, i ->
@@ -515,6 +560,55 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
         const val REQ_ADHAN_FILE = 46
         const val REQ_MORNING_FILE = 48
         const val REQ_EVENING_FILE = 49
+        const val REQ_BOOK_FILE = 50
+
+        /** Аудиокнига выбрана: постоянное разрешение, главы из тегов файла, длительность; в библиотеку. */
+        fun onBookPicked(act: Activity, resultCode: Int, data: Intent?) {
+            if (resultCode != Activity.RESULT_OK || data == null) return
+            val clip = data.clipData
+            val uris = if (clip != null) List(clip.itemCount) { clip.getItemAt(it).uri } else listOfNotNull(data.data)
+            for (u in uris) addBook(act, u)
+        }
+
+        private fun addBook(act: Activity, uri: android.net.Uri) {
+            try {
+                act.contentResolver.takePersistableUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            } catch (e: Exception) {
+                AppLog.i("книга: постоянное разрешение на файл не дано: ${e.message}")
+            }
+            val name = try {
+                act.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { c ->
+                    if (c.moveToFirst()) c.getString(0) else null
+                }
+            } catch (_: Exception) {
+                null
+            } ?: uri.lastPathSegment ?: ""
+            val chapters = try {
+                act.contentResolver.openInputStream(uri)?.use { inp ->
+                    val buf = ByteArray(1 shl 20)
+                    var n = 0
+                    while (n < buf.size) {
+                        val r = inp.read(buf, n, buf.size - n)
+                        if (r <= 0) break
+                        n += r
+                    }
+                    com.yegorkapomidorka.headswap.prayer.AudioBook.oggChapters(buf.copyOf(n))
+                } ?: emptyList()
+            } catch (e: Exception) {
+                AppLog.i("книга: главы не прочитаны: ${e.message}")
+                emptyList()
+            }
+            val dur = try {
+                android.media.MediaMetadataRetriever().use { r ->
+                    r.setDataSource(act, uri)
+                    r.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION)?.toLongOrNull() ?: 0L
+                }
+            } catch (_: Exception) {
+                0L
+            }
+            com.yegorkapomidorka.headswap.prayer.AudioBook.Library(act).add(uri.toString(), name, dur, chapters)
+            AppLog.i("книга: добавлена, глав ${chapters.size}, ${dur / 1000} с")
+        }
 
         /** Своя запись азкаров утра/вечера: постоянное разрешение и имя. */
         fun onAdhkarPicked(act: Activity, morning: Boolean, resultCode: Int, data: Intent?) {

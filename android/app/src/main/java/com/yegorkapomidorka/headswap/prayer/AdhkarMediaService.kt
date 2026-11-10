@@ -37,6 +37,10 @@ class AdhkarMediaService : MediaBrowserService() {
                 out.add(item(PrayerPlayer.What.MORNING.name, getString(R.string.pr_morning), null, playable = true))
                 out.add(item(PrayerPlayer.What.EVENING.name, getString(R.string.pr_evening), null, playable = true))
                 out.add(item(QURAN, getString(R.string.qr_title), QuranPrefs(this).reciter.nameAr, playable = false))
+                val books = AudioBook.Library(this).books()
+                // одна книга - сразу её главы, несколько - список книг
+                if (books.size == 1) out.add(item(BOOK + books[0].id, AudioBook.displayName(books[0].name), getString(R.string.ab_chapters, books[0].chapters.size), playable = false))
+                else if (books.isNotEmpty()) out.add(item(LIBRARY, getString(R.string.ab_title), getString(R.string.ab_books, books.size), playable = false))
                 out.add(item(TIMES, getString(R.string.pr_car_times), PrayerPrefs(this).place.ifBlank { null }, playable = false))
             }
             QURAN -> {
@@ -45,6 +49,9 @@ class AdhkarMediaService : MediaBrowserService() {
                     out.add(item("QURAN:${q.lastSurah}:${q.lastPosMs}", getString(R.string.qr_continue, Quran.name(q.lastSurah)), null, playable = true))
                 }
                 for (n in 1..Quran.SURAHS) out.add(item("QURAN:$n:0", "$n. ${Quran.name(n)}", null, playable = true))
+            }
+            LIBRARY -> for (b in AudioBook.Library(this).books()) {
+                out.add(item(BOOK + b.id, AudioBook.displayName(b.name), getString(R.string.ab_chapters, b.chapters.size), playable = false))
             }
             TIMES -> {
                 val prefs = PrayerPrefs(this)
@@ -63,6 +70,17 @@ class AdhkarMediaService : MediaBrowserService() {
                 }
             }
         }
+        if (parentId.startsWith(BOOK)) AudioBook.Library(this).book(parentId.removePrefix(BOOK))?.let { b ->
+            // «Продолжить» с сохранённого места, затем все главы
+            if (b.lastPosMs > 0) {
+                val i = b.chapterAt(b.lastPosMs)
+                out.add(item("BOOK:${b.id}:-1", getString(R.string.qr_continue, b.title(i, getString(R.string.ab_chapter))), null, playable = true))
+            }
+            val label = getString(R.string.ab_chapter)
+            for ((i, c) in b.chapters.withIndex()) {
+                out.add(item("BOOK:${b.id}:${c.startMs}", b.title(i, label), b.length(i).takeIf { it > 0 }?.let { AudioBook.clock(it) }, playable = true))
+            }
+        }
         result.sendResult(out)
     }
 
@@ -74,6 +92,8 @@ class AdhkarMediaService : MediaBrowserService() {
         private const val ROOT = "root"
         private const val TIMES = "times"
         private const val QURAN = "quran"
+        private const val LIBRARY = "library"
+        private const val BOOK = "book:"
     }
 }
 
@@ -88,6 +108,11 @@ object PrayerSession {
         val s = MediaSession(app, "hog-prayer")
         s.setCallback(object : MediaSession.Callback() {
             override fun onPlayFromMediaId(mediaId: String, extras: Bundle?) {
+                if (mediaId.startsWith("BOOK:")) {
+                    val p = mediaId.split(':')
+                    PrayerPlayer.book(app, p.getOrNull(1) ?: return, p.getOrNull(2)?.toLongOrNull() ?: -1)
+                    return
+                }
                 if (mediaId.startsWith("QURAN:")) {
                     val p = mediaId.split(':')
                     PrayerPlayer.quran(app, p.getOrNull(1)?.toIntOrNull() ?: 1, p.getOrNull(2)?.toLongOrNull() ?: 0)
@@ -108,6 +133,8 @@ object PrayerSession {
 
             /** Голосом в машине: «включи азкары вечера в HOG CarLink». */
             override fun onPlayFromSearch(query: String?, extras: Bundle?) {
+                // «شغّل أذكار النوم»: файл из аудиотеки по имени важнее встроенных азкаров
+                AudioBook.Library(app).books().let { books -> AudioBook.match(books.map { it.name }, query)?.let { return PrayerPlayer.book(app, books[it].id) } }
                 // «أذان الفجر» - азан, а не сура аль-Фаджр: ключевые слова азана/азкаров важнее названий сур
                 val kw = keyword(query)
                 val surah = if (kw == null) surahFor(query) else null

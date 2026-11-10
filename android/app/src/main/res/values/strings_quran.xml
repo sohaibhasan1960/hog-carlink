@@ -35,4 +35,13 @@
     <string name="qr_speed">Recitation speed</string>
     <string name="qr_speed_btn">Speed %1$s</string>
     <string name="qr_paused">Paused</string>
+    <string name="ab_title">Audio library</string>
+    <string name="ab_chapter">Part</string>
+    <string name="ab_chapters">%1$d parts</string>
+    <string name="ab_books">%1$d files</string>
+    <string name="ab_add">Add a file from the phone</string>
+    <string name="ab_note">An audio file with chapters (for example Hisn al-Muslim in one file): in the car it shows as a list of parts, next and previous move between parts, and the listening position is saved. The file stays on your phone and is not uploaded anywhere.</string>
+    <string name="ab_from_start">Play from the start</string>
+    <string name="ab_pick_chapter">Choose a part</string>
+    <string name="ab_remove">Remove from the library (the file stays on the phone)</string>
 </resources>

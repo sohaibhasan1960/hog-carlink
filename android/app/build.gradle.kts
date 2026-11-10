@@ -113,6 +113,8 @@ androidComponents {
 
 dependencies {
     implementation("androidx.annotation:annotation:1.8.1")
+    // HOG CarLink: аудиотека - точная перемотка по главам в Ogg Opus (MediaPlayer прыгает к границе страницы, это секунды)
+    implementation("androidx.media3:media3-exoplayer:1.8.0")
     // активация Headswap Desktop с самого телефона: пейринг и подключение к своему adbd по беспроводной отладке
     implementation("com.flyfishxu:kadb:2.1.5")
     // Kadb.pair - suspend; зовём из рабочего потока через runBlocking

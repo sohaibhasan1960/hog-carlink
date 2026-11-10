@@ -35,4 +35,13 @@
     <string name="qr_speed">سرعة التلاوة</string>
     <string name="qr_speed_btn">السرعة %1$s</string>
     <string name="qr_paused">متوقف مؤقتًا</string>
+    <string name="ab_title">المكتبة الصوتية</string>
+    <string name="ab_chapter">المقطع</string>
+    <string name="ab_chapters">%1$d مقطعًا</string>
+    <string name="ab_books">%1$d ملفات</string>
+    <string name="ab_add">إضافة ملف من الهاتف</string>
+    <string name="ab_note">ملف صوتي فيه فصول (مثل حصن المسلم في ملف واحد): يظهر في السيارة قائمةَ مقاطع، والتالي والسابق ينتقلان بين المقاطع، ويُحفظ موضع الاستماع. يبقى الملف في هاتفك ولا يُرفع إلى أي مكان.</string>
+    <string name="ab_from_start">تشغيل من البداية</string>
+    <string name="ab_pick_chapter">اختيار مقطع</string>
+    <string name="ab_remove">إزالة من المكتبة (يبقى الملف في الهاتف)</string>
 </resources>

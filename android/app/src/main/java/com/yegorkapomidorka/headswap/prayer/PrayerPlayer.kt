@@ -31,10 +31,12 @@ import java.util.Locale
  * Азкары читает синтез речи (арабский голос телефона); нет голоса - текст остаётся в уведомлении.
  */
 class PrayerPlayer : Service() {
-    enum class What { ADHAN, IQAMA, MORNING, EVENING, DHIKR, TEST_ADHAN, QURAN }
+    enum class What { ADHAN, IQAMA, MORNING, EVENING, DHIKR, TEST_ADHAN, QURAN, BOOK }
 
     private val main = Handler(Looper.getMainLooper())
     private var player: MediaPlayer? = null
+    /** Аудиотека играет через ExoPlayer: точная перемотка в Ogg Opus (у MediaPlayer - до границы страницы, секунды). */
+    private var exo: androidx.media3.exoplayer.ExoPlayer? = null
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var pendingSpeech: List<Pair<String, String>>? = null   // (текст для экрана, текст для речи)
@@ -50,13 +52,27 @@ class PrayerPlayer : Service() {
     private var quranPaused = false
     /** Пауза из-за временной потери фокуса (звонок): по возврату фокуса чтение продолжается само. */
     private var pausedByFocus = false
+    /** Аудиокнига (BOOK): файл с главами; глава и позиция - по положению в файле. */
+    private var book: AudioBook.Book? = null
+    private var bookChapter = -1
+    private var bookTicks = 0
     private val savePos = object : Runnable {
         override fun run() {
+            if (current == What.BOOK) {
+                // раз в секунду: смена главы сразу видна в машине; позиция сохраняется раз в 10 с
+                if (++bookTicks % 10 == 0) saveQuranPos()
+                if (book?.chapterAt(quranPos()) != bookChapter) quranState()
+                main.postDelayed(this, 1_000)
+                return
+            }
             saveQuranPos()
             quranState()
             main.postDelayed(this, 10_000)
         }
     }
+
+    /** Коран или аудиокнига: пауза, перемотка, скорость и «вперёд/назад» вместо стопа. */
+    private val longForm get() = current == What.QURAN || current == What.BOOK
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -66,7 +82,7 @@ class PrayerPlayer : Service() {
             return START_NOT_STICKY
         }
         if (intent?.action in QURAN_ACTIONS) {
-            if (current != What.QURAN || player == null) {
+            if (!longForm || (player == null && exo == null)) {
                 // сервис поднят только ради команды, а суры нет - не висеть
                 if (current == null) stopSelf()
                 return START_NOT_STICKY
@@ -74,13 +90,16 @@ class PrayerPlayer : Service() {
             when (intent!!.action) {
                 ACTION_Q_PAUSE -> pauseQuran(false)
                 ACTION_Q_RESUME -> resumeQuran()
-                ACTION_Q_SEEK -> seekQuran(intent.getLongExtra(EXTRA_POS, 0L))
+                // у книги полоса прокрутки в машине - внутри главы
+                ACTION_Q_SEEK -> seekQuran(intent.getLongExtra(EXTRA_POS, 0L) + bookChapterStart())
                 ACTION_Q_SPEED -> setQuranSpeed(com.yegorkapomidorka.headswap.quran.Quran.nextSpeed(QuranPrefs(this).speed))
                 ACTION_Q_SPEED_SET -> setQuranSpeed(QuranPrefs(this).speed)
-                ACTION_Q_NEXT -> com.yegorkapomidorka.headswap.quran.Quran.next(quranSurah)?.let { switchSurah(it, 0) }
-                ACTION_Q_PREV -> com.yegorkapomidorka.headswap.quran.Quran.backTarget(quranSurah, quranPos())?.let { (s, p) ->
-                    if (s == quranSurah) seekQuran(p) else switchSurah(s, p)
-                }
+                ACTION_Q_NEXT -> if (current == What.BOOK) book?.let { b -> AudioBook.nextStart(b.chapters, quranPos())?.let { seekQuran(it) } }
+                    else com.yegorkapomidorka.headswap.quran.Quran.next(quranSurah)?.let { switchSurah(it, 0) }
+                ACTION_Q_PREV -> if (current == What.BOOK) book?.let { b -> seekQuran(AudioBook.backTarget(b.chapters, quranPos())) }
+                    else com.yegorkapomidorka.headswap.quran.Quran.backTarget(quranSurah, quranPos())?.let { (s, p) ->
+                        if (s == quranSurah) seekQuran(p) else switchSurah(s, p)
+                    }
             }
             return START_NOT_STICKY
         }
@@ -102,6 +121,7 @@ class PrayerPlayer : Service() {
         }
         stopSound()
         current = what
+        if (what == What.BOOK) book = AudioBook.Library(this).book(intent.getStringExtra(EXTRA_BOOK) ?: "")
         title = if (what == What.QURAN) quranTitle(surah) else titleFor(what, prayer)
         startForeground(NOTIF_ID, notification(title, text ?: ""), ServiceInfo.FOREGROUND_SERVICE_TYPE_MEDIA_PLAYBACK)
         startSession()
@@ -111,6 +131,7 @@ class PrayerPlayer : Service() {
             What.IQAMA -> speak(listOf(title to Adhkar.IQAMA), short = true)
             What.DHIKR -> playShortDhikr(text ?: "")
             What.QURAN -> playQuran(surah, intent.getLongExtra(EXTRA_POS, 0L))
+            What.BOOK -> playBook(intent.getLongExtra(EXTRA_POS, -1L))
             What.MORNING, What.EVENING -> {
                 // своя запись азкаров (файл с телефона) вместо синтеза речи
                 val file = PrayerPrefs(this).adhkarUri(what == What.MORNING)
@@ -144,6 +165,7 @@ class PrayerPlayer : Service() {
         What.EVENING -> getString(R.string.pr_evening)
         What.DHIKR -> getString(R.string.pr_dhikr)
         What.QURAN -> quranTitle(quranSurah)
+        What.BOOK -> book?.let { AudioBook.displayName(it.name) } ?: getString(R.string.ab_title)
     }
 
     private fun quranTitle(surah: Int): String =
@@ -177,7 +199,7 @@ class PrayerPlayer : Service() {
             mp.setOnPreparedListener {
                 if (player !== it) return@setOnPreparedListener
                 quranPrepared = true
-                if (startMs > 0) it.seekTo(startMs.toInt())
+                if (startMs > 0) it.seekTo(startMs, MediaPlayer.SEEK_CLOSEST)
                 it.start()
                 applySpeed(it)
                 main.removeCallbacks(savePos)
@@ -228,13 +250,14 @@ class PrayerPlayer : Service() {
     }
 
     private fun quranPos(): Long = try {
-        if (quranPrepared) player?.currentPosition?.toLong() ?: 0L else 0L
+        if (!quranPrepared) 0L else exo?.currentPosition ?: player?.currentPosition?.toLong() ?: 0L
     } catch (_: Exception) {
         0L
     }
 
     /** Состояние суры для машины и шторки: буферизация, игра или пауза, позиция, длительность, скорость. */
     private fun quranState(posOverride: Long? = null) {
+        if (current == What.BOOK) return bookState(posOverride)
         if (current != What.QURAN) return
         val mp = player
         val state = when {
@@ -264,10 +287,10 @@ class PrayerPlayer : Service() {
     }
 
     private fun pauseQuran(byFocus: Boolean) {
-        val mp = player ?: return
+        if (player == null && exo == null) return
         if (!quranPrepared || quranPaused) return
         try {
-            mp.pause()
+            exo?.pause() ?: player?.pause()
         } catch (_: Exception) {
         }
         quranPaused = true
@@ -279,27 +302,27 @@ class PrayerPlayer : Service() {
     }
 
     private fun resumeQuran() {
-        val mp = player ?: return
+        if (player == null && exo == null) return
         if (!quranPaused) return
         if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) return
         quranPaused = false
         pausedByFocus = false
         try {
-            mp.start()
-            applySpeed(mp)
+            val e = exo
+            if (e != null) e.play() else player?.let { it.start(); applySpeed(it) }
         } catch (_: Exception) {
         }
         main.removeCallbacks(savePos)
-        main.postDelayed(savePos, 10_000)
+        main.postDelayed(savePos, if (current == What.BOOK) 1_000 else 10_000)
         notify(title, "")
         quranState()
     }
 
     private fun seekQuran(posMs: Long) {
-        val mp = player ?: return
+        if (player == null && exo == null) return
         if (!quranPrepared) return
         try {
-            mp.seekTo(posMs.coerceAtLeast(0).toInt())
+            exo?.seekTo(posMs.coerceAtLeast(0)) ?: player?.seekTo(posMs.coerceAtLeast(0), MediaPlayer.SEEK_CLOSEST)
         } catch (_: Exception) {
         }
         quranState(posMs)
@@ -308,12 +331,22 @@ class PrayerPlayer : Service() {
     private fun setQuranSpeed(v: Float) {
         QuranPrefs(this).speed = v
         val mp = player
+        exo?.setPlaybackSpeed(v)
         if (mp != null && quranPrepared && !quranPaused) applySpeed(mp)
         AppLog.i("Коран: скорость ${com.yegorkapomidorka.headswap.quran.Quran.speedLabel(v)}")
         quranState()
     }
 
     private fun saveQuranPos(force: Boolean = false) {
+        if (current == What.BOOK) {
+            val b = book ?: return
+            val e = exo ?: return
+            try {
+                if (quranPrepared && (force || e.isPlaying)) AudioBook.Library(this).setPos(b.id, e.currentPosition)
+            } catch (_: Exception) {
+            }
+            return
+        }
         if (force) {
             if (current == What.QURAN && quranPrepared) QuranPrefs(this).lastPosMs = quranPos()
             return
@@ -325,6 +358,103 @@ class PrayerPlayer : Service() {
             if (mp.isPlaying) QuranPrefs(this).lastPosMs = mp.currentPosition.toLong()
         } catch (_: Exception) {
         }
+    }
+
+    // ---------------- аудиокнига (файл с главами) ----------------
+
+    private fun bookChapterStart(): Long {
+        val b = book ?: return 0L
+        return if (current == What.BOOK && bookChapter >= 0) b.start(bookChapter) else 0L
+    }
+
+    private fun playBook(pos0: Long) {
+        val b = book
+        if (b == null) {
+            finish("книги нет")
+            return
+        }
+        quranPrepared = false
+        quranPaused = false
+        pausedByFocus = false
+        quranActive = true
+        bookChapter = -1
+        if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) {
+            finish("фокус звука не дан (звонок?)")
+            return
+        }
+        // дослушанная до конца - сначала
+        val startMs = (if (pos0 >= 0) pos0 else b.lastPosMs).let { if (b.durationMs > 0 && it >= b.durationMs - 1_000) 0L else it }
+        bookState(startMs)
+        try {
+            val e = androidx.media3.exoplayer.ExoPlayer.Builder(this).build()
+            exo = e
+            // фокус звука ведём сами (как у Корана): пауза при звонке и продолжение после
+            e.setAudioAttributes(androidx.media3.common.AudioAttributes.Builder().setUsage(androidx.media3.common.C.USAGE_MEDIA)
+                .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_SPEECH).build(), false)
+            e.setWakeMode(androidx.media3.common.C.WAKE_MODE_LOCAL)
+            e.addListener(object : androidx.media3.common.Player.Listener {
+                override fun onPlaybackStateChanged(state: Int) {
+                    if (exo !== e) return
+                    when (state) {
+                        androidx.media3.common.Player.STATE_READY -> if (!quranPrepared) {
+                            quranPrepared = true
+                            // длительность при добавлении не узнали - взять у плеера (иначе у последней главы 0:00)
+                            if (b.durationMs <= 0 && e.duration > 0) {
+                                AudioBook.Library(this@PrayerPlayer).setDuration(b.id, e.duration)
+                                book = AudioBook.Library(this@PrayerPlayer).book(b.id) ?: book
+                            }
+                            main.removeCallbacks(savePos)
+                            main.postDelayed(savePos, 1_000)
+                            bookState()
+                        }
+                        androidx.media3.common.Player.STATE_ENDED -> {
+                            AudioBook.Library(this@PrayerPlayer).setPos(b.id, 0)
+                            finish("книга дослушана")
+                        }
+                    }
+                }
+
+                override fun onPositionDiscontinuity(old: androidx.media3.common.Player.PositionInfo, new: androidx.media3.common.Player.PositionInfo, reason: Int) {
+                    if (exo === e && quranPrepared) bookState()
+                }
+
+                override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                    if (exo !== e) return
+                    // файл удалён или разрешение отозвано
+                    AppLog.i("книга: ошибка файла ${error.errorCodeName}: ${error.message}")
+                    finish("ошибка файла книги")
+                    notify(title, getString(R.string.pr_file_failed), ongoing = false)
+                }
+            })
+            e.setMediaItem(androidx.media3.common.MediaItem.fromUri(b.uri), startMs)
+            e.setPlaybackSpeed(QuranPrefs(this).speed)
+            e.playWhenReady = true
+            e.prepare()
+            AppLog.i("книга: глав ${b.chapters.size}, с ${startMs / 1000} с")
+        } catch (e: Exception) {
+            AppLog.e("книга: файл не открылся", e)
+            finish("файл книги не открылся")
+            notify(title, getString(R.string.pr_file_failed), ongoing = false)
+        }
+    }
+
+    /** Глава для машины: имя главы, полоса прокрутки и длительность - внутри главы, а не всего файла. */
+    private fun bookState(posOverride: Long? = null) {
+        val b = book ?: return
+        val abs = posOverride ?: quranPos()
+        val i = b.chapterAt(abs)
+        val state = when {
+            !quranPrepared -> android.media.session.PlaybackState.STATE_BUFFERING
+            quranPaused -> android.media.session.PlaybackState.STATE_PAUSED
+            else -> android.media.session.PlaybackState.STATE_PLAYING
+        }
+        val dur = b.length(i)
+        val chTitle = b.title(i, getString(R.string.ab_chapter))
+        if (i != bookChapter) {
+            bookChapter = i
+            notify(title, chTitle)
+        }
+        PrayerSession.quran(this, chTitle, "$title · ${i + 1}/${b.chapters.size}", state, (abs - b.start(i)).coerceAtLeast(0), dur, QuranPrefs(this).speed)
     }
 
     /** Своя запись (азкары утра/вечера) с телефона. */
@@ -665,8 +795,8 @@ class PrayerPlayer : Service() {
                 // Коран при звонке - пауза и продолжение после него
                 main.post {
                     when {
-                        change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT && current == What.QURAN -> pauseQuran(true)
-                        change == AudioManager.AUDIOFOCUS_GAIN && current == What.QURAN && pausedByFocus -> resumeQuran()
+                        change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT && longForm -> pauseQuran(true)
+                        change == AudioManager.AUDIOFOCUS_GAIN && longForm && pausedByFocus -> resumeQuran()
                         change == AudioManager.AUDIOFOCUS_LOSS || change == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT -> finish("фокус звука потерян ($change)")
                     }
                 }
@@ -689,10 +819,13 @@ class PrayerPlayer : Service() {
             it.release()
         }
         player = null
+        exo?.release()
+        exo = null
         quranActive = false
         quranPrepared = false
         quranPaused = false
         pausedByFocus = false
+        bookChapter = -1
         humanGen++
         humanQueue = emptyList()
         pendingSpeech = null
@@ -771,6 +904,7 @@ class PrayerPlayer : Service() {
         const val EXTRA_TEXT = "text"
         const val EXTRA_SURAH = "surah"
         const val EXTRA_POS = "pos"
+        const val EXTRA_BOOK = "book"
         const val CH_PLAY = "prayer_play"
         const val CH_INFO = "prayer_info"
         const val CH_ADHAN = "prayer_adhan"
@@ -798,6 +932,16 @@ class PrayerPlayer : Service() {
                 ctx.startForegroundService(i)
             } catch (e: Exception) {
                 AppLog.i("Коран: звук не запущен: ${e.javaClass.simpleName}: ${e.message}")
+            }
+        }
+
+        /** Аудиокнига [id] с позиции [posMs] в файле; -1 - с сохранённой. */
+        fun book(ctx: Context, id: String, posMs: Long = -1) {
+            val i = Intent(ctx, PrayerPlayer::class.java).putExtra(EXTRA_WHAT, What.BOOK.name).putExtra(EXTRA_BOOK, id).putExtra(EXTRA_POS, posMs)
+            try {
+                ctx.startForegroundService(i)
+            } catch (e: Exception) {
+                AppLog.i("книга: звук не запущен: ${e.javaClass.simpleName}: ${e.message}")
             }
         }
 

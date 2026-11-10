@@ -35,4 +35,13 @@
     <string name="qr_speed">Скорость чтения</string>
     <string name="qr_speed_btn">Скорость %1$s</string>
     <string name="qr_paused">Пауза</string>
+    <string name="ab_title">Аудиотека</string>
+    <string name="ab_chapter">Часть</string>
+    <string name="ab_chapters">частей: %1$d</string>
+    <string name="ab_books">файлов: %1$d</string>
+    <string name="ab_add">Добавить файл с телефона</string>
+    <string name="ab_note">Аудиофайл с главами (например, «Крепость мусульманина» одним файлом): в машине - список частей, «вперёд/назад» по частям, место прослушивания запоминается. Файл остаётся на телефоне и никуда не загружается.</string>
+    <string name="ab_from_start">С начала</string>
+    <string name="ab_pick_chapter">Выбрать часть</string>
+    <string name="ab_remove">Убрать из аудиотеки (файл остаётся на телефоне)</string>
 </resources>
