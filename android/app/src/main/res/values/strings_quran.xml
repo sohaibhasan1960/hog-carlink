@@ -26,6 +26,7 @@
     <string name="pr_morning_audio">Morning adhkar audio</string>
     <string name="pr_evening_audio">Evening adhkar audio</string>
     <string name="pr_audio_tts">Phone voice reading</string>
+    <string name="pr_audio_human">Real voice (Hisn al-Muslim recordings)</string>
     <string name="pr_audio_note">You can choose a recording on your phone (for example, adhkar recited by Sheikh Mishary Alafasy that you own) instead of the phone voice.</string>
     <string name="pr_voice_male">Male voice</string>
     <string name="pr_voice_female">Female voice</string>

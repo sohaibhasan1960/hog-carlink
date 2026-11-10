@@ -35,4 +35,17 @@ class AdhkarTest {
         assertEquals(7, Adhkar.utterances(seven, fullRepeat = false).size)
         assertTrue(Adhkar.speakable("بِمُحَمَّدٍ ﷺ نَبِيًّا").contains("صلى الله عليه وسلم"))
     }
+
+    @Test
+    fun shortDhikrHaveRealVoice() {
+        // каждый короткий зикр - с записью, и это та же запись, что у этого зикра в азкарах утра/вечера
+        assertTrue(Adhkar.SHORT.size >= 6)
+        for (t in Adhkar.SHORT) {
+            val url = Adhkar.SHORT_AUDIO[t]!!
+            assertTrue(url, url.startsWith("https://www.hisnmuslim.com/audio/ar/") && url.endsWith(".mp3"))
+            val item = all.firstOrNull { it.text == t }
+            assertTrue("нет в adhkar_ar.json: $t", item != null)
+            assertEquals(t, item!!.audio, url)
+        }
+    }
 }

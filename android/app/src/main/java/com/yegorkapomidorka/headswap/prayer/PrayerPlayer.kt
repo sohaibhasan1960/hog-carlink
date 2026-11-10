@@ -109,7 +109,7 @@ class PrayerPlayer : Service() {
         when (what) {
             What.ADHAN, What.TEST_ADHAN -> playAdhan()
             What.IQAMA -> speak(listOf(title to Adhkar.IQAMA), short = true)
-            What.DHIKR -> speak(listOf((text ?: "") to (text ?: "")), short = true)
+            What.DHIKR -> playShortDhikr(text ?: "")
             What.QURAN -> playQuran(surah, intent.getLongExtra(EXTRA_POS, 0L))
             What.MORNING, What.EVENING -> {
                 // своя запись азкаров (файл с телефона) вместо синтеза речи
@@ -407,6 +407,62 @@ class PrayerPlayer : Service() {
     private var humanRep = 0
     /** Поколение очереди: после остановки запоздалые колбэки скачивания не играют. */
     private var humanGen = 0
+
+    /**
+     * Короткий зикр-напоминание: запись живым голосом (Adhkar.SHORT_AUDIO), если включён «живой голос»;
+     * поверх музыки с приглушением, как синтез. Нет записи и сети - синтез речи.
+     */
+    private fun playShortDhikr(text: String) {
+        val url = Adhkar.SHORT_AUDIO[text]
+        if (!PrayerPrefs(this).adhkarHuman || url == null) {
+            speak(listOf(text to text), short = true)
+            return
+        }
+        val gen = ++humanGen
+        val app = applicationContext
+        Thread({
+            val f = AdhkarAudio.fetch(app, url)
+            main.post {
+                if (gen != humanGen) return@post
+                if (f == null) {
+                    AppLog.i("зикр: нет записи, синтез речи")
+                    speak(listOf(text to text), short = true)
+                } else {
+                    playShortFile(gen, f, text)
+                }
+            }
+        }, "dhikr-audio").start()
+    }
+
+    private fun playShortFile(gen: Int, file: java.io.File, text: String) {
+        val usage = AudioAttributes.USAGE_ASSISTANCE_NAVIGATION_GUIDANCE
+        if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK, usage, AudioAttributes.CONTENT_TYPE_SPEECH)) {
+            finish("фокус звука не дан (звонок?)")
+            return
+        }
+        notify(title, text)
+        PrayerSession.playing(this, title, text)
+        player?.release()
+        val mp = MediaPlayer()
+        player = mp
+        try {
+            mp.setAudioAttributes(attrs(usage, AudioAttributes.CONTENT_TYPE_SPEECH))
+            mp.setDataSource(file.path)
+            mp.setOnCompletionListener { if (gen == humanGen) finish("зикр прочитан") }
+            mp.setOnErrorListener { _, w, x ->
+                AppLog.i("зикр: ошибка записи $w/$x")
+                file.delete()
+                if (gen == humanGen) finish("ошибка записи зикра")
+                true
+            }
+            mp.prepare()
+            mp.start()
+        } catch (e: Exception) {
+            AppLog.e("зикр: запись не открылась", e)
+            file.delete()
+            finish("запись зикра не открылась")
+        }
+    }
 
     private fun playHuman(list: List<Adhkar.Item>, full: Boolean) {
         if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) {

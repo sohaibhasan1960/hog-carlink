@@ -26,6 +26,7 @@
     <string name="pr_morning_audio">صوت أذكار الصباح</string>
     <string name="pr_evening_audio">صوت أذكار المساء</string>
     <string name="pr_audio_tts">القراءة بصوت الهاتف</string>
+    <string name="pr_audio_human">بصوت حقيقي (تسجيلات حصن المسلم)</string>
     <string name="pr_audio_note">يمكنك اختيار تسجيل موجود في هاتفك (مثل أذكار بصوت الشيخ مشاري العفاسي تملك نسخة منها) بدل صوت الهاتف.</string>
     <string name="pr_voice_male">صوت رجالي</string>
     <string name="pr_voice_female">صوت نسائي</string>

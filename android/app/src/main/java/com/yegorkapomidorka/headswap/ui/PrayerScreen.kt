@@ -239,10 +239,11 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
         box.addView(valueRow(c.getString(R.string.pr_dhikr_every), dhikrLabel(prefs.dhikrEvery)) { pickDhikr() })
         box.addView(ToggleRow(c, c.getString(R.string.pr_human), c.getString(R.string.pr_human_sub), prefs.adhkarHuman) {
             prefs.adhkarHuman = it
+            buildSettings()
         }.view, lp(MATCH, WRAP))
         box.addView(valueRow(c.getString(R.string.pr_voice), prefs.ttsVoice.ifBlank { c.getString(R.string.pr_voice_default) }.let { voiceLabel(it) }) { pickVoice() })
-        box.addView(valueRow(c.getString(R.string.pr_morning_audio), prefs.adhkarName(true).ifBlank { c.getString(R.string.pr_audio_tts) }) { pickAdhkarAudio(true) })
-        box.addView(valueRow(c.getString(R.string.pr_evening_audio), prefs.adhkarName(false).ifBlank { c.getString(R.string.pr_audio_tts) }) { pickAdhkarAudio(false) })
+        box.addView(valueRow(c.getString(R.string.pr_morning_audio), prefs.adhkarName(true).ifBlank { c.getString(if (prefs.adhkarHuman) R.string.pr_audio_human else R.string.pr_audio_tts) }) { pickAdhkarAudio(true) })
+        box.addView(valueRow(c.getString(R.string.pr_evening_audio), prefs.adhkarName(false).ifBlank { c.getString(if (prefs.adhkarHuman) R.string.pr_audio_human else R.string.pr_audio_tts) }) { pickAdhkarAudio(false) })
         box.addView(c.text(c.getString(R.string.pr_audio_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
 
         box.addView(c.sectionTitle(c.getString(R.string.pr_sec_calc)))

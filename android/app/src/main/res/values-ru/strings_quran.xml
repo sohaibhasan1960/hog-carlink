@@ -26,6 +26,7 @@
     <string name="pr_morning_audio">Запись утренних азкаров</string>
     <string name="pr_evening_audio">Запись вечерних азкаров</string>
     <string name="pr_audio_tts">Голос телефона</string>
+    <string name="pr_audio_human">Живой голос (записи «Крепости мусульманина»)</string>
     <string name="pr_audio_note">Можно выбрать запись на телефоне (например, азкары в чтении шейха Мишари Аль-Афаси, которые у вас есть) вместо голоса телефона.</string>
     <string name="pr_voice_male">Мужской голос</string>
     <string name="pr_voice_female">Женский голос</string>
