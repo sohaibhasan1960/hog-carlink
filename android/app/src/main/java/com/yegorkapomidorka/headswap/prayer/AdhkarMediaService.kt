@@ -125,7 +125,7 @@ object PrayerSession {
 
             override fun onPlay() {
                 // сура на паузе - продолжить её
-                if (PrayerPlayer.quranActive) return PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_RESUME)
+                if (PrayerPlayer.controllable) return PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_RESUME)
                 // «Играть» без выбора: азкары по времени суток
                 val morning = java.time.LocalTime.now().hour < 12
                 PrayerPlayer.start(app, if (morning) PrayerPlayer.What.MORNING else PrayerPlayer.What.EVENING)
@@ -147,19 +147,19 @@ object PrayerSession {
 
             override fun onStop() = stopPlayer(app)
 
-            // Коран: настоящая пауза (позиция и полоса прокрутки остаются); азан и азкары - стоп, как раньше
-            override fun onPause() = if (PrayerPlayer.quranActive) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_PAUSE) else stopPlayer(app)
+            // Коран, книга и азкары записью: настоящая пауза (позиция и полоса прокрутки остаются); азан и синтез речи - стоп
+            override fun onPause() = if (PrayerPlayer.controllable) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_PAUSE) else stopPlayer(app)
 
             override fun onSeekTo(pos: Long) {
-                if (PrayerPlayer.quranActive) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_SEEK, pos)
+                if (PrayerPlayer.controllable) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_SEEK, pos)
             }
 
             override fun onSkipToNext() {
-                if (PrayerPlayer.quranActive) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_NEXT)
+                if (PrayerPlayer.controllable) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_NEXT)
             }
 
             override fun onSkipToPrevious() {
-                if (PrayerPlayer.quranActive) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_PREV)
+                if (PrayerPlayer.controllable) PrayerPlayer.control(app, PrayerPlayer.ACTION_Q_PREV)
             }
 
             override fun onCustomAction(action: String, extras: Bundle?) {
@@ -248,6 +248,27 @@ object PrayerSession {
                 PlaybackState.ACTION_SKIP_TO_PREVIOUS or PlaybackState.ACTION_PLAY_FROM_MEDIA_ID or PlaybackState.ACTION_PLAY_FROM_SEARCH)
             .addCustomAction(PlaybackState.CustomAction.Builder(CA_SPEED, label, R.drawable.ic_speed).build())
             .setState(state, posMs, if (state == PlaybackState.STATE_PLAYING) speed else 0f)
+            .build())
+        s.isActive = true
+    }
+
+    /** Азкары записью: полоса прокрутки текущего зикра, пауза, следующий/предыдущий зикр (без кнопки скорости). */
+    fun adhkar(ctx: Context, title: String, text: String, state: Int, posMs: Long, durMs: Long) {
+        val s = get(ctx)
+        val key = "adhkar|$title|$text|$durMs"
+        if (key != quranMetaKey) {
+            quranMetaKey = key
+            s.setMetadata(MediaMetadata.Builder()
+                .putString(MediaMetadata.METADATA_KEY_TITLE, title)
+                .putString(MediaMetadata.METADATA_KEY_ARTIST, text.take(120))
+                .apply { if (durMs > 0) putLong(MediaMetadata.METADATA_KEY_DURATION, durMs) }
+                .build())
+        }
+        s.setPlaybackState(PlaybackState.Builder()
+            .setActions(PlaybackState.ACTION_STOP or PlaybackState.ACTION_PAUSE or PlaybackState.ACTION_PLAY or
+                PlaybackState.ACTION_PLAY_PAUSE or PlaybackState.ACTION_SEEK_TO or PlaybackState.ACTION_SKIP_TO_NEXT or
+                PlaybackState.ACTION_SKIP_TO_PREVIOUS or PlaybackState.ACTION_PLAY_FROM_MEDIA_ID or PlaybackState.ACTION_PLAY_FROM_SEARCH)
+            .setState(state, posMs, if (state == PlaybackState.STATE_PLAYING) 1f else 0f)
             .build())
         s.isActive = true
     }

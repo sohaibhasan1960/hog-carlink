@@ -82,6 +82,11 @@ class PrayerPlayer : Service() {
             return START_NOT_STICKY
         }
         if (intent?.action in QURAN_ACTIONS) {
+            // азкары записью: те же кнопки машины (пауза, полоса прокрутки, следующий/предыдущий зикр)
+            if (adhkarActive && !longForm) {
+                adhkarControl(intent!!)
+                return START_NOT_STICKY
+            }
             if (!longForm || (player == null && exo == null)) {
                 // сервис поднят только ради команды, а суры нет - не висеть
                 if (current == null) stopSelf()
@@ -472,6 +477,7 @@ class PrayerPlayer : Service() {
             mp.setOnErrorListener { _, w, x -> AppLog.i("намаз: ошибка записи $w/$x"); finish("ошибка записи"); true }
             mp.prepare()
             mp.start()
+            adhkarStarted(title, "")
         } catch (e: Exception) {
             AppLog.e("намаз: своя запись не открылась", e)
             finish("своя запись не открылась")
@@ -649,6 +655,7 @@ class PrayerPlayer : Service() {
                 if (humanRep < plays) {
                     it.seekTo(0)
                     it.start()
+                    adhkarState(0)
                 } else {
                     humanRep = 0
                     humanIndex++
@@ -665,12 +672,90 @@ class PrayerPlayer : Service() {
             }
             mp.prepare()
             mp.start()
+            adhkarStarted(title + progress, item.text)
         } catch (e: Exception) {
             AppLog.e("азкары: запись не играет", e)
             file.delete()
             humanIndex++
             humanNext(gen)
         }
+    }
+
+    // ---------------- азкары записью: управление из машины ----------------
+
+    private var adhkarPaused = false
+    private var adhkarTitle = ""
+    private var adhkarText = ""
+
+    private fun adhkarStarted(t: String, text: String) {
+        adhkarActive = true
+        adhkarPaused = false
+        adhkarTitle = t
+        adhkarText = text
+        adhkarState(0)
+    }
+
+    /** Полоса прокрутки - внутри текущей записи; Android Auto сам ведёт её между обновлениями. */
+    private fun adhkarState(posOverride: Long? = null) {
+        val mp = player ?: return
+        val pos = posOverride ?: try { mp.currentPosition.toLong() } catch (_: Exception) { 0L }
+        val dur = try { mp.duration.toLong().coerceAtLeast(0L) } catch (_: Exception) { 0L }
+        val st = if (adhkarPaused) android.media.session.PlaybackState.STATE_PAUSED else android.media.session.PlaybackState.STATE_PLAYING
+        PrayerSession.adhkar(this, adhkarTitle, adhkarText, st, pos, dur)
+    }
+
+    private fun adhkarControl(i: Intent) {
+        val mp = player ?: return
+        when (i.action) {
+            ACTION_Q_PAUSE -> {
+                if (adhkarPaused) return
+                try { mp.pause() } catch (_: Exception) { }
+                adhkarPaused = true
+                notify(adhkarTitle, getString(R.string.qr_paused))
+            }
+            ACTION_Q_RESUME -> {
+                if (!adhkarPaused) return
+                if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) return
+                try { mp.start() } catch (_: Exception) { }
+                adhkarPaused = false
+                notify(adhkarTitle, adhkarText)
+            }
+            ACTION_Q_SEEK -> {
+                val p = i.getLongExtra(EXTRA_POS, 0L).coerceAtLeast(0L)
+                try { mp.seekTo(p, MediaPlayer.SEEK_CLOSEST) } catch (_: Exception) { }
+                return adhkarState(p)
+            }
+            ACTION_Q_NEXT -> {
+                if (humanIndex + 1 < humanQueue.size) humanJump(humanIndex + 1)
+                return
+            }
+            ACTION_Q_PREV -> {
+                // как у Корана: дальше 3 с от начала - в начало зикра, иначе предыдущий
+                val pos = try { mp.currentPosition } catch (_: Exception) { 0 }
+                if (humanQueue.isEmpty() || humanIndex == 0 || pos > 3_000) {
+                    try { mp.seekTo(0) } catch (_: Exception) { }
+                    return adhkarState(0)
+                }
+                humanJump(humanIndex - 1)
+                return
+            }
+            else -> return
+        }
+        adhkarState()
+    }
+
+    private fun humanJump(index: Int) {
+        val gen = ++humanGen      // колбэки прежней записи больше не срабатывают
+        player?.let {
+            try { it.stop() } catch (_: Exception) { }
+            it.release()
+        }
+        player = null
+        if (adhkarPaused && !requestFocus(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) return
+        adhkarPaused = false
+        humanIndex = index
+        humanRep = 0
+        humanNext(gen)
     }
 
     // ---------------- речь ----------------
@@ -822,6 +907,8 @@ class PrayerPlayer : Service() {
         exo?.release()
         exo = null
         quranActive = false
+        adhkarActive = false
+        adhkarPaused = false
         quranPrepared = false
         quranPaused = false
         pausedByFocus = false
@@ -890,6 +977,12 @@ class PrayerPlayer : Service() {
 
         /** Сура загружена (играет или на паузе): кнопки машины управляют ею, а не азкарами. */
         @Volatile var quranActive = false
+
+        /** Азкары записью (живой голос или своя запись): пауза, перемотка и следующий/предыдущий зикр из машины. */
+        @Volatile var adhkarActive = false
+
+        /** Кнопки машины ведут играющую суру, книгу или азкары записью. */
+        val controllable get() = quranActive || adhkarActive
 
         /** Команда играющей суре; сервис уже работает (foreground), поэтому обычный startService. */
         fun control(ctx: Context, action: String, posMs: Long = 0) {
