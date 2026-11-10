@@ -16,9 +16,10 @@ class DesktopHomeLogicTest {
         wireless: Boolean = false,
         name: String = "Headswap",
         usbAudio: Boolean = false,
+        usbDebug: Boolean = false,
     ) = DesktopInputs(
         ready, paired, running, desktop, recovering, status, error,
-        wireless = wireless, videoRes = "1920×1080", desktopName = name, usbAudio = usbAudio,
+        wireless = wireless, videoRes = "1920×1080", desktopName = name, usbAudio = usbAudio, needUsbDebug = usbDebug,
     )
 
     private fun DesktopHomeState.stage(i: Int) = stages[i].second
@@ -125,7 +126,7 @@ class DesktopHomeLogicTest {
         assertEquals(UiText.res(R.string.home_desk_sub_ok, "Headswap"), s.sub)
         assertEquals(StageState.DONE to UiText.raw("CarLife 2.0"), s.stage(1))
         assertEquals(StageState.DONE to UiText.raw("Headswap"), s.stage(2))
-        assertEquals(StageState.DONE to UiText.raw("1920×1080"), s.stage(3))
+        assertEquals(StageState.DONE to UiText.raw("⁦1920×1080⁩"), s.stage(3)) // LTR-изоляция под RTL
         assertEquals(StageState.DONE to UiText.raw("Bluetooth"), s.stage(4))
         assertEquals(listOf(DesktopButton.STOP), s.buttons)
     }
@@ -149,5 +150,17 @@ class DesktopHomeLogicTest {
     @Test
     fun desktopRunningWithoutServiceIsNotWorking() {
         assertEquals(DesktopPhase.WAITING, DesktopHomeLogic.compute(inp(running = false, desktop = true)).phase)
+    }
+
+    @Test
+    fun android17WithoutUsbDebuggingAsksForIt() {
+        val activate = DesktopHomeLogic.compute(inp(ready = false, paired = true, usbDebug = true))
+        assertEquals(UiText.res(R.string.home_desk_sub_usb_debug), activate.sub)
+        val waiting = DesktopHomeLogic.compute(inp(usbDebug = true))
+        assertEquals(DesktopPhase.WAITING, waiting.phase)
+        assertEquals(Tone.WARN, waiting.tone)
+        assertEquals(UiText.res(R.string.home_desk_sub_usb_debug), waiting.sub)
+        // работающий рабочий стол не трогаем
+        assertEquals(DesktopPhase.WORKING, DesktopHomeLogic.compute(inp(running = true, desktop = true, usbDebug = true)).phase)
     }
 }

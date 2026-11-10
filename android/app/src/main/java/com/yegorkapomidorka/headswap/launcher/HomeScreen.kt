@@ -39,30 +39,51 @@ import com.yegorkapomidorka.headswap.R
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
-/** Подложка карточки главного экрана. */
+/** Подложка карточки главного экрана. Содержимое следует направлению языка; физические куски (медиа-ряд) берут [Ltr] сами. */
 @Composable
 fun CardBox(modifier: Modifier = Modifier, background: Color = Pal.SURFACE, shape: Shape? = null, content: @Composable BoxScope.() -> Unit) {
     val m = LocalMetrics.current
-    Box(modifier.clip(shape ?: RoundedCornerShape(m.dp(m.spec.radius))).background(background)) {
-        Ltr { content() }
-    }
+    Box(modifier.clip(shape ?: RoundedCornerShape(m.dp(m.spec.radius))).background(background), content = content)
 }
 
-/** Главный экран: строка статуса, верхний ряд (музыка | навигация) и нижний (приложения | телефон). */
+/**
+ * Главный экран: строка статуса и плашки. Четыре плашки - верхний ряд (музыка | большая плашка) и нижний
+ * (приложения | телефон). Две плашки (2:1, 1:2) - большая и малая на всю высоту, без нижнего ряда.
+ * Большая плашка - навигатор, YouTube, музыка или часы (листают «Слои»), ⇄ на стыке меняет плашки местами.
+ */
 @Composable
 fun HomeScreen() {
     val m = LocalMetrics.current
     val s = m.spec
+    val model = LauncherModel
+    val layout = model.homeLayout
+    val tiles = model.tiles
+    // «Карта слева» и «2 : 1» - физические стороны экрана при любом языке: в RTL Row кладёт первую плашку справа
+    val rtl = localeRtl()
     // нижний ряд прибит к краю экрана, как блок навигации на рейке: снизу без поля
-    Column(Modifier.fillMaxSize().padding(start = m.dp(s.g), top = m.dp(s.g8), end = m.dp(s.m), bottom = m.dp(if (s.strip) s.m else 0))) {
+    Column(Modifier.fillMaxSize().padding(start = m.dp(s.g), top = m.dp(s.g8), end = m.dp(s.m),
+        bottom = m.dp(if (s.strip || layout.two) s.m else 0))) {
         StatusBar()
-        Spacer(Modifier.height(m.dp(s.g8)))
-        // «Карта слева»: оба ряда в обратном порядке (row-reverse), рейка и содержимое карточек не зеркалятся
-        val mirror = LauncherModel.mapLeft
+        // без строки статуса (Для разработчиков) плитки поднимаются к верхнему полю
+        if (!model.hideStatusBar) Spacer(Modifier.height(m.dp(s.statusGap)))
+        val bigMod = Modifier.onGloballyPositioned { model.bigTileRect = it.boundsInRoot() }
+        if (layout.two) {
+            Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(m.dp(s.g))) {
+                val cells = listOf<@Composable RowScope.() -> Unit>(
+                    { TileCard(tiles.big, Modifier.weight(1f).fillMaxHeight().then(bigMod)) },
+                    { TileCard(tiles.small, Modifier.width(m.dp(s.tileSmall)).fillMaxHeight()
+                        .onGloballyPositioned { model.smallTileRect = it.boundsInRoot() }, small = true) },
+                )
+                for (cell in if ((layout == HomeLayout.WIDE_LEFT) != rtl) cells else cells.asReversed()) cell(this)
+            }
+            return@Column
+        }
+        // «Карта слева»: оба ряда в обратном порядке (row-reverse); в RTL Row уже кладёт первое справа, порядок обратный
+        val mirror = model.mapLeft != rtl
         Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(m.dp(s.g))) {
             val top = buildList<@Composable RowScope.() -> Unit> {
                 add { MusicCard(Modifier.width(m.dp(s.music)).fillMaxHeight()) }
-                add { NavCard(Modifier.weight(1f).fillMaxHeight()) }
+                add { TileCard(tiles.big, Modifier.weight(1f).fillMaxHeight().then(bigMod)) }
                 if (s.strip) add { CardBox(Modifier.fillMaxHeight()) { AppsGrid(columns = 2, rows = 3) } }
             }
             for (cell in if (mirror) top.asReversed() else top) cell(this)
@@ -82,7 +103,10 @@ fun HomeScreen() {
     }
 }
 
-/** Слоты быстрого ряда: первые n приложений списка и «+» сразу за ними. */
+/**
+ * Слоты быстрого ряда, всего n+1: приложения и «+» сразу за ними. Когда приложений n+1 и больше, «+» уступает место
+ * последнему из них (Егор 04.11: пятое приложение добавлялось, но пряталось за закреплённым «+»).
+ */
 sealed interface QuickSlot {
     data class App(val ref: AppRef) : QuickSlot
     data object Plus : QuickSlot
@@ -90,7 +114,7 @@ sealed interface QuickSlot {
 }
 
 fun quickSlots(apps: List<AppRef>, n: Int): List<QuickSlot> {
-    val shown = AppList.quick(apps, n)
+    val shown = AppList.quick(apps, n + 1)
     return List(n + 1) { i ->
         when {
             i < shown.size -> QuickSlot.App(shown[i])

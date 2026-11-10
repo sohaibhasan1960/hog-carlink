@@ -10,6 +10,7 @@ import com.yegorkapomidorka.headswap.dex.DesktopAudioState
 import com.yegorkapomidorka.headswap.dex.DexPrefs
 import com.yegorkapomidorka.headswap.dex.DexState
 import com.yegorkapomidorka.headswap.dex.PhoneActivationState
+import com.yegorkapomidorka.headswap.dex.VdmDesktop
 import java.util.Locale
 
 /** Главный экран в режиме «Свой лаунчер»: тот же скелет, что у Android Auto (HomeState), но свои этапы, тексты и кнопки. */
@@ -48,6 +49,8 @@ class DesktopInputs(
     val desktopName: String = "HOG CarLink",
     /** Звук идёт по каналу CarLife (захват работает и в нём не тишина); иначе - Bluetooth магнитолы. */
     val usbAudio: Boolean = false,
+    /** Android 17 без «Отладки по USB»: экран машины будет гаснуть с телефоном (VdmDesktop.usbDebugMissing). */
+    val needUsbDebug: Boolean = false,
 )
 
 object DesktopHomeLogic {
@@ -65,7 +68,11 @@ object DesktopHomeLogic {
     fun compute(i: DesktopInputs): DesktopHomeState = when {
         !i.activationReady -> state(
             DesktopPhase.ACTIVATE, Tone.PRI, HeroIcon.KEY, UiText.res(R.string.home_desk_title_activate),
-            UiText.res(if (i.paired) R.string.home_desk_sub_activate_paired else R.string.home_desk_sub_activate),
+            when {
+                i.needUsbDebug -> UiText.res(R.string.home_desk_sub_usb_debug)
+                i.paired -> UiText.res(R.string.home_desk_sub_activate_paired)
+                else -> UiText.res(R.string.home_desk_sub_activate)
+            },
             listOf(
                 StageState.TODO to UiText.res(if (i.paired) R.string.home_desk_st_needed_again else R.string.home_desk_st_needed),
                 StageState.PEND to NONE, StageState.PEND to NONE, StageState.PEND to NONE, StageState.PEND to NONE,
@@ -99,7 +106,7 @@ object DesktopHomeLogic {
                 StageState.DONE to ACTIVE,
                 StageState.DONE to (if (i.wireless) CARLIFE_WIFI else CARLIFE),
                 StageState.DONE to UiText.raw(i.desktopName),
-                StageState.DONE to UiText.raw(i.videoRes),
+                StageState.DONE to UiText.raw("\u2066${i.videoRes}\u2069"), // LTR-изоляция: в RTL не «720×1280»
                 StageState.DONE to UiText.raw(if (!i.usbAudio) "Bluetooth" else if (i.wireless) "Wi-Fi" else "USB"),
             ),
             listOf(DesktopButton.STOP),
@@ -115,7 +122,8 @@ object DesktopHomeLogic {
             listOf(DesktopButton.STOP),
         )
         else -> state(
-            DesktopPhase.WAITING, Tone.PRI, HeroIcon.PLUG, UiText.res(R.string.home_title_ready), UiText.res(R.string.home_sub_ready),
+            DesktopPhase.WAITING, if (i.needUsbDebug) Tone.WARN else Tone.PRI, HeroIcon.PLUG, UiText.res(R.string.home_title_ready),
+            UiText.res(if (i.needUsbDebug) R.string.home_desk_sub_usb_debug else R.string.home_sub_ready),
             listOf(
                 StageState.DONE to ACTIVE, StageState.ACTIVE to UiText.res(R.string.home_stage_wait_cable),
                 StageState.PEND to NONE, StageState.PEND to NONE, StageState.PEND to NONE,
@@ -153,13 +161,14 @@ object DesktopHomeStatus {
             videoRes = (CarLifeState.videoMode ?: aa.videoGeometry.effective(aa.transcode)).outLabel,
             desktopName = desktopName(ctx),
             usbAudio = DesktopAudioState.running && DesktopAudioState.nonSilentBuffers > 0,
+            needUsbDebug = VdmDesktop.usbDebugMissing(ctx),
         )
     }
 
     fun current(ctx: Context): DesktopHomeState = DesktopHomeLogic.compute(inputs(ctx))
 
     private fun recoveringTexts(ctx: Context): Set<String> = recoveringTexts ?: buildSet {
-        val locales = listOf(Locale.forLanguageTag("ru"), Locale.ENGLISH, ctx.resources.configuration.locales[0])
+        val locales = listOf(Locale.forLanguageTag("ru"), Locale.ENGLISH, Locale.forLanguageTag("ar"), ctx.resources.configuration.locales[0])
         for (loc in locales) {
             val lctx = ctx.createConfigurationContext(Configuration(ctx.resources.configuration).apply { setLocale(loc) })
             for (n in 1..2) add(lctx.getString(R.string.desk_recovering, n))

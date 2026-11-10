@@ -33,10 +33,10 @@ class DesktopPrefsTest {
     }
     @Test fun freshInstallDefaultsAreNativeGeometryAndIndependentDesktopFps() {
         val prefs = DexPrefs(MemoryPrefs())
-        assertEquals(160, prefs.desktopDensity)
+        assertEquals(0, prefs.desktopDensity) // авто по высоте: клавиатура не делится пополам
         assertEquals(FpsSetting.FPS30, prefs.desktopFps)
         assertNotEquals(FpsSetting.DEFAULT, prefs.desktopFps) // Independent from the AA default.
-        assertTrue(prefs.usbPlaybackAudio)
+        assertTrue(prefs.usbPlaybackAudio) // ADR 0025: по умолчанию звук по USB, как в режиме AA
         assertEquals(DesktopModePolicy.ANDROID_DESKTOP, prefs.desktopMode)
     }
     @Test fun desktopChoicesSurviveNewPreferenceInstances() {
@@ -82,6 +82,12 @@ class DesktopPrefsTest {
         val context = MemoryPrefs()
         DexPrefs(context).usbPlaybackAudio = false
         assertFalse(DexPrefs(context).usbPlaybackAudio)
+    }
+    @Test fun usbAudioSharesTheAaToggle() {
+        val context = MemoryPrefs()
+        DexPrefs(context).usbPlaybackAudio = false
+        assertEquals(false, context.values["usbAudio"])
+        assertFalse(context.values.containsKey("desktop_usb_playback_audio"))
     }
     @Test fun unsupportedStoredModeFallsBackToAndroidDesktop() {
         val context = MemoryPrefs()

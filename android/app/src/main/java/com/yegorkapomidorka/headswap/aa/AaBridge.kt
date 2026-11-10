@@ -14,6 +14,8 @@ interface DesktopMedia {
     fun isPlaying(): Boolean
     fun pause()
     fun resume()
+    /** Громкость медиа телефона на steps шагов (+ громче); вернуть новый уровень для лога. */
+    fun adjustVolume(steps: Int): String = "нет"
 }
 
 /** Что мост требует от CarLife-стороны (реализует CarLifeSession). */
@@ -445,7 +447,27 @@ class AaBridgeCore(
     /** Прореживание MOVE ([TouchDecimation]) стоит перед пейсером и прямой отправкой. */
     @Volatile var touchDecimationProvider: () -> TouchDecimation = { TouchDecimation.DEFAULT }
     private val touchDecimator = TouchDecimator { a, x, y, px, py -> routeTouch(a, x, y, px, py) }
+
+    /** Рабочий стол: громкость двумя пальцами у правого края (настройка; на Vezel всегда). */
+    @Volatile var volumeSwipeProvider: () -> Boolean = { false }
+    private val volumeSwipe = VolumeSwipe(
+        onCancel = {
+            log("BRIDGE тач: два пальца у правого края - жест громкости, касание отменяю", true)
+            touchDecimator.reset()
+            touchPacer.reset()
+            dispatchTouch(3, 0, 0, 0, 0)
+        },
+        onStep = { steps ->
+            val media = desktopMedia
+            if (media == null) log("BRIDGE громкость ${if (steps > 0) "+" else ""}$steps: плеера рабочего стола нет", true)
+            else log("BRIDGE громкость ${if (steps > 0) "+" else ""}$steps -> ${media.adjustVolume(steps)}", true)
+        },
+    )
     @Volatile private var touchDecimationLogged = 1
+
+    /** Режим фильтра повторного DOWN без UP ([DupDownFilter]), читается на каждое касание. */
+    @Volatile var dupDownFilterProvider: () -> DupDownFilter = { DupDownFilter.DEFAULT }
+    fun dupDownFilter() = dupDownFilterProvider()
     private val mediaReleaseTimer = AudioTimer()
     private val voiceExitTimer = AudioTimer()
     private var carlifePaused = false          // VIDEO_ENCODER_PAUSE после последнего START
@@ -1043,6 +1065,7 @@ class AaBridgeCore(
         if (desktopInputEnabled) {
             touchDecimator.reset()
             touchPacer.reset()
+            volumeSwipe.reset()
         }
         synchronized(touchLock) {
             if (desktopInputEnabled && fingers.isNotEmpty()) peer?.let { sendFingers(it, 3, 0, "CANCEL") }
@@ -1074,6 +1097,10 @@ class AaBridgeCore(
      * [VideoMode.mapTouch] (без margin-ов 1:1). Один палец уходит в AA так же, как до мультитача (id 0, action_index 0).
      */
     fun onCarlifeTouch(action: Int, x: Int, y: Int, px: Int = 0, py: Int = 0) {
+        if (desktopInputEnabled) {
+            val g = videoMode
+            if (volumeSwipe.onTouch(action, x, y, px, py, g.outW, g.outH, huHondaVezel || volumeSwipeProvider())) return
+        }
         if (desktopInputEnabled && action and 0xFF == 3) {
             // Discard delayed MOVE events instead of replaying them into an already cancelled gesture.
             touchDecimator.reset()
@@ -1316,7 +1343,7 @@ class AaBridgeCore(
                 log("BRIDGE шайба keycode=$code проигнорирована: AA не подключён", true)
                 return
             }
-            log("BRIDGE шайба keycode=$code -> AA rotary $delta", true)
+            log("BRIDGE шайба keycode=$code -> rotary $delta", true)
             p.sendRotary(delta)
             return
         }
@@ -1331,6 +1358,7 @@ class AaBridgeCore(
             log("BRIDGE руль keycode=$code: нет аналога в AA, игнор", true)
             return
         }
+        if (android == KEYCODE_SEARCH && toPhoneAssistant("руль keycode=$code")) return
         val p = peer
         if (p == null) {
             log("BRIDGE руль keycode=$code проигнорирован: AA не подключён", true)
@@ -1369,9 +1397,36 @@ class AaBridgeCore(
         return dup
     }
 
+    /**
+     * Режим рабочего стола: кнопку голоса получает помощник телефона, а не AA. Там AA теневая, без экрана и
+     * микрофона (только стрелки навигации), и KEYCODE_SEARCH в неё ничего не открывает (поездка 04.11, Vezel).
+     * В режиме Android Auto null.
+     */
+    @Volatile var phoneAssistant: (() -> Unit)? = null
+
+    /** true, если кнопку голоса забрал помощник телефона (или это дребезг); false - пусть идёт в AA. */
+    private fun toPhoneAssistant(what: String): Boolean {
+        val launch = phoneAssistant ?: return false
+        if (voiceKeyBounce(what)) return true
+        log("BRIDGE $what -> помощник телефона", true)
+        launch()
+        return true
+    }
+
+    /**
+     * Рабочий стол: панель Алисы открыта/закрыта -> MODULE_STATUS VR=1/0, как Baidu MD (prepareShowVr/prepareCloseVr).
+     * Без него Vezel через несколько секунд после кнопки голоса пишет, что голосовую сессию не активировать (поездка 05.11).
+     */
+    @Synchronized
+    fun desktopVoiceStatus(on: Boolean) {
+        val s = if (on) 1 else 0
+        if (link.sendModuleStatus(CarlifeAudio.MODULE_VR, s)) log("BRIDGE CarLife MODULE_STATUS VR=$s (панель Алисы)", true)
+    }
+
     /** MODULE_CONTROL VR=1 от ГУ (кнопка голоса) -> AA KEYCODE_SEARCH: AA открывает ассистента и сам просит микрофон. */
     fun onCarlifeVoiceKey() {
         lastUserInputMs = clockMs()
+        if (toPhoneAssistant("кнопка голоса (MODULE_CONTROL VR=1)")) return
         val p = peer
         if (p == null) {
             log("BRIDGE кнопка голоса проигнорирована: AA не подключён", true)

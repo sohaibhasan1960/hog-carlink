@@ -8,10 +8,14 @@ import com.yegorkapomidorka.headswap.aa.FpsSetting
 /** Desktop preferences are separate from the AA / bridge settings. */
 class DexPrefs(context: Context) {
     private val prefs = context.getSharedPreferences("headswap_dex", Context.MODE_PRIVATE)
-    /** First activation offers USB playback. Changing the selection takes effect on the next activation. */
+    private val aaPrefs = context.getSharedPreferences("aa", Context.MODE_PRIVATE)
+    /**
+     * Звук рабочего стола по USB/Wi-Fi (ADR 0025): тот же переключатель «Звук через Headswap», что в режиме AA
+     * (ключ usbAudio в prefs "aa"). Выключен - звук по Bluetooth. Старый ключ desktop_usb_playback_audio не читаем.
+     */
     var usbPlaybackAudio: Boolean
-        get() = prefs.getBoolean("desktop_usb_playback_audio", true)
-        set(value) { prefs.edit().putBoolean("desktop_usb_playback_audio", value).apply() }
+        get() = aaPrefs.getBoolean("usbAudio", true)
+        set(value) { aaPrefs.edit().putBoolean("usbAudio", value).apply() }
     /** Only Android Desktop is available here; any other stored value falls back to it. */
     var desktopMode: Int
         get() = prefs.getInt("desktop_mode", DesktopModePolicy.ANDROID_DESKTOP).let {
@@ -21,9 +25,9 @@ class DexPrefs(context: Context) {
             DesktopModePolicy.requireMode(value)
             prefs.edit().putInt("desktop_mode", value).apply()
         }
-    /** Zero selects proportional DPI. */
+    /** Zero selects proportional DPI (DesktopGeometryPolicy.density: клавиатура не делится пополам). */
     var desktopDensity: Int
-        get() = prefs.getInt("desktop_density", 160).let {
+        get() = prefs.getInt("desktop_density", 0).let {
             if (it == 0) 0 else it.coerceIn(DesktopGeometryPolicy.MIN_DENSITY, DesktopGeometryPolicy.MAX_DENSITY)
         }
         set(value) { if (value != 0) DesktopGeometryPolicy.requireDensity(value); prefs.edit().putInt("desktop_density", value).apply() }

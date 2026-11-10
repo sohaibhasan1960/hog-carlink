@@ -24,8 +24,12 @@
     <string name="dev_voice_chunk_note">Assistant replies and navigation prompts. Auto: 1024 B on VW CNS2 Delphi, otherwise as AA sends it</string>
     <string name="dev_section_tts_preroll">Silence before prompt (experimental)</string>
     <string name="dev_tts_preroll_note">Zeros after the prompt starts, so the head unit can open the audio path. Auto: 400 ms on VW</string>
+    <string name="dev_volume_swipe_title">Two-finger volume</string>
+    <string name="dev_volume_swipe_sub">Desktop: two fingers at the right edge, up is louder, down is quieter. Always on for Honda Vezel.</string>
     <string name="dev_section_touch_decimation">Touch decimation (experimental)</string>
     <string name="dev_touch_decimation_note">Skip every second MOVE: the head unit sends up to ~70 events per second, video runs at up to 30 fps. The last point before the finger lifts is never lost.</string>
+    <string name="dev_section_dup_down">Double touch from head unit</string>
+    <string name="dev_dup_down_note">Some head units (Honda) send every touch twice: launcher buttons fire twice, Settings opens and closes at once. The filter drops the second DOWN at the same point without an UP.</string>
 
 
     <string name="dev_section_video">Video (applies on reconnect)</string>
@@ -33,6 +37,9 @@
     <string name="dev_own_idr_sub">Every 2 s the phone sends the head unit its own keyframe: the picture comes back after the reverse camera and the car menu. Turn off if the head unit recovers on its own (e.g. VW): less traffic and phone load</string>
     <string name="dev_custom_res_title">Custom resolution</string>
     <string name="dev_custom_res_sub">Instead of the mode from video settings</string>
+    <string name="dev_section_desktop">Head unit desktop</string>
+    <string name="dev_hide_status_title">Hide status bar</string>
+    <string name="dev_hide_status_sub">For head units that already show their own bar with clock and icons on top (some VW). Notifications hang as a notch with a gold line: pull down for the shade</string>
     <string name="dev_custom_w">Width</string>
     <string name="dev_custom_h">Height</string>
     <string name="dev_custom_hint">Width 640–2240, height 640–1080 (portrait: the other way round), even numbers</string>

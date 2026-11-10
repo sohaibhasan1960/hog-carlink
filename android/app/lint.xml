@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  HOG CarLink: исключения lint только для кода апстрима Headswap 4.1.1, который мы взяли без изменений.
+  Каждое - по пути файла, чтобы та же проверка ловила новые ошибки в остальном коде.
+  Пересмотреть при следующем слиянии с апстримом.
+-->
+<lint>
+    <!-- Этап B (Android 17): процесс shell (app_process, uid 2000) запускается только на новых Android;
+         API 31-34 вызываются там без проверки версии, потому что на старых системах этот код не запускается. -->
+    <issue id="NewApi">
+        <ignore path="src/main/java/com/yegorkapomidorka/headswap/dex/VdmHostMain.kt" />
+    </issue>
+    <!-- Свой хост Car App Library: иконки шаблонов навигаторов (IconCompat.getBitmap из androidx.core). -->
+    <issue id="RestrictedApi">
+        <ignore path="src/main/java/com/yegorkapomidorka/headswap/carapp/CarAppSession.kt" />
+        <ignore path="src/main/java/com/yegorkapomidorka/headswap/carapp/CarUiMapper.kt" />
+    </issue>
+    <!-- TEMPLATE_RENDERER объявлен намеренно (ADR 0022 апстрима): HostValidator навигаторов пускает только хост с ним. -->
+    <issue id="ReservedSystemPermission">
+        <ignore path="src/main/AndroidManifest.xml" />
+    </issue>
+</lint>

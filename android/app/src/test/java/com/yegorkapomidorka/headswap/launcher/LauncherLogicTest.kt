@@ -126,11 +126,13 @@ class LauncherLogicTest {
             quickSlots(emptyList(), 5))
         assertEquals(listOf(QuickSlot.App(apps[0]), QuickSlot.App(apps[1]), QuickSlot.Plus),
             quickSlots(apps.take(2), 2).take(3))
-        // больше пяти: плюс закреплён шестым, лишние в быстрый ряд не попадают
+        // n приложений: «+» последним
+        assertEquals(QuickSlot.Plus, quickSlots(apps.take(5), 5)[5])
+        // n+1 и больше: «+» пропадает, на его месте приложение, лишние в ряд не попадают
         val full = quickSlots(apps, 5)
         assertEquals(6, full.size)
-        assertEquals(QuickSlot.App(apps[4]), full[4])
-        assertEquals(QuickSlot.Plus, full[5])
+        assertEquals(QuickSlot.App(apps[5]), full[5])
+        assertFalse(QuickSlot.Plus in full)
     }
 
     @Test fun netLabels() {
@@ -141,11 +143,21 @@ class LauncherLogicTest {
         assertEquals("4G", NetLabel.cellular(null))
     }
 
-    @Test fun cardViewCyclesAndRestores() {
-        assertEquals(CardView.CLOCK, CardView.NAVIGATOR.next())
-        assertEquals(CardView.NAVIGATOR, CardView.CLOCK.next())
+    @Test fun cardViewRestoresOldPrefs() {
         assertEquals(CardView.NAVIGATOR, CardView.restore("junk"))
         assertEquals(CardView.CLOCK, CardView.restore("CLOCK"))
+        assertEquals(CardView.MUSIC, CardView.restore(null, CardView.MUSIC))
+        assertEquals(HomeLayout.QUAD, HomeLayout.restore(null))
+        assertEquals(HomeLayout.WIDE_RIGHT, HomeLayout.restore("WIDE_RIGHT"))
+    }
+
+
+    @Test fun smallTileIsCappedOnWideScreens() {
+        val wide = LauncherSpecs.forSize(1920, 720)
+        assertTrue(wide.tileSmall < wide.narrow)
+        assertEquals(Math.round(wide.t * 4.4).toInt(), wide.tileSmall)
+        val r720 = LauncherSpecs.forSize(1280, 720)
+        assertEquals(r720.narrow, r720.tileSmall)
     }
 
     @Test fun afterBackClosesWhenTaskIsGoneOrInBackground() {
@@ -204,7 +216,13 @@ class LauncherLogicTest {
         // открыт текст лицензии -> список лицензий -> «Система» -> шагов внутри настроек больше нет
         assertEquals(SettingsPage.ABOUT to false, BackNav.settingsStep(SettingsPage.ABOUT, licenseOpen = true))
         assertEquals(SettingsPage.SYSTEM to false, BackNav.settingsStep(SettingsPage.ABOUT, licenseOpen = false))
-        for (p in SettingsPage.entries.filter { it != SettingsPage.ABOUT }) assertNull(BackNav.settingsStep(p, licenseOpen = false))
+        for (p in SettingsPage.entries.filter { it != SettingsPage.ABOUT && it != SettingsPage.COLORS }) {
+            assertNull(BackNav.settingsStep(p, licenseOpen = false))
+        }
+    }
+
+    @Test fun backFromColorsReturnsToLook() {
+        assertEquals(SettingsPage.LOOK to false, BackNav.settingsStep(SettingsPage.COLORS, licenseOpen = false))
     }
 
     @Test fun railBackIsGreyOnlyOnHome() {
@@ -257,7 +275,17 @@ class LauncherLogicTest {
         val local = PlayerChip.slots(all, "com.aimp", null, local = "com.aimp")
         assertEquals("com.aimp", local[0].pkg)
         assertTrue(local[0].selected)
-        assertEquals(listOf("com.aimp", "x"), PlayerChip.localPlayers(listOf(PlayerChip.YANDEX, "com.aimp", PlayerChip.VK, "x")))
+        // во второй слот можно закрепить любой плеер, не только онлайн-сервис
+        val aimp2 = PlayerChip.slots(all, null, PlayerChip.VK, fixedOnline = "com.aimp")[1]
+        assertEquals(PlayerChip.Slot(PlayerChip.Kind.APP, "com.aimp", false), aimp2)
+        // в первый - онлайн-сервис; второй тогда его не дублирует
+        val ya = PlayerChip.slots(all, null, PlayerChip.YANDEX, local = PlayerChip.YANDEX)
+        assertEquals(listOf(PlayerChip.YANDEX, PlayerChip.YT_MUSIC), ya.map { it.pkg })
+        assertEquals(PlayerChip.YT_MUSIC, PlayerChip.slots(all, null, null, local = PlayerChip.YANDEX, fixedOnline = PlayerChip.YANDEX)[1].pkg)
+        // списки настроек: найденные плееры плюс установленные онлайн; во втором онлайн первыми
+        val players = PlayerChip.allPlayers(listOf("com.aimp", PlayerChip.VK), setOf(PlayerChip.YANDEX, PlayerChip.VK))
+        assertEquals(listOf("com.aimp", PlayerChip.VK, PlayerChip.YANDEX), players)
+        assertEquals(listOf(PlayerChip.YANDEX, PlayerChip.VK, "com.aimp"), PlayerChip.secondSlotPlayers(players))
     }
 
     @Test fun lastOnlineChangesOnlyOnOnlinePlayers() {
@@ -265,6 +293,13 @@ class LauncherLogicTest {
         assertEquals(PlayerChip.YANDEX, PlayerChip.lastOnline(PlayerChip.YANDEX, "com.spotify"))
         assertEquals(PlayerChip.YANDEX, PlayerChip.lastOnline(PlayerChip.YANDEX, null))
         assertEquals(null, PlayerChip.lastOnline(null, null))
+    }
+
+    @Test fun lastLocalKeptWhileOnlinePlays() {
+        assertEquals("com.aimp", PlayerChip.lastLocal("com.aimp", PlayerChip.YANDEX))
+        assertEquals("com.spotify", PlayerChip.lastLocal("com.aimp", "com.spotify"))
+        assertEquals("com.aimp", PlayerChip.lastLocal("com.aimp", null))
+        assertEquals(null, PlayerChip.lastLocal(null, PlayerChip.VK))
     }
 
     @Test fun settingsGridBordersMatchOnAllResolutions() {
@@ -295,12 +330,48 @@ class LauncherLogicTest {
         assertTrue(ThemeChoice.light(ThemeChoice.LIGHT, 1))
     }
 
-    @Test fun navArrowStopsInAnotherDirection() {
-        for (k in 1..7) {
-            val next = NavSpinLogic.next(90f, k)
-            assertTrue(next - 90f >= 720f + 45f)
-            assertTrue((next - 90f) % 360f != 0f)
-            assertEquals(0f, (next - 90f) % 45f)
-        }
+    @Test fun fullscreenRailHidesAfterTwoReadsAndShowsOnDoubt() {
+        val t = FullscreenApp.Tracker()
+        assertFalse(t.update(1, 10_000))
+        assertTrue(t.update(1, 10_500))
+        // смена размера окна из-за спрятанной рейки: короткое «нет» не возвращает рейку
+        t.resized(10_600)
+        assertTrue(t.update(0, 11_000))
+        assertTrue(t.update(-1, 11_500))
+        assertTrue(t.update(1, 12_000))
+        // выход кнопкой YouTube после успокоения - рейка сразу видна; неизвестно - тоже видна
+        assertFalse(t.update(0, 12_500))
+        assertTrue(FullscreenApp.watched(FullscreenApp.YOUTUBE))
+        assertFalse(FullscreenApp.watched(PlayerChip.YT_MUSIC))
+        val u = FullscreenApp.Tracker()
+        u.update(1, 0); u.update(1, 500)
+        assertFalse(u.update(-1, 5_000))
+    }
+
+    @Test fun hintsDefaultOffForAll() {
+        for (pkg in NavigatorPick.KNOWN) assertFalse(pkg, NavigatorPick.hintsDefault(pkg))
+    }
+
+    @Test fun shadowAaFollowsNavigatorHints() {
+        val hints = mapOf("com.google.android.apps.maps" to false, "ru.dublgis.dgismobile" to true)
+        val of = { p: String -> hints[p] ?: true }
+        assertFalse(NavigatorPick.shadowWanted(true, "com.google.android.apps.maps", of))
+        assertTrue(NavigatorPick.shadowWanted(true, "ru.dublgis.dgismobile", of))
+        assertTrue(NavigatorPick.shadowWanted(true, null, of))
+        assertFalse(NavigatorPick.shadowWanted(false, "ru.dublgis.dgismobile", of))
+    }
+
+    @Test fun needsPlusOnlyYandex() {
+        assertTrue(NavigatorPick.needsPlus("ru.yandex.yandexnavi"))
+        assertTrue(NavigatorPick.needsPlus("ru.yandex.yandexmaps"))
+        assertFalse(NavigatorPick.needsPlus("ru.dublgis.dgismobile"))
+        assertFalse(NavigatorPick.needsPlus(null))
+    }
+
+    @Test fun doubleBackWithinWindow() {
+        assertFalse(DoubleBack.isDouble(0L, 1000L))
+        assertTrue(DoubleBack.isDouble(1000L, 2000L))
+        assertTrue(DoubleBack.isDouble(1000L, 1000L + DoubleBack.WINDOW_MS))
+        assertFalse(DoubleBack.isDouble(1000L, 1001L + DoubleBack.WINDOW_MS))
     }
 }

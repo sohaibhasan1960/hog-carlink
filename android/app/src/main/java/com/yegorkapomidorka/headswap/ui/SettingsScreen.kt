@@ -54,6 +54,7 @@ import com.yegorkapomidorka.headswap.aa.MusicRate
 import com.yegorkapomidorka.headswap.aa.VideoMode
 import com.yegorkapomidorka.headswap.desktop.DesktopAppCatalog
 import com.yegorkapomidorka.headswap.dex.DelegatedDesktopAccess
+import com.yegorkapomidorka.headswap.dex.DesktopAudioAccess
 import com.yegorkapomidorka.headswap.dex.DesktopPick
 import com.yegorkapomidorka.headswap.dex.DexPrefs
 import com.yegorkapomidorka.headswap.link.car.CarNetwork
@@ -66,6 +67,7 @@ import com.yegorkapomidorka.headswap.link.diag.NetProbe
 import com.yegorkapomidorka.headswap.update.UpdatePrefs
 import com.yegorkapomidorka.headswap.update.Updater
 import java.text.NumberFormat
+import java.util.Locale
 
 /** Шапка «назад + заголовок» и прокручиваемое тело. */
 fun scaffold(ctx: Context, title: String, onBack: () -> Unit, body: View): LinearLayout = ctx.vbox().apply {
@@ -888,6 +890,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
         val seg = modeSeg ?: return
         val desktop = aa.bridgeMode == BridgeMode.DESKTOP
         seg.setSelected(if (desktop) 1 else 0)
+        refreshUsbAudio()
         val box = actHost ?: return
         if (!desktop) {
             box.visibility = View.GONE
@@ -1180,7 +1183,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
     private fun setResFieldOpen(open: Boolean) {
         val c = ctx
         resField?.background = c.rippleBg(c.shape(c.clr(R.color.surf), 20, if (open) c.clr(R.color.pri) else 0, 1.5f), 20)
-        resChevron?.rotation = if (open) -90f else 90f
+        resChevron?.rotation = c.chevronRotation(open)
     }
 
     /** Выпадающий список разрешений под полем, шириной поля; не влезает по высоте - прокрутка. */
@@ -1310,13 +1313,17 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
             background = c.shape(c.clr(R.color.surf), 20)
             pad(c, 12, 10, 12, 10)
             addView(auto, c.lpDp(WRAP, 44))
-            addView(minus, c.lpDp(c.dp(48), 48))
-            addView(c.vbox(2).apply {
-                gravity = Gravity.CENTER_HORIZONTAL
-                addView(value, lp(MATCH, WRAP))
-                addView(sub, lp(MATCH, WRAP))
+            // «− значение +» - числовая ось, физически слева направо и в RTL
+            addView(c.hbox(10).apply {
+                layoutDirection = View.LAYOUT_DIRECTION_LTR
+                addView(minus, c.lpDp(c.dp(48), 48))
+                addView(c.vbox(2).apply {
+                    gravity = Gravity.CENTER_HORIZONTAL
+                    addView(value, lp(MATCH, WRAP))
+                    addView(sub, lp(MATCH, WRAP))
+                }, lp(0, WRAP, 1f))
+                addView(plus, c.lpDp(c.dp(48), 48))
             }, lp(0, WRAP, 1f))
-            addView(plus, c.lpDp(c.dp(48), 48))
         }
         refreshDensity()
         return row
@@ -1368,10 +1375,13 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
     private fun buildSound() {
         val c = ctx
         body.addView(c.sectionTitle(c.getString(R.string.set_sound)))
-        body.addView(ToggleRow(c, c.getString(R.string.set_usb_audio_title), c.getString(R.string.set_usb_audio_sub), aa.usbAudio) {
+        usbAudioRow = ToggleRow(c, c.getString(R.string.set_usb_audio_title), c.getString(R.string.set_usb_audio_sub), aa.usbAudio) {
             aa.usbAudio = it
             refreshEqEntry()
-        }.view)
+            refreshUsbAudio()
+        }
+        body.addView(usbAudioRow!!.view)
+        refreshUsbAudio()
         body.addView(eqEntry(), lp(MATCH, WRAP).margins(c, 0, 6, 0, 0))
         // HOG CarLink: голосовые сообщения WhatsApp и прочие системные звуки - в машину (выкл. по умолчанию)
         body.addView(ToggleRow(c, c.getString(R.string.set_system_audio_title), c.getString(R.string.set_system_audio_sub), aa.systemToCar) {
@@ -1398,6 +1408,20 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
 
         callsRow = ToggleRow(c, c.getString(R.string.set_calls_title), c.getString(R.string.set_calls_sub), aa.callsToHu) { onCallsToggle(it) }
         body.addView(callsRow!!.view, lp(MATCH, WRAP).margins(c, 0, 12, 0, 0))
+    }
+
+    private var usbAudioRow: ToggleRow? = null
+
+    /**
+     * ADR 0025: один переключатель на оба режима. На рабочем столе захват звука даёт только активация с ним включённым -
+     * если активировали при выключенном (или в бете 7, где звук был только по Bluetooth), подсказываем повторить.
+     */
+    private fun refreshUsbAudio() {
+        val row = usbAudioRow ?: return
+        val desktop = BridgeMode.effective(aa.bridgeMode, Build.VERSION.SDK_INT) == BridgeMode.DESKTOP
+        row.setChecked(aa.usbAudio)
+        val reactivate = desktop && aa.usbAudio && DelegatedDesktopAccess.isReady(ctx) && !DesktopAudioAccess.hasPermission(ctx)
+        row.subView?.text = ctx.getString(if (reactivate) R.string.set_usb_audio_desktop else R.string.set_usb_audio_sub)
     }
 
     /** Включение просит READ_PHONE_STATE (API 31+); результат - в onPermissionResult. */
@@ -1544,6 +1568,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
             })
         }
         val row = c.hbox(4).apply {
+            layoutDirection = View.LAYOUT_DIRECTION_LTR      // частоты и ползунок физически слева направо
             pad(c, 16, 0, 16, 0)
             if (label.isNotEmpty()) addView(c.text(label, 14f, 500).apply { maxLines = 1 }, c.lpDp(c.dp(64), 44))
             addView(bar, c.lpDp(0, 44, 1f))
@@ -1554,11 +1579,14 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
 
     private fun freqLabel(f: Int): String {
         if (f < 1000) return ctx.getString(R.string.eq_hz, f.toString())
-        val nf = NumberFormat.getInstance(ctx.resources.configuration.locales[0]).apply { maximumFractionDigits = 1 }
+        val loc = Locale.Builder().setLocale(ctx.resources.configuration.locales[0]).setUnicodeLocaleKeyword("nu", "latn").build()
+        val nf = NumberFormat.getInstance(loc).apply { maximumFractionDigits = 1 }
         return ctx.getString(R.string.eq_khz, nf.format(f / 1000.0))
     }
 
-    private fun dbLabel(v: Int): String = ctx.getString(R.string.eq_db, if (v > 0) "+$v" else if (v < 0) "−${-v}" else "0")
+    /** Знак и число в изоляции LTR (U+2066..U+2069): в RTL строке знак не уезжает на другую сторону числа. */
+    private fun dbLabel(v: Int): String =
+        ctx.getString(R.string.eq_db, "\u2066" + (if (v > 0) "+$v" else if (v < 0) "−${-v}" else "0") + "\u2069")
 
     /** Любое движение слайдера = «Свой»; его значения запоминаются отдельно. */
     private fun applyCustomEq(s: EqSettings) {
@@ -1850,7 +1878,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
 
     // --- обновления ---
 
-    /** Переключатель проверки + строка состояния с кнопкой «Проверить» / «Обновить» (как карточка автозапуска). */
+    /** Переключатель проверки + строка состояния с кнопкой «Проверить и обновить» / «Обновить сейчас» (как карточка автозапуска). */
     private fun updateCard(): View {
         val c = ctx
         val prefs = UpdatePrefs(c)
@@ -1870,7 +1898,7 @@ class SettingsSectionScreen(host: MainActivity, val section: SettingsSection) : 
             pad(c, 14, 0, 14, 0)
             background = c.rippleBg(null, 20)
             isClickable = true
-            setOnClickListener { if (Updater.available(c) != null) Updater.start(host, confirm = false) else Updater.check(c, manual = true) }
+            setOnClickListener { Updater.checkAndUpdate(host) }
         }
         updStatus = status
         updButton = button

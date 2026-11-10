@@ -13,6 +13,7 @@
     <string name="set_sound">Sound</string>
     <string name="set_usb_audio_title">Sound through HOG CarLink</string>
     <string name="set_usb_audio_sub">To the car speakers over cable or Wi-Fi. Off: over Bluetooth</string>
+    <string name="set_usb_audio_desktop">To get desktop sound, activate access again. Until then sound goes over Bluetooth</string>
     <string name="set_calls_title">Tell the head unit about calls</string>
     <string name="set_calls_sub">Needs the “Phone” permission: HOG CarLink learns about an incoming call and tells the car, music is muted for the call</string>
 
@@ -142,8 +143,8 @@
     <string name="video_wide_hd_sub">1920×720: sharper and smaller, more fits on the screen</string>
     <string name="video_wide_640_title">Wide 3:1 (Citroen C5 X)</string>
     <string name="video_wide_640_sub">1920×640: native resolution of the Citroen C5 X screen, no side bars</string>
-    <string name="video_wide_2_1_title">Wide 2:1 (Skoda Octavia Pro)</string>
-    <string name="video_wide_2_1_sub">1280×640: native resolution of the Octavia screen, no stretching</string>
+    <string name="video_wide_2_1_title">Wide 2:1 (Octavia Pro, VW Discover Pro 9.2)</string>
+    <string name="video_wide_2_1_sub">1280×640: native resolution of the Octavia Pro and VW Discover Pro 9.2 screens, no stretching</string>
     <string name="video_wide_976_title">Wide 2240×976 (VW Tiguan L Pro)</string>
     <string name="video_wide_976_sub">Wide crop scaled to the CarLife window of the VW CNS3 head unit</string>
     <string name="video_wide_836_title">Wide 1920×836 (VW Tiguan L Pro, passthrough)</string>
@@ -184,6 +185,11 @@
     <!-- Touch decimation (TouchDecimation) -->
     <string name="tdec_off">Off</string>
     <string name="tdec_x2">×2</string>
+
+    <!-- Double touch from head unit (DupDownFilter) -->
+    <string name="dup_down_auto">Auto (repeat within 150 ms)</string>
+    <string name="dup_down_on">Always filter</string>
+    <string name="dup_down_off">Don\'t filter</string>
 
     <!-- Frame rate (FpsSetting) -->
     <string name="fps_auto_title">Auto</string>
@@ -250,10 +256,13 @@
     <string name="car_toyota_levin">Toyota Levin</string>
     <string name="car_toyota_rav4_2025">Toyota RAV4 2025</string>
     <string name="car_vw_bora_2021">Volkswagen Bora 2021</string>
+    <string name="car_vw_discover_pro_9_2">Volkswagen Discover Pro 9.2 (1280×640)</string>
     <string name="car_vw_golf_8_pro">Volkswagen Golf 8 Pro 2021</string>
+    <string name="car_vw_golf_8_r_line">Volkswagen Golf 8 R-Line</string>
     <string name="car_vw_id_unyx">Volkswagen ID.Unyx</string>
     <string name="car_vw_lamando_l">Volkswagen Lamando L</string>
     <string name="car_vw_sagitar_2021">Volkswagen Sagitar 2021–2022, pre-facelift</string>
+    <string name="car_vw_tayron_gte_2020">Volkswagen Tayron GTE 2020 (MIB 2.5)</string>
     <string name="car_vw_troc_2026">Volkswagen T-Roc facelift 2026</string>
     <string name="car_vw_tharu_xr">Volkswagen Tharu XR 2025–2026</string>
     <string name="car_vw_tiguan_l_pro">Volkswagen Tiguan L Pro / Teramont Pro</string>

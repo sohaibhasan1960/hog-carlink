@@ -62,10 +62,9 @@ android {
     }
 
     sourceSets {
-        // debug-транспорт для эмулятора ГУ (DebugTransport) и exported BridgeService; в smoke берём debug-набор целиком
+        // debug-транспорт для эмулятора ГУ (DebugTransport); манифест свой: exported BridgeService как в debug и без <permission> TEMPLATE_RENDERER
         getByName("smoke") {
             kotlin.srcDir("src/debug/java")
-            manifest.srcFile("src/debug/AndroidManifest.xml")
         }
     }
 
@@ -128,6 +127,8 @@ dependencies {
     implementation("com.google.zxing:core:3.5.3")
     // HOG CarLink: вход Google для поддержки через системный Credential Manager (Apache-2.0); Play Services не тянем
     implementation("androidx.credentials:credentials:1.5.0")
+    // свой хост Car App Library для навигаторов рабочего стола (AIDL ICarApp/ICarHost, модели Trip/Template), см. carapp/
+    implementation("androidx.car.app:app:1.7.0")
     testImplementation("junit:junit:4.13.2")
     // В unit-тестах android.jar — заглушки (isReturnDefaultValues), настоящий org.json нужен LogDiag
     testImplementation("org.json:json:20240303")

@@ -2,7 +2,11 @@ package com.yegorkapomidorka.headswap.launcher
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -28,6 +32,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.scale
@@ -47,6 +52,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -101,6 +107,12 @@ class LauncherPalette(
     val bgSolid: Color,
     /** Подложка миниатюр «Карта на главном». */
     val mini: Color,
+    /** Сплошная полоса строки статуса и язычок/шторка уведомлений под ней (в обеих должен быть непрозрачный цвет). */
+    val bar: Color,
+    /** Разделитель строк шторки уведомлений. */
+    val sep: Color,
+    /** Акцент ([LocalAccent]): кнопка навигации, выбранное, свечение фона. Свой - из «Вид › Цвета» ([LauncherColors]). */
+    val accent: Color = Color(0xFFD4AF37),
 )
 
 object Palettes {
@@ -113,6 +125,7 @@ object Palettes {
         btnSet = Color(1f, 1f, 1f, 0.10f), railFg = Color(0xFFF2F5F7),
         missed = Color(0xFFFFB4A9), backOff = Color(0xFF5F6A80), tagBg = Color(14, 20, 26, 153), mapBg = Color(0xFF172026),
         bgSolid = Color(0xFF1A232B), mini = Color(0xFF0E151B),
+        bar = Color(0xFF1B2329), sep = Color(1f, 1f, 1f, 0.08f),
     )
     private val BROWN = Color(90, 70, 20)
     val LIGHT = LauncherPalette(
@@ -125,6 +138,7 @@ object Palettes {
         btnSet = BROWN.copy(alpha = 0.12f), railFg = Color(0xFF5C5340),
         missed = Color(0xFFB3361F), backOff = Color(0xFFA89F88), tagBg = Color(1f, 1f, 1f, 0.88f), mapBg = Color(0xFFEEE9DC),
         bgSolid = Color(0xFFF4EDDB), mini = Color(0xFFFBF7EC),
+        bar = Color(0xFFE9E0C8), sep = BROWN.copy(alpha = 0.14f),
     )
 }
 
@@ -176,10 +190,9 @@ fun Modifier.launcherBackground(pal: LauncherPalette): Modifier = drawBehind {
                 radius = rx, center = Offset.Zero)
         }
     }
-    // два приглушённых свечения по бокам: ellipse 26% 70% at 0% 55% и 22% 70% at 100% 55%
-    val gold = Color(0xFFD4AF37)
-    glowAt(0f, h * 0.55f, w * 0.26f, h * 0.70f, gold.copy(alpha = pal.glowLeft))
-    glowAt(w, h * 0.55f, w * 0.22f, h * 0.70f, gold.copy(alpha = pal.glowRight))
+    // два приглушённых свечения акцентом по бокам: ellipse 26% 70% at 0% 55% и 22% 70% at 100% 55%
+    glowAt(0f, h * 0.55f, w * 0.26f, h * 0.70f, pal.accent.copy(alpha = pal.glowLeft))
+    glowAt(w, h * 0.55f, w * 0.22f, h * 0.70f, pal.accent.copy(alpha = pal.glowRight))
 }
 
 /** Иконки из макета (viewBox 24x24); пути в SVG-синтаксисе, рисуем без библиотеки иконок. */
@@ -214,6 +227,13 @@ object Ico {
     val MUSIC = listOf("M9 18V5l12-2v13", circle(6, 18, 3), circle(18, 16, 3))
     val HOME = listOf("m3 11 9-8 9 8", "M5 10v10h14V10")
     val CHECK = listOf("m5 12 5 5 9-10")
+    /** ⇄ на стыке двух плашек главного. */
+    val SWAP = listOf("M7 4 3 8l4 4", "M3 8h14", "m17 20 4-4-4-4", "M21 16H7")
+    /** «Развернуть» плашку YouTube на весь экран. */
+    val EXPAND = listOf("M14 4h6v6", "M20 4l-7 7", "M10 20H4v-6", "M4 20l7-7")
+    /** Миниатюры «Раскладки»: YouTube (рамка с треугольником) и часы. */
+    val VIDEO = listOf(roundRectPath(2f, 5.5f, 20f, 13f, 4f), "M10 9v6l5.2-3z")
+    val CLOCK = listOf(circle(12, 12, 9), "M12 7v5l3 2")
     /** Разделы настроек: «Главный экран» (раскладка) и «Система» (экран ГУ). */
     val LAYOUT = listOf(roundRectPath(3f, 4f, 18f, 16f, 2f), "M8 4v16", "M8 14h13")
     val SCREEN = listOf(roundRectPath(2f, 5f, 20f, 13f, 2f), "M8 21h8")
@@ -299,6 +319,12 @@ fun SvgIcon(paths: List<String>, sizePx: Int, color: Color, modifier: Modifier =
 /**
  * Кнопка под тач ГУ: нажатое состояние сразу на DOWN, действие на UP, долгий тап считается по времени
  * между DOWN и UP ([PressLogic]), сдвиг пальца отмену не вызывает (clickable с touch slop тут не подходит).
+ * Кнопка же - остановка фокуса шайбы ([LauncherKnob]): рамка [focusShape] (по умолчанию скругление карточек)
+ * цветом [ringColor] (по умолчанию акцент), OK - то же, что тап.
+ *
+ * [onSwipe] получает на UP смещение пальца за весь жест (dx, dy в px); true - жест съеден как смахивание, тапа нет
+ * (уведомления: потянуть полоску, смахнуть строку). [cooperative] - не забирать сдвиги пальца, чтобы родитель мог
+ * прокручивать список; сдвиг дальше touch slop отменяет тап (строки шторки уведомлений).
  */
 @Composable
 fun Pressable(
@@ -307,16 +333,32 @@ fun Pressable(
     description: String? = null,
     onLong: (() -> Unit)? = null,
     onPress: (() -> Unit)? = null,
+    focusShape: Shape? = null,
+    ringColor: Color? = null,
+    onSwipe: ((dx: Float, dy: Float) -> Boolean)? = null,
+    cooperative: Boolean = false,
     onTap: () -> Unit,
     content: @Composable BoxScope.(pressed: Boolean) -> Unit,
 ) {
     var pressed by remember { mutableStateOf(false) }
+    var focused by remember { mutableStateOf(false) }
     val tap = rememberUpdatedState(onTap)
     val long = rememberUpdatedState(onLong)
     val press = rememberUpdatedState(onPress)
+    val swipe = rememberUpdatedState(onSwipe)
+    val shareMoves = rememberUpdatedState(cooperative)
     val on = rememberUpdatedState(enabled)
+    val knob = remember { LauncherKnob.Target().apply { this.tap = { if (on.value) { press.value?.invoke(); tap.value() } } } }
+    knob.description = description
+    DisposableEffect(knob) { onDispose { LauncherKnob.focused(knob, false) } }
+    val m = LocalMetrics.current
     Box(
-        modifier
+        Modifier
+            .knobRing(focused && enabled && LauncherKnob.visible, focusShape ?: RoundedCornerShape(m.dp(m.spec.radius)),
+                ringColor ?: LocalAccent.current, LauncherKnob.gapColor(LocalPalette.current), m.spec.b4.toFloat())
+            .then(modifier)
+            .onFocusChanged { focused = it.isFocused; LauncherKnob.focused(knob, it.isFocused) }
+            .focusable(enabled)
             .semantics {
                 role = Role.Button
                 if (description != null) contentDescription = description
@@ -332,13 +374,20 @@ fun Pressable(
                     // анимация нажатия стартует по DOWN: UP с ГУ приходит на 200-500 мс позже
                     press.value?.invoke()
                     var up: PointerInputChange? = null
+                    var scrolled = false
                     while (true) {
                         val change = awaitPointerEvent().changes.firstOrNull { it.id == down.id } ?: break
-                        change.consume()
+                        if (!shareMoves.value) change.consume()
+                        else if (!scrolled && (change.position - down.position).getDistance() > viewConfiguration.touchSlop) {
+                            scrolled = true
+                            pressed = false
+                        }
                         if (!change.pressed) { up = change; break }
                     }
                     pressed = false
                     up?.let {
+                        val d = it.position - down.position
+                        if (swipe.value?.invoke(d.x, d.y) == true || scrolled) return@let
                         val kind = PressLogic.classify(down.uptimeMillis, it.uptimeMillis, long.value != null)
                         if (kind == Press.LONG) long.value?.invoke() else tap.value()
                     }
@@ -360,7 +409,7 @@ fun RoundButton(
     Pressable(
         modifier.size(m.dp(sizePx)).clip(CircleShape)
             .background(background), enabled = enabled, description = description, onTap = onTap, onLong = onLong,
-        onPress = onPress,
+        onPress = onPress, focusShape = CircleShape,
     ) { pressed ->
         if (pressed) Box(Modifier.matchParentSize().background(Pal.SURFACE_PRESSED))
         Box(Modifier.matchParentSize(), contentAlignment = Alignment.Center, content = content)
@@ -374,21 +423,57 @@ fun Txt(
     ellipsis: Boolean = true,
 ) {
     val m = LocalMetrics.current
+    // Арабский (RTL): Start/End - по раскладке, а не по абзацу (латиница в RTL-интерфейсе тоже прижата вправо);
+    // текст без RTL-символов ("1 / 3", "2 : 1") читается слева направо, иначе пробелы вокруг "/" переворачивают его.
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val hasRtl = remember(text, rtl) { rtl && text.any { Character.getDirectionality(it).let { d ->
+        d == Character.DIRECTIONALITY_RIGHT_TO_LEFT || d == Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC } } }
+    val physicalAlign = if (!rtl) align else when (align) {
+        TextAlign.Start -> TextAlign.Right
+        TextAlign.End -> TextAlign.Left
+        else -> align
+    }
     BasicText(
         text, modifier,
         style = TextStyle(
             color = color, fontSize = m.sp(sizePx), fontWeight = weight,
             fontFamily = LauncherFonts.family(LocalContext.current, mono, weight),
-            lineHeight = m.sp((sizePx * 1.15f).toInt()), textAlign = align,
+            lineHeight = m.sp((sizePx * 1.15f).toInt()), textAlign = physicalAlign,
+            textDirection = if (rtl && !hasRtl) TextDirection.ContentOrLtr else TextDirection.Unspecified,
         ),
         maxLines = maxLines, softWrap = maxLines > 1, overflow = if (ellipsis) TextOverflow.Ellipsis else TextOverflow.Clip,
     )
 }
 
-/** Содержимое карточек всегда слева направо, даже при зеркальной раскладке правого руля. */
+/**
+ * Направление языка приложения (русский и английский - Ltr, арабский - Rtl): задаёт [LauncherRoot] до любого [Ltr].
+ * Нужно там, где внутри физического блока ([Ltr]) надо вернуться к раскладке языка ([LocaleDir]).
+ */
+val LocalLocaleDirection = staticCompositionLocalOf { LayoutDirection.Ltr }
+
+/**
+ * Физическая раскладка слева направо при любом языке: окна встроенных приложений, карта и стрелки навигатора, медиа-ряд,
+ * оверлеи с пиксельными rect-ами. Только composable внутри не переупорядочивается: ряд или Box должен создаваться
+ * внутри блока, иначе его детей расставляет направление родителя.
+ */
 @Composable
 fun Ltr(content: @Composable () -> Unit) {
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Ltr, content = content)
 }
+
+/** Вернуться из [Ltr] к направлению языка приложения (содержимое карточек, тексты уведомлений). */
+@Composable
+fun LocaleDir(content: @Composable () -> Unit) {
+    CompositionLocalProvider(LocalLayoutDirection provides LocalLocaleDirection.current, content = content)
+}
+
+/** Язык приложения пишется справа налево (арабский). */
+@Composable
+fun localeRtl(): Boolean = LocalLocaleDirection.current == LayoutDirection.Rtl
+
+/** Зеркалит значок с направлением (шеврон «назад», стрелки страниц) в RTL; в [Ltr] ничего не делает. */
+@Composable
+fun Modifier.mirrorRtl(): Modifier =
+    if (LocalLayoutDirection.current == LayoutDirection.Rtl) this.graphicsLayer { scaleX = -1f } else this
 
 fun cardShape(r: Dp): Shape = androidx.compose.foundation.shape.RoundedCornerShape(r)

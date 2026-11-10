@@ -35,8 +35,6 @@ object PressEasing {
     val DROP = CubicBezierEasing(0.3f, 0f, 0.2f, 1f)
     /** «Назад»: CSS ease-in-out. */
     val IN_OUT = CubicBezierEasing(0.42f, 0f, 0.58f, 1f)
-    /** Стрелка навигации: cubic-bezier(.15,.85,.25,1). */
-    val NAV = CubicBezierEasing(0.15f, 0.85f, 0.25f, 1f)
 }
 
 /**
@@ -61,29 +59,6 @@ fun rememberPressAnim(ms: Int): PressAnim {
     return remember(ms) { PressAnim(scope, ms) }
 }
 
-/** Стрелка навигации: rot += 720 + 45 * (1..7), 1,6 с, cubic-bezier(.15,.85,.25,1); всегда не та сторона, где стояла. */
-class NavSpin(private val scope: CoroutineScope) {
-    private val anim = Animatable(0f)
-    private var target = 0f
-    val degrees: Float get() = anim.value
-    fun play() {
-        if (!LauncherModel.animations) return
-        target = NavSpinLogic.next(target, (1..7).random())
-        scope.launch { anim.animateTo(target, tween(1600, easing = PressEasing.NAV)) }
-    }
-}
-
-@Composable
-fun rememberNavSpin(): NavSpin {
-    val scope = rememberCoroutineScope()
-    return remember { NavSpin(scope) }
-}
-
-internal object NavSpinLogic {
-    /** Следующий угол: два оборота плюс 1..7 шагов по 45 градусов. */
-    fun next(rot: Float, steps: Int): Float = rot + 720f + 45f * steps.coerceIn(1, 7)
-}
-
 /** Значение ключевых кадров «Назад»: шеврон улетает влево и гаснет к 40%, на 41% появляется справа и возвращается. */
 internal object BackKeyframes {
     /** Сдвиг по X в единицах viewBox 24 и прозрачность. */
@@ -100,12 +75,12 @@ private fun parse(d: String): Path = PathParser().parsePathString(d).toPath()
 private fun DrawScope.strokePath(p: Path, color: Color, width: Float) =
     drawPath(p, color, style = Stroke(width = width, cap = StrokeCap.Round, join = StrokeJoin.Round))
 
-/** Шеврон «Назад» рейки с анимацией по [progress]. */
+/** Шеврон «Назад» рейки с анимацией по [progress]; в RTL зеркален (смотрит вправо, рейка справа). */
 @Composable
 fun BackIcon(sizePx: Int, color: Color, progress: () -> Float) {
     val m = LocalMetrics.current
     val path = remember { parse(Ico.CHEV_BACK[0]) }
-    Canvas(Modifier.size(m.dp(sizePx))) {
+    Canvas(Modifier.mirrorRtl().size(m.dp(sizePx))) {
         val sc = size.minDimension / 24f
         val (dx, alpha) = BackKeyframes.at(progress())
         scale(sc, sc, pivot = Offset.Zero) {

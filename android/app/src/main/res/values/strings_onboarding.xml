@@ -161,7 +161,7 @@
     <string-array name="step_activate_list">
         <item>Tap “Activate”, “Developer options” opens (on Xiaomi: Additional settings → Developer options)</item>
         <item>Turn on “Wireless debugging” and tap “Pair device with pairing code”</item>
-        <item>Type the code shown into the Headswap notification</item>
+        <item>Type the code shown into the HOG CarLink notification</item>
     </string-array>
     <string name="step_activate_hint">Activation is lost after the phone reboots. HOG CarLink will ask you to repeat it, it takes half a minute.</string>
     <string name="step_activate_short">HOG CarLink activation</string>

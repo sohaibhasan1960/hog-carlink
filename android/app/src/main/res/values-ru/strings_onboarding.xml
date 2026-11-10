@@ -137,7 +137,7 @@
     <string-array name="step_activate_list">
         <item>Нажмите «Активировать», откроется «Для разработчиков» (на Xiaomi: Расширенные настройки → Для разработчиков)</item>
         <item>Включите «Отладку по Wi-Fi» и нажмите «Подключить устройство с кодом сопряжения»</item>
-        <item>Введите показанный код в уведомление Headswap</item>
+        <item>Введите показанный код в уведомление HOG CarLink</item>
     </string-array>
     <string name="step_activate_hint">После перезагрузки телефона активация слетает. HOG CarLink сам попросит повторить, это полминуты.</string>
     <string name="step_activate_short">Активация HOG CarLink</string>

@@ -23,6 +23,9 @@ import android.os.PowerManager
 import android.os.SystemClock
 import android.provider.Settings
 import com.yegorkapomidorka.headswap.aa.AaBridgeCore
+import com.yegorkapomidorka.headswap.aa.AaShadowNav
+import com.yegorkapomidorka.headswap.aa.DesktopNavHints
+import com.yegorkapomidorka.headswap.carapp.CarAppHost
 import com.yegorkapomidorka.headswap.aa.AaConnector
 import com.yegorkapomidorka.headswap.aa.AaCertsMissingException
 import com.yegorkapomidorka.headswap.aa.AaCreds
@@ -47,10 +50,12 @@ import com.yegorkapomidorka.headswap.dex.DesktopAccess
 import com.yegorkapomidorka.headswap.dex.DesktopAudioCapture
 import com.yegorkapomidorka.headswap.dex.DesktopAudioState
 import com.yegorkapomidorka.headswap.dex.DesktopFailure
+import com.yegorkapomidorka.headswap.dex.DesktopKeys
 import com.yegorkapomidorka.headswap.dex.DesktopMusicPlayback
 import com.yegorkapomidorka.headswap.dex.DesktopRecoveryPolicy
 import com.yegorkapomidorka.headswap.dex.DexPrefs
 import com.yegorkapomidorka.headswap.dex.DexState
+import com.yegorkapomidorka.headswap.dex.PhoneAssistant
 import com.yegorkapomidorka.headswap.dex.UsbDetachPolicy
 import com.yegorkapomidorka.headswap.link.CarTransport
 import com.yegorkapomidorka.headswap.link.LinkSetupException
@@ -1037,6 +1042,8 @@ class BridgeService : Service() {
             h.core.spliceMs = spliceMs
         }
         h.core.carVwId = aaPrefs.carPreset == CarPreset.VW_ID_UNYX
+        h.core.phoneAssistant = null   // режим AA: кнопка голоса идёт в AA
+        DesktopKeys.voiceStatus = null
         if (wakeLock == null) {
             wakeLock = getSystemService(PowerManager::class.java)
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "headswap:session")
@@ -1137,7 +1144,8 @@ class BridgeService : Service() {
         val screenOn = getSystemService(PowerManager::class.java).isInteractive
         val cfg = SessionConfig(
             screenOn, false, dexPrefs.desktopFps,
-            metaMusic = false, metaNavi = false, naviField6 = aaPrefs.naviField6, desktopVideo = desktopVideo,
+            // ПРОБНИК: навигация из теневой AA-сессии (AaShadowNav), без неё подписку ГУ просто никто не кормит
+            metaMusic = false, metaNavi = aaPrefs.metaNavi, naviField6 = aaPrefs.naviField6, desktopVideo = desktopVideo,
         )
         MetaRelay.PROGRESS_UNIT = if (aaPrefs.progressSeconds) 1 else 1000
 
@@ -1166,6 +1174,7 @@ class BridgeService : Service() {
         owner.core.transcodeEnabled = true
         owner.core.spliceMs = 0L
         owner.core.carVwId = aaPrefs.carPreset == CarPreset.VW_ID_UNYX
+        // кнопка голоса: системный помощник клавишей KEYCODE_ASSIST (как долгое нажатие питания), см. createDesktopHost
         if (wakeLock == null) {
             wakeLock = getSystemService(PowerManager::class.java)
                 .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "headswap:session")
@@ -1183,7 +1192,9 @@ class BridgeService : Service() {
         DesktopMusicPlayback.attach(applicationContext, this, s, audioUsb,
             ready = { session === s && DexState.running && s.hasFreshDesktopVideo() },
             audioReady = { !DexPrefs(this).usbPlaybackAudio || !owner.core.audioViaUsb || DesktopAudioState.running })
-        desktopAudio.attach(owner.core, audioUsb) { session === s && s.canCaptureDesktopAudio() }
+        // h658: по Wi-Fi (tcp6) звук CarLife в режиме AA ходит, а BT A2DP ГУ рвёт сама — захват рабочего стола тоже пускаем в tcp6
+        val desktopAudioLink = audioUsb || transport.caps === TransportCaps.TCP6
+        desktopAudio.attach(owner.core, desktopAudioLink) { session === s && s.canCaptureDesktopAudio() }
         s.start()
         owner.onUsbSessionStarted()
     }
@@ -1210,7 +1221,18 @@ class BridgeService : Service() {
             core.usbAudioEnabled = false
             core.mapHomeKey = true
             core.desktopInputEnabled = true
+            core.volumeSwipeProvider = { aaPrefs.volumeSwipe }
+            DesktopNavHints.target = core   // подсказки навигатора рабочего стола (свой хост Car App, теневая AA) в MetaRelay
+            // в машине adb нет: стартуем вместе с рабочим столом; у навигатора выключены подсказки на приборке - AA не трогаем (h800).
+            // Действующий навигатор как у лаунчера: сохранённый, пока установлен, иначе первый известный (LauncherModel.init
+            // зовётся один раз на процесс - на вторую сессию рабочего стола его applyShadowNav не придёт)
+            val lp = com.yegorkapomidorka.headswap.launcher.LauncherPrefs(this)
+            val pick = com.yegorkapomidorka.headswap.launcher.NavigatorPick
+            val installed = pick.KNOWN.filterTo(HashSet()) { packageManager.getLaunchIntentForPackage(it) != null }
+            if (pick.shadowWanted(aaPrefs.metaNavi, pick.effective(lp.navigator, installed), lp::navHints)) AaShadowNav.start(this)
+            else if (aaPrefs.metaNavi) AppLog.i("SHADOWNAV не стартую: у навигатора выключены подсказки на приборке", false)
             core.touchDecimationProvider = { aaPrefs.touchDecimation }
+            core.dupDownFilterProvider = { aaPrefs.dupDownFilter }
             core.transcodeEnabled = true
             core.refDecoderFactory = { sink -> RefDecoder(sink) { AppLog.i(it, false) } }
             core.videoMode = mode
@@ -1222,6 +1244,15 @@ class BridgeService : Service() {
             val conn = DelegatedDexConnector(applicationContext, core) { reason ->
                 main.post { ref[0]?.let { onDesktopSourceFailed(it, reason) } }
             }
+            // кнопка голоса: панель Алисы в своём лаунчере (DesktopKeys); лаунчер не на экране или чужой - Алиса на весь
+            // дисплей рабочего стола (dex/PhoneAssistant, ADR 0026). Лямбда зовётся не с главного потока
+            core.phoneAssistant = {
+                if (DesktopKeys.sink?.voice() != true) {
+                    AppLog.i("ASSIST панель не взята лаунчером, Алиса на весь дисплей")
+                    main.post { PhoneAssistant.launch(applicationContext, DexState.displayId) }
+                }
+            }
+            DesktopKeys.voiceStatus = { on -> core.desktopVoiceStatus(on) }
             AppLog.i("DEX: видео ${mode.outW}x${mode.outH} через CarLife; звук по USB по настройке; микрофон CarLife не передаётся")
             val h = BridgeHost(core, conn, scheduler, log, previous = previous, onTornDown = {
                 main.post { ref[0]?.let(::onDesktopHostTornDown) }
@@ -1267,6 +1298,9 @@ class BridgeService : Service() {
     private fun onDesktopHostTornDown(owner: BridgeHost) {
         if (host === owner) host = null
         AppLog.i("DEX: источник закрыт")
+        AaShadowNav.stop()
+        CarAppHost.stop()
+        DesktopNavHints.target = null
         val recovery = pendingDesktopRecovery
         if (recovery != null && recovery.owner === owner && desktopRecovery.isCurrent(recovery.attempt)) {
             // колбэк подтверждает закрытие и привилегированного производителя, и энкодера с Surface
@@ -1317,6 +1351,7 @@ class BridgeService : Service() {
     /** Новый AA-хост: ядро, коннектор, сертификаты. null = мост не поднялся (причина в AaState.setupError). */
     private fun createHost(aaPrefs: AaPrefs, chosen: VideoGeometry, mode: VideoGeometry, densityOverride: Int, previous: BridgeHost?): BridgeHost? {
         return try {
+            AaShadowNav.stop()      // ПРОБНИК: одноразовый сервер 5277 нужен самому мосту AA
             val loaded = AaCreds.load(this, aaPrefs.certSet)
             AaState.setupError = null
             AaState.reset()
@@ -1339,6 +1374,7 @@ class BridgeService : Service() {
             core.voiceChunkProvider = { aaPrefs.voiceChunk }
             core.ttsPrerollProvider = { aaPrefs.ttsPreroll }
             core.touchDecimationProvider = { aaPrefs.touchDecimation }
+            core.dupDownFilterProvider = { aaPrefs.dupDownFilter }
             core.phoneMic = PhoneMicCapture(applicationContext)
             core.usbAudioEnabled = aaPrefs.usbAudio
             EqLive.settings = aaPrefs.eq

@@ -239,6 +239,7 @@ object LogShare {
             appendLine("  حجم حزمة الصوت: ${aa.voiceChunk.name}")
             appendLine("  صمت قبل التنبيه: ${aa.ttsPreroll.name}")
             appendLine("  تخفيف اللمس: ${aa.touchDecimation.name}")
+            appendLine("  اللمس المزدوج: ${aa.dupDownFilter.name}")
             appendLine("  سيارتي: ${aa.carPreset?.let { "${it.name}${if (aa.carSettings == it.settings) "" else "، إعدادات معدّلة يدويًا"}" } ?: "غير محددة"}")
             appendLine("  الشهادة: ${aa.certSet}")
             appendLine("  الميكروفون: ${aa.micMode.label}, MODULE_STATUS VR: ${aa.micVrStatus}")

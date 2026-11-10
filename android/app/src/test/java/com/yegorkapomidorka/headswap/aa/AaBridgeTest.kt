@@ -648,7 +648,7 @@ class AaBridgeCoreTest {
         core.onCarlifeHardKey(0x14)                           // OK: нажатие шайбы
         assertEquals(listOf(1, -1), peer.rotary.toList())
         assertEquals(listOf(23), peer.keys.toList())
-        assertTrue(logs.any { it.contains("шайба keycode=6 -> AA rotary 1") })
+        assertTrue(logs.any { it.contains("шайба keycode=6 -> rotary 1") })
         assertTrue(AapMessages.KEYCODE_ROTARY_CONTROLLER in AapMessages.KEYCODES_SUPPORTED)
         core.peer = null
         core.onCarlifeHardKey(6)                              // AA не подключён: игнор без исключений
@@ -1411,6 +1411,33 @@ class AaBridgeAudioTest {
         now += 600
         c.onCarlifeHardKey(0x21)
         assertEquals(listOf(AaBridgeCore.KEYCODE_SEARCH, AaBridgeCore.KEYCODE_SEARCH), peer.keys.toList())
+    }
+
+    @Test
+    fun desktopVoiceKeyGoesToPhoneAssistantNotShadowAa() {
+        var now = 1_000L
+        val c = AaBridgeCore({ l, _ -> logs.add(l) }, clockMs = { now })
+        val peer = FakePeer()
+        c.peer = peer                                                    // теневая AA рабочего стола
+        var launched = 0
+        c.phoneAssistant = { launched++ }
+        c.onCarlifeVoiceKey()                                            // MODULE_CONTROL VR=1 (Vezel)
+        now += 2
+        c.onCarlifeVoiceKey()                                            // дребезг глотаем
+        assertEquals(1, launched)
+        now += 600
+        c.onCarlifeHardKey(0x21)                                         // VR_START с руля
+        assertEquals(2, launched)
+        assertTrue(peer.keys.isEmpty())
+        c.peer = null
+        now += 600
+        c.onCarlifeVoiceKey()                                            // без AA тоже работает
+        assertEquals(3, launched)
+        c.phoneAssistant = null                                          // режим AA: снова KEYCODE_SEARCH
+        c.peer = peer
+        now += 600
+        c.onCarlifeVoiceKey()
+        assertEquals(listOf(AaBridgeCore.KEYCODE_SEARCH), peer.keys.toList())
     }
 
     @Test

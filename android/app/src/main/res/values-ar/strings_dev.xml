@@ -101,4 +101,12 @@
         <item quantity="many">حُذف %d ملفًا قديمًا</item>
         <item quantity="other">حُذف %d ملف قديم</item>
     </plurals>
+    <!-- HOG CarLink: строки апстрима 4.1.1 (перевод апстрима) -->
+    <string name="dev_section_desktop">سطح المكتب على شاشة السيارة</string>
+    <string name="dev_hide_status_title">إخفاء شريط الحالة</string>
+    <string name="dev_hide_status_sub">لشاشات السيارة التي تعرض في الأعلى شريطها الخاص بالساعة والأيقونات (بعض سيارات VW). تظهر الإشعارات كنتوء بخط ذهبي: اسحب للأسفل لفتح لوحة الإشعارات</string>
+    <string name="dev_volume_swipe_title">الصوت بإصبعين</string>
+    <string name="dev_volume_swipe_sub">سطح المكتب: إصبعان عند الحافة اليمنى، للأعلى رفع الصوت وللأسفل خفضه. مفعّل دائمًا في Honda Vezel.</string>
+    <string name="dev_section_dup_down">لمسة مزدوجة من شاشة السيارة</string>
+    <string name="dev_dup_down_note">بعض شاشات السيارات (Honda) ترسل كل لمسة مرتين: تعمل أزرار المشغّل مرتين، وتُفتح «الإعدادات» ثم تُغلق فورًا. يتجاهل المرشّح أمر DOWN الثاني في النقطة نفسها دون UP.</string>
 </resources>

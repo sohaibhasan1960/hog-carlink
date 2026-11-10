@@ -24,6 +24,7 @@ internal object EmbeddedSessionRegistry {
     private class Lease(val handle: Int, val uid: Int, val parent: Parent, val token: IBinder) {
         lateinit var death: IBinder.DeathRecipient
         @Volatile var linked = false
+        @Volatile var childDisplay = -1   // id дочернего дисплея от createChildDisplay
         @Volatile var packageName: String? = null
         var closing: CompletableFuture<Unit>? = null // Guarded by lock.
     }
@@ -73,7 +74,7 @@ internal object EmbeddedSessionRegistry {
         try {
             token.linkToDeath(lease.death, 0)
             lease.linked = true
-            activeCall(lease) { it.createChildDisplay(surface, token, width, height, density) }
+            lease.childDisplay = activeCall(lease) { it.createChildDisplay(surface, token, width, height, density) }
             synchronized(lock) {
                 check(parent === lease.parent && leases[lease.handle] === lease && token.isBinderAlive) {
                     "Сеанс рабочего стола завершился"
@@ -86,6 +87,9 @@ internal object EmbeddedSessionRegistry {
             throw error
         }
     }
+
+    /** id дочернего дисплея окна; -1, если окно закрыто. */
+    fun childDisplayId(uid: Int, handle: Int): Int = runCatching { active(uid, handle).childDisplay }.getOrDefault(-1)
 
     private fun active(uid: Int, handle: Int): Lease = synchronized(lock) {
         val lease = checkNotNull(leases[handle]) { "Встроенное окно уже закрыто" }
@@ -119,6 +123,10 @@ internal object EmbeddedSessionRegistry {
         val lease = active(uid, handle)
         activeCall(lease) { it.injectChildBack(lease.token) }
     }
+    fun key(uid: Int, handle: Int, keycode: Int) {
+        val lease = active(uid, handle)
+        activeCall(lease) { it.injectChildKey(lease.token, keycode) }
+    }
     fun producerLifetime(uid: Int, handle: Int): IBinder {
         val lease = active(uid, handle)
         return activeCall(lease) { it.childProducerLifetime(lease.token) }
@@ -133,6 +141,12 @@ internal object EmbeddedSessionRegistry {
     fun taskPackages(uid: Int, handle: Int): List<String>? {
         val lease = active(uid, handle)
         return activeCall(lease) { it.childTaskPackages(lease.token)?.toList() }
+    }
+    /** 1 запущенное в окно приложение в полноэкранном режиме, 0 нет, -1 не удалось узнать. */
+    fun fullscreen(uid: Int, handle: Int, packageName: String): Int {
+        val lease = active(uid, handle)
+        if (lease.packageName != packageName) return 0
+        return activeCall(lease) { it.childFullscreen(lease.token, packageName) }
     }
     fun release(uid: Int, handle: Int) {
         val lease = synchronized(lock) { leases[handle] } ?: return // Already stopped with ACK.

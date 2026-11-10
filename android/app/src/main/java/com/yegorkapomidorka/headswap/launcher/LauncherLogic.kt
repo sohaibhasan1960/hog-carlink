@@ -75,6 +75,16 @@ data class AppRef(val pkg: String, val cls: String) {
     }
 }
 
+/**
+ * Двойное «Назад» в окне приложения - на главный. Teams и другие на своём первом экране глотают Back: задача остаётся
+ * сверху, а «Домой» на рейке нет (Егор 04.11). Отличить первый экран от внутреннего мы не можем, поэтому второе
+ * нажатие в пределах [WINDOW_MS] уводит на главный всегда; приложение остаётся в фоне.
+ */
+object DoubleBack {
+    const val WINDOW_MS = 1500L
+    fun isDouble(prevAt: Long, now: Long): Boolean = prevAt > 0 && now - prevAt in 0..WINDOW_MS
+}
+
 /** Персистентный список приложений: порядок важен, дублей нет. */
 object AppList {
     fun encode(list: List<AppRef>): String = list.joinToString("\n") { it.key }
@@ -99,8 +109,24 @@ object CatalogLists {
 /** Выбор навигатора по умолчанию и проверка сохранённого. */
 object NavigatorPick {
     const val YANDEX_NAVI = "ru.yandex.yandexnavi"
-    val KNOWN = listOf(YANDEX_NAVI, "ru.yandex.yandexmaps", "ru.dublgis.dgismobile",
-        "com.google.android.apps.maps", "com.waze", "app.organicmaps")
+    const val YANDEX_MAPS = "ru.yandex.yandexmaps"
+    const val GOOGLE_MAPS = "com.google.android.apps.maps"
+    val KNOWN = listOf(YANDEX_NAVI, YANDEX_MAPS, "ru.dublgis.dgismobile",
+        GOOGLE_MAPS, "com.waze", "app.organicmaps")
+
+    /** Машинная часть только с подпиской Яндекс Плюс (у Карт тот же NavigationCarAppService, что у Навигатора). */
+    fun needsPlus(pkg: String?): Boolean = pkg == YANDEX_NAVI || pkg == YANDEX_MAPS
+
+    /**
+     * «Подсказки на приборке» по умолчанию (h800, ADR 0028). Вкл - машинная часть на своём хосте Car App или теневая AA;
+     * выкл - навигатор окном, как на телефоне. По умолчанию выкл у всех (Егор 05.11): окно работает без Плюса и без AA.
+     */
+    @Suppress("UNUSED_PARAMETER")
+    fun hintsDefault(pkg: String): Boolean = false
+
+    /** Теневую AA держим, пока у выбранного навигатора подсказки включены; навигатора нет - как раньше, держим. */
+    fun shadowWanted(metaNavi: Boolean, navPkg: String?, hints: (String) -> Boolean): Boolean =
+        metaNavi && (navPkg == null || hints(navPkg))
 
     fun defaultFor(installed: Set<String>): String? = KNOWN.firstOrNull { it in installed }
 
@@ -165,6 +191,7 @@ object BackNav {
      * null - шагов внутри настроек нет, «Назад» выходит с экрана настроек.
      */
     fun settingsStep(page: SettingsPage, licenseOpen: Boolean): Pair<SettingsPage, Boolean>? = when {
+        page == SettingsPage.COLORS -> SettingsPage.LOOK to false
         page != SettingsPage.ABOUT -> null
         licenseOpen -> SettingsPage.ABOUT to false
         else -> SettingsPage.SYSTEM to false
@@ -175,9 +202,48 @@ object BackNav {
 }
 
 /**
+ * Полноэкранный YouTube в окне приложения занимает весь экран, рейка прячется; выход - кнопкой самого YouTube.
+ * Только YouTube: приложение, которое прячет строку состояния всегда (игры), осталось бы без «Назад» и «Домой».
+ * Сомнение (ошибка запроса, не тот экран, не готово) - рейка видна.
+ */
+object FullscreenApp {
+    const val YOUTUBE = "com.google.android.youtube"
+    private val PACKAGES = setOf(YOUTUBE)
+    /** Опрос, пока в окне YouTube. */
+    const val POLL_MS = 500L
+    /** Подряд ответов «полноэкранный», чтобы спрятать рейку. */
+    const val HIDE_AFTER = 2
+    /** После смены размера окна YouTube перестраивается и может на миг показать панели: «нет» столько не верим. */
+    const val SETTLE_MS = 1500L
+
+    fun watched(pkg: String?): Boolean = pkg in PACKAGES
+
+    /** Решение «рейка спрятана» по ответам childFullscreen (1 да, 0 нет, -1 неизвестно). */
+    class Tracker {
+        var hidden = false
+            private set
+        private var yes = 0
+        private var resizedAt = Long.MIN_VALUE / 2
+
+        fun reset() { hidden = false; yes = 0 }
+        fun resized(now: Long) { resizedAt = now }
+
+        fun update(state: Int, now: Long): Boolean {
+            if (state == 1) {
+                if (++yes >= HIDE_AFTER) hidden = true
+            } else {
+                yes = 0
+                if (now - resizedAt >= SETTLE_MS) hidden = false
+            }
+            return hidden
+        }
+    }
+}
+
+/**
  * Чип плееров на карточке музыки: два слота - свой плеер телефона (любая активная сессия) и последний онлайн-плеер
  * (Я.Музыка, YouTube Music, VK Музыка - что слушали последним, иначе первый установленный). Остальные медиаприложения -
- * долгий тап по «ноте» (список плееров).
+ * долгий тап по «ноте» (список плееров). В настройках в оба слота можно закрепить любой плеер телефона (жалобы юзеров 09.11).
  */
 object PlayerChip {
     const val YANDEX = "ru.yandex.music"
@@ -186,13 +252,15 @@ object PlayerChip {
     /** Онлайн-плееры второго слота; порядок - выбор по умолчанию, пока ничего не слушали. */
     val ONLINE = listOf(YANDEX, YT_MUSIC, VK)
 
-    enum class Kind { PHONE, YANDEX, YT_MUSIC, VK }
+    /** APP - любой другой плеер, закреплённый во втором слоте: подпись и иконка - самого приложения. */
+    enum class Kind { PHONE, YANDEX, YT_MUSIC, VK, APP }
     data class Slot(val kind: Kind, val pkg: String?, val selected: Boolean)
 
     private fun kindOf(pkg: String): Kind = when (pkg) {
         YANDEX -> Kind.YANDEX
         YT_MUSIC -> Kind.YT_MUSIC
-        else -> Kind.VK
+        VK -> Kind.VK
+        else -> Kind.APP
     }
 
     /**
@@ -202,20 +270,32 @@ object PlayerChip {
     fun slots(installed: Set<String>, chosen: String?, lastOnline: String?, local: String? = null, fixedOnline: String? = null): List<Slot> =
         buildList {
             add(Slot(Kind.PHONE, local, chosen == null || (local != null && chosen == local)))
-            val online = onlineSlot(installed, lastOnline, fixedOnline)
+            val online = onlineSlot(installed, lastOnline, fixedOnline, exclude = local)
             if (online != null) add(Slot(kindOf(online), online, chosen == online))
         }
 
-    /** Пакет второго слота: закреплённый в настройках, иначе последний услышанный, иначе первый установленный. */
-    fun onlineSlot(installed: Set<String>, lastOnline: String?, fixedOnline: String?): String? =
-        fixedOnline?.takeIf { it in installed && it in ONLINE }
-            ?: lastOnline?.takeIf { it in installed && it in ONLINE } ?: ONLINE.firstOrNull { it in installed }
+    /**
+     * Пакет второго слота: закреплённый в настройках (любой плеер), иначе последний услышанный онлайн, иначе первый
+     * установленный. [exclude] - плеер первого слота: второй его не дублирует.
+     */
+    fun onlineSlot(installed: Set<String>, lastOnline: String?, fixedOnline: String?, exclude: String? = null): String? {
+        fun ok(pkg: String?) = pkg != null && pkg in installed && pkg != exclude
+        return fixedOnline?.takeIf(::ok) ?: lastOnline?.takeIf { ok(it) && it in ONLINE } ?: ONLINE.firstOrNull(::ok)
+    }
 
-    /** Свои плееры для первого слота: всё найденное на телефоне, кроме онлайн-сервисов второго. */
-    fun localPlayers(players: List<String>): List<String> = players.filter { it !in ONLINE }
+    /** Плееры для слотов в настройках: всё найденное на телефоне плюс установленные онлайн-сервисы, без повторов. */
+    fun allPlayers(found: List<String>, installed: Set<String>): List<String> =
+        (found + ONLINE.filter { it in installed }).distinct()
+
+    /** Список второго слота: онлайн-сервисы первыми (это его основное назначение), за ними остальные плееры. */
+    fun secondSlotPlayers(players: List<String>): List<String> =
+        ONLINE.filter { it in players } + players.filter { it !in ONLINE }
 
     /** Последний онлайн-плеер после того, как выбрали или услышали [pkg]: меняется, только если это онлайн-плеер. */
     fun lastOnline(previous: String?, pkg: String?): String? = pkg?.takeIf { it in ONLINE } ?: previous
+
+    /** Последний свой плеер после того, как выбрали или услышали [pkg]: меняется, только если это не онлайн-плеер. */
+    fun lastLocal(previous: String?, pkg: String?): String? = pkg?.takeIf { it !in ONLINE } ?: previous
 }
 
 /**
@@ -245,11 +325,3 @@ object NetLabel {
     }
 }
 
-/** Вид центральной карточки на месте навигации (иконка «слои» переключает по кругу). */
-enum class CardView { NAVIGATOR, CLOCK;
-    fun next(): CardView = entries[(ordinal + 1) % entries.size]
-
-    companion object {
-        fun restore(name: String?): CardView = entries.firstOrNull { it.name == name } ?: NAVIGATOR
-    }
-}

@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.Offset
@@ -99,9 +100,12 @@ fun MusicCard(modifier: Modifier) {
     CardBox(modifier, background = Color.Transparent) {
         Box(Modifier.fillMaxSize().musicBackground())
         if (st.art == null) {
-            BoxWithConstraints(Modifier.fillMaxSize()) {
-                SvgIcon(Ico.MUSIC, s.cover, Pal.WHITE.copy(alpha = 0.3f), stroke = 1.2f,
-                    modifier = Modifier.offset(maxWidth * 0.32f, maxHeight * 0.22f))
+            // нота лежит у золотого пятна фона, а оно нарисовано физически: Ltr, чтобы в RTL нота не уезжала от него
+            Ltr {
+                BoxWithConstraints(Modifier.fillMaxSize()) {
+                    SvgIcon(Ico.MUSIC, s.cover, Pal.WHITE.copy(alpha = 0.3f), stroke = 1.2f,
+                        modifier = Modifier.offset(maxWidth * 0.32f, maxHeight * 0.22f))
+                }
             }
         }
         st.art?.let { Image(it, null, Modifier.fillMaxSize(), contentScale = ContentScale.Crop) }
@@ -127,24 +131,27 @@ fun MusicCard(modifier: Modifier) {
                 }
             }
         }
-        Row(
-            Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = m.dp(s.g8)).height(m.dp(s.t)),
-            verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly,
-        ) {
-            if (st.hasSession) {
-                RoundButton(s.tp, stringResource(R.string.l_prev), onTap = { MusicController.previous() }) {
-                    SvgIcon(Ico.PREV, s.tpIc, Pal.WHITE, fill = true)
+        // prev / play / next всегда слева направо, как значки плеера: ряд создаётся внутри Ltr
+        Ltr {
+            Row(
+                Modifier.align(Alignment.BottomCenter).fillMaxWidth().padding(bottom = m.dp(s.g8)).height(m.dp(s.t)),
+                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceEvenly,
+            ) {
+                if (st.hasSession) {
+                    RoundButton(s.tp, stringResource(R.string.l_prev), onTap = { MusicController.previous() }) {
+                        SvgIcon(Ico.PREV, s.tpIc, Pal.WHITE, fill = true)
+                    }
                 }
-            }
-            if (st.hasSession || (st.access && player != null)) {
-                RoundButton(s.t, stringResource(if (st.playing) R.string.l_pause else R.string.l_play),
-                    onTap = { MusicController.playPause(ctx, player) }, background = Color(0x29FFFFFF)) {
-                    SvgIcon(if (st.playing) Ico.PAUSE else Ico.PLAY, s.ic, Pal.WHITE, fill = true)
+                if (st.hasSession || (st.access && player != null)) {
+                    RoundButton(s.t, stringResource(if (st.playing) R.string.l_pause else R.string.l_play),
+                        onTap = { MusicController.playPause(ctx, player) }, background = Color(0x29FFFFFF)) {
+                        SvgIcon(if (st.playing) Ico.PAUSE else Ico.PLAY, s.ic, Pal.WHITE, fill = true)
+                    }
                 }
-            }
-            if (st.hasSession) {
-                RoundButton(s.tp, stringResource(R.string.l_next), onTap = { MusicController.next() }) {
-                    SvgIcon(Ico.NEXT, s.tpIc, Pal.WHITE, fill = true)
+                if (st.hasSession) {
+                    RoundButton(s.tp, stringResource(R.string.l_next), onTap = { MusicController.next() }) {
+                        SvgIcon(Ico.NEXT, s.tpIc, Pal.WHITE, fill = true)
+                    }
                 }
             }
         }
@@ -171,19 +178,25 @@ private fun PlayerChipColumn(modifier: Modifier) {
         for (slot in slots) {
             val fg = Pal.WHITE.copy(alpha = if (slot.selected) 0.9f else 0.55f)
             val bg = if (slot.selected) accent.copy(alpha = 0.32f) else Color.Transparent
-            val desc = stringResource(when (slot.kind) {
-                PlayerChip.Kind.PHONE -> R.string.l_player_mine
-                PlayerChip.Kind.YANDEX -> R.string.l_player_yandex
-                PlayerChip.Kind.YT_MUSIC -> R.string.l_player_ytm
-                PlayerChip.Kind.VK -> R.string.l_player_vk
-            })
+            val desc = when (slot.kind) {
+                PlayerChip.Kind.PHONE -> stringResource(R.string.l_player_mine)
+                PlayerChip.Kind.YANDEX -> stringResource(R.string.l_player_yandex)
+                PlayerChip.Kind.YT_MUSIC -> stringResource(R.string.l_player_ytm)
+                PlayerChip.Kind.VK -> stringResource(R.string.l_player_vk)
+                PlayerChip.Kind.APP -> LauncherModel.packageLabel(slot.pkg!!)
+            }
             RoundButton(
                 s.pcB, desc, background = bg,
                 onTap = { if (slot.pkg == null) LauncherActions.choosePhonePlayer() else LauncherActions.choosePlayer(slot.pkg) },
                 onLong = if (slot.kind == PlayerChip.Kind.PHONE) ({ LauncherActions.openPlayers() }) else null,
             ) {
-                when (slot.kind) {
-                    PlayerChip.Kind.PHONE -> SvgIcon(Ico.MUSIC, s.pcIc, fg, stroke = 2.4f)
+                // иконка выбранного приложения; «любой плеер» без закрепления - последний свой, что выбирали или слушали
+                val iconPkg = slot.pkg ?: model.lastLocalPlayer
+                val icon = iconPkg?.let { rememberPackageIcon(it) }
+                if (icon != null) {
+                    Image(icon, null, Modifier.size(m.dp(s.pcApp)).clip(CircleShape).alpha(if (slot.selected) 1f else 0.55f))
+                } else when (slot.kind) {
+                    PlayerChip.Kind.PHONE, PlayerChip.Kind.APP -> SvgIcon(Ico.MUSIC, s.pcIc, fg, stroke = 2.4f)
                     PlayerChip.Kind.YANDEX -> Txt("Я", s.pcIc, color = fg, weight = FontWeight.Bold)
                     PlayerChip.Kind.YT_MUSIC -> VectorIcon(VIco.YT_MUSIC, 24f, s.pcIc, fg)
                     PlayerChip.Kind.VK -> Txt("VK", s.pcVk, color = fg, weight = FontWeight.Bold)

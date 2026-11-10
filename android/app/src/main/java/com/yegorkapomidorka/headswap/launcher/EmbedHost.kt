@@ -1,5 +1,6 @@
 package com.yegorkapomidorka.headswap.launcher
 
+import android.content.Context
 import android.graphics.SurfaceTexture
 import android.os.Binder
 import android.os.Handler
@@ -12,12 +13,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.yegorkapomidorka.headswap.AppLog
+import com.yegorkapomidorka.headswap.aa.AaShadowNav
+import com.yegorkapomidorka.headswap.aa.TouchPoint
+import com.yegorkapomidorka.headswap.carapp.CarAppCatalog
+import com.yegorkapomidorka.headswap.carapp.CarAppHost
+import com.yegorkapomidorka.headswap.carapp.CarAppTarget
 import com.yegorkapomidorka.headswap.dex.DexState
 import com.yegorkapomidorka.headswap.embed.EmbeddedSessionRegistry
 
 internal enum class EmbedStatus { IDLE, CONNECTING, STARTING, READY, FAILED }
 
-/** Один дочерний экран: навигатор или «текущее приложение». Лимит реестра - 2 окна, значит слотов ровно два. */
+/** Один дочерний экран: навигатор, «текущее приложение» или панель Алисы. Лимит реестра - 3 окна, значит слотов ровно три. */
 internal class EmbedSlot(val name: String) {
     private var statusValue by mutableStateOf(EmbedStatus.IDLE)
 
@@ -34,6 +40,14 @@ internal class EmbedSlot(val name: String) {
     @Volatile var wantKey: String? = null
     @Volatile var wantW = 0
     @Volatile var wantH = 0
+    /** Размер на весь экран: поверхность своего хоста Car App всегда такая, карточка показывает её вырезку. */
+    @Volatile var fullW = 0
+    @Volatile var fullH = 0
+    private var carHostValue by mutableStateOf(false)
+    /** Окно рисует свой хост Car App (только nav). Пишется с рабочего потока. */
+    var carHost: Boolean
+        get() = carHostValue
+        set(value) { if (value != carHostValue) carHostValue = value }
     /** Касания в окно пересылаются (в карточке навигатора - нет: тап = развернуть). */
     @Volatile var interactive = false
 
@@ -42,6 +56,8 @@ internal class EmbedSlot(val name: String) {
     val lock = Any()
     var texture: SurfaceTexture? = null
     var textureDisplay = -1
+    /** Смена значения пересоздаёт TextureView слоя: свежая текстура без старого продюсера (кнопка перезапуска). */
+    var textureGen by mutableStateOf(0)
 
     // Только рабочий поток.
     var surface: Surface? = null
@@ -71,6 +87,17 @@ internal class EmbedSlot(val name: String) {
     var stale = false
     var dropped = 0
     val watchToken = Any()
+    val fullscreenToken = Any()
+    val fullscreenTracker = FullscreenApp.Tracker()
+    private var fullscreenValue by mutableStateOf(false)
+    /** Приложение в окне в полноэкранном режиме ([FullscreenApp]): рейка спрятана. Пишется с рабочего потока. */
+    var fullscreen: Boolean
+        get() = fullscreenValue
+        set(value) {
+            if (value == fullscreenValue) return
+            AppLog.i("EMBED $name: полноэкранный режим ${if (value) "включён" else "выключен"} pkg=$pkg", false)
+            fullscreenValue = value
+        }
 
     val touchQueue = ArrayDeque<TouchPacket>()
 
@@ -100,7 +127,8 @@ internal object EmbedHost {
 
     val nav = EmbedSlot("nav")
     val app = EmbedSlot("app")
-    private val slots = listOf(nav, app)
+    val alice = EmbedSlot("alice")
+    private val slots = listOf(nav, app, alice)
 
     private val thread = HandlerThread("headswap-launcher-embed").apply { start() }
     private val worker = Handler(thread.looper)
@@ -112,13 +140,24 @@ internal object EmbedHost {
 
     /** Задача приложения на дочернем дисплее исчезла (Back из корня, процесс убит). Вызывается на главном потоке. */
     @Volatile var onGone: ((EmbedSlot) -> Unit)? = null
+    /** В панели Алисы открылась задача другого приложения. Главный поток. */
+    @Volatile var onAssistantOpened: ((android.app.ActivityManager.RunningTaskInfo) -> Unit)? = null
+
+    /** Дочерний дисплей окна навигатора; 0 - нет. */
+    fun aliceDisplayId(): Int = if (alice.handle <= 0) 0 else runCatching { EmbeddedSessionRegistry.childDisplayId(uid, alice.handle) }.getOrDefault(0)
+
+    fun navDisplayId(): Int = if (nav.handle <= 0) 0 else runCatching { EmbeddedSessionRegistry.childDisplayId(uid, nav.handle) }.getOrDefault(0)
 
     // --- вызовы с главного потока ---
 
-    /** Нужное содержимое и размер слота. Тот же ключ и размер - ничего не происходит. */
-    fun want(slot: EmbedSlot, key: String?, w: Int, h: Int) {
+    /** Нужное содержимое и размер слота. Тот же ключ и размер - ничего не происходит. [fullW]x[fullH] - на весь экран. */
+    fun want(slot: EmbedSlot, key: String?, w: Int, h: Int, fullW: Int = w, fullH: Int = h) {
+        if (fullW > 0 && fullH > 0) { slot.fullW = fullW; slot.fullH = fullH }
         // другое приложение в то же окно: сразу «запускаем», не показывая на миг прежнее
-        if (key != slot.wantKey) slot.status = if (key == null) EmbedStatus.IDLE else EmbedStatus.STARTING
+        if (key != slot.wantKey) {
+            slot.status = if (key == null) EmbedStatus.IDLE else EmbedStatus.STARTING
+            slot.fullscreen = false // трекер сбросит рабочий поток: следующий тик увидит STARTING
+        }
         slot.wantKey = key
         if (w > 0 && h > 0) { slot.wantW = w; slot.wantH = h }
         schedule(slot, 0)
@@ -150,6 +189,87 @@ internal object EmbedHost {
         worker.post { slot.attempts = 0; slot.createdAt = SystemClock.uptimeMillis(); reconcile(slot) }
     }
 
+    /** ПРОБНИК: включили/выключили проекцию AA в окне навигатора ([AaShadowNav.projection]). */
+    fun reproject() {
+        worker.post { reconcile(nav) }
+    }
+
+    /** Кнопка «Перезапустить навигатор»: новая сессия своего хоста на свежей поверхности (2ГИС «Перезапустите 2ГИС»). */
+    fun restartCar() {
+        worker.post {
+            if (!projCar) return@post
+            AppLog.i("EMBED nav: перезапуск навигатора на своём хосте", false)
+            unproject(); dropSurface(nav)
+            CarAppHost.stop()
+            reconcile(nav)
+        }
+    }
+
+    /**
+     * Кнопка «Перезапустить навигатор» для любого навигатора. Свой хост - как [restartCar]. Окно (Google Карты, Waze):
+     * отпустить окно, выбросить текстуру и запустить навигатор заново на свежей - иначе в карточке может остаться
+     * последний кадр прежнего навигатора (стенд 05.11: после Яндекса на своём хосте Google Карты «висели»).
+     */
+    fun restartNav() {
+        worker.post {
+            if (projCar) {
+                AppLog.i("EMBED nav: перезапуск навигатора на своём хосте", false)
+                unproject(); dropSurface(nav)
+                CarAppHost.stop()
+                reconcile(nav)
+                return@post
+            }
+            if (nav.wantKey == null) return@post
+            AppLog.i("EMBED nav: перезапуск навигатора окном (${nav.pkg}) на свежей текстуре", false)
+            unproject()
+            releaseLease(nav)
+            synchronized(nav.lock) { nav.texture = null }
+            nav.status = EmbedStatus.STARTING
+            main.post { nav.textureGen++ } // новый TextureView -> textureAvailable -> reconcile создаст окно и запустит
+        }
+    }
+
+    /** Поверхность, отданная декодеру AA или своему хосту Car App (только рабочий поток). */
+    private var projSurface: Surface? = null
+    /** Окно навигатора рисует свой хост Car App: касания идут ему, а не в реестр. */
+    @Volatile private var projCar = false
+    @Volatile private var projW = 0
+    @Volatile private var projH = 0
+
+    @Volatile var appContext: Context? = null
+
+    /** Навигатор слота nav на Car App Library, последний ответ каталога (только рабочий поток). */
+    private var carPkg: String? = null
+    private var carTarget: CarAppTarget? = null
+
+    init {
+        // навигатор отказал хосту: следующий проход откроет его обычным окном
+        CarAppHost.onRefused = { pkg -> worker.post { if (carPkg == pkg) carPkg = null; reconcile(nav) } }
+    }
+
+    private fun unproject() {
+        if (projSurface == null) return
+        if (projCar) CarAppHost.setSurface(null, 0, 0) else AaShadowNav.setSurface(null)
+        projSurface = null
+        projCar = false
+    }
+
+    /** Навигатор [pkg] на Car App Library, которому хост ещё не отказал; null - показывать окном. Только рабочий поток. */
+    private fun carTargetFor(pkg: String?): CarAppTarget? {
+        val ctx = appContext
+        if (pkg == null || ctx == null || !CarAppHost.enabled) return null
+        if (!CarAppHost.allowFor(pkg)) {
+            if (carPkg == pkg) { carPkg = null; AppLog.i("EMBED nav: $pkg - подсказки на приборке выключены, окном", false) }
+            return null
+        }
+        if (pkg != carPkg) {
+            carPkg = pkg
+            carTarget = CarAppCatalog.usable(ctx, pkg)
+            AppLog.i("EMBED nav: $pkg ${if (carTarget != null) "на Car App Library - свой хост" else "- окном"}", false)
+        }
+        return carTarget
+    }
+
     fun textureAvailable(slot: EmbedSlot, texture: SurfaceTexture) {
         worker.post {
             val old = synchronized(slot.lock) {
@@ -161,6 +281,7 @@ internal object EmbedHost {
                 previous.takeIf { it !== texture }
             }
             if (old != null) {
+                if (slot === nav) unproject()
                 // окно жило на прежней поверхности: освобождаем его по-настоящему, reconcile создаст новое на этой
                 if (slot.handle > 0) releaseLease(slot) else dropSurface(slot)
                 runCatching { old.release() }
@@ -180,6 +301,22 @@ internal object EmbedHost {
         if (action !in intArrayOf(0, 1, 2, 3, 5, 6)) return
         val count = ev.pointerCount
         if (count > 2 || viewW <= 0 || viewH <= 0) return
+        if (slot === nav && projCar) {
+            val w = projW
+            val h = projH
+            if (w > 0 && h > 0 && slot.interactive) CarAppHost.touch(action, ev.x * w / viewW, ev.y * h / viewH)
+            return
+        }
+        if (slot === nav && AaShadowNav.projection) {
+            // кадр AA растянут на окно: координаты обратно в кадр
+            val pts = List(count) {
+                TouchPoint(ev.getPointerId(it),
+                    (ev.getX(it) * AaShadowNav.PROJ_W / viewW).toInt().coerceIn(0, AaShadowNav.PROJ_W - 1),
+                    (ev.getY(it) * AaShadowNav.PROJ_H / viewH).toInt().coerceIn(0, AaShadowNav.PROJ_H - 1))
+            }
+            AaShadowNav.touch(action, if (action == 5 || action == 6) ev.actionIndex else 0, pts)
+            return
+        }
         val gw = slot.geomW
         val gh = slot.geomH
         if (gw <= 0 || gh <= 0) return
@@ -197,12 +334,32 @@ internal object EmbedHost {
         worker.post { drainTouch(slot) }
     }
 
+    /** Шайба ГУ в окно: нажатие навигационной клавиши на дочернем дисплее. false - окна нет, клавиша не ушла. */
+    fun key(slot: EmbedSlot, keycode: Int): Boolean {
+        if (slot.status != EmbedStatus.READY) return false
+        worker.post {
+            if (slot.handle <= 0) return@post
+            try {
+                timed(slot, "key") { EmbeddedSessionRegistry.key(uid, slot.handle, keycode) }
+            } catch (e: Exception) {
+                AppLog.i("EMBED ${slot.name}: клавиша $keycode отклонена: ${e.javaClass.simpleName}: ${e.message}", false)
+                if (leaseGone(e)) lostLease(slot)
+            }
+        }
+        return true
+    }
+
     /**
      * Back в окно; если приложение ушло из корня (его задачи больше нет сверху), onClosed вызовется на главном потоке.
      * Задачу проверяем несколько раз: у закрывающейся активности top ещё держится, а ответ -1 (список задач
      * недоступен) раньше навсегда оставлял слой поверх пустого дисплея.
      */
     fun back(slot: EmbedSlot, onClosed: () -> Unit) {
+        if (slot === nav && projCar) {
+            // свой хост: на карте с маршрутом «Назад» - на главный, на остальных экранах навигатор возвращается сам
+            if (CarAppHost.template?.template is androidx.car.app.navigation.model.NavigationTemplate) onClosed() else CarAppHost.back()
+            return
+        }
         worker.post {
             AppLog.i("EMBED ${slot.name}: Back handle=${slot.handle} pkg=${slot.pkg} статус=${slot.status} " +
                 "state=${slot.lastState} касаний отброшено=${slot.dropped}", false)
@@ -297,6 +454,7 @@ internal object EmbedHost {
         slot.launchedKey = null
         slot.seenTop = false
         slot.touchBlocked = true
+        resetFullscreen(slot)
         main.post { onGone?.invoke(slot) }
     }
 
@@ -313,6 +471,35 @@ internal object EmbedHost {
     private fun startWatch(slot: EmbedSlot) {
         worker.removeCallbacksAndMessages(slot.watchToken)
         worker.postAtTime({ watchTick(slot) }, slot.watchToken, SystemClock.uptimeMillis() + WATCH_MS)
+        if (slot === app && FullscreenApp.watched(slot.pkg)) {
+            worker.removeCallbacksAndMessages(slot.fullscreenToken)
+            worker.postAtTime({ fullscreenTick(slot) }, slot.fullscreenToken, SystemClock.uptimeMillis() + FullscreenApp.POLL_MS)
+        }
+    }
+
+    /** Пока в окне приложения YouTube, раз в 0,5 с: не перешёл ли он в полноэкранный режим. Любое сомнение - рейка видна. */
+    private fun fullscreenTick(slot: EmbedSlot) {
+        val pkg = slot.pkg
+        if (pkg == null || !FullscreenApp.watched(pkg) || slot.handle <= 0 || slot.status != EmbedStatus.READY) {
+            resetFullscreen(slot)
+            return
+        }
+        if (slot.interactive && !slot.touchBlocked && slot.backAt == 0L) {
+            val state = try {
+                timed(slot, "fullscreen") { EmbeddedSessionRegistry.fullscreen(uid, slot.handle, pkg) }
+            } catch (e: Exception) {
+                AppLog.i("EMBED ${slot.name}: fullscreen не удался: ${e.javaClass.simpleName}: ${e.message}", false)
+                if (leaseGone(e)) { lostLease(slot); return }
+                -1
+            }
+            slot.fullscreen = slot.fullscreenTracker.update(state, SystemClock.uptimeMillis())
+        } else resetFullscreen(slot)
+        worker.postAtTime({ fullscreenTick(slot) }, slot.fullscreenToken, SystemClock.uptimeMillis() + FullscreenApp.POLL_MS)
+    }
+
+    private fun resetFullscreen(slot: EmbedSlot) {
+        slot.fullscreenTracker.reset()
+        slot.fullscreen = false
     }
 
     // --- рабочий поток ---
@@ -353,12 +540,48 @@ internal object EmbedHost {
 
     private fun reconcileInternal(slot: EmbedSlot) {
         val key = slot.wantKey
-        if (key == null) { releaseLease(slot); slot.status = EmbedStatus.IDLE; return }
+        if (key == null) { if (slot === nav) unproject(); releaseLease(slot); slot.status = EmbedStatus.IDLE; return }
         val display = DexState.displayId
         if (display <= 0) { slot.status = EmbedStatus.CONNECTING; schedule(slot, 1000); return }
         if (slot.handle > 0 && slot.leaseDisplay != display) lostLease(slot) // новый сеанс рабочего стола
         val texture = synchronized(slot.lock) { slot.texture }
         if (texture == null || texture.isReleased) { slot.status = EmbedStatus.CONNECTING; return }
+        if (slot === nav) {
+            val car = carTargetFor(slot.pkg)
+            if (car != null) {
+                // Свой хост Car App: карта навигатора прямо в эту поверхность; телефонную часть навигатора не запускаем -
+                // иначе она держит его движок и машинная часть висит на заставке. Поверхность всегда на весь экран,
+                // карточка показывает её вырезку (CarAppHost.setCrop): смена размера той же Surface вешает 2ГИС.
+                val w = slot.fullW
+                val h = slot.fullH
+                if (w < 128 || h < 128) return
+                if (projSurface != null && !projCar) unproject()
+                if (slot.handle > 0) { releaseLease(slot); AppLog.i("EMBED nav: окно отдано своему хосту Car App", false) }
+                CarAppHost.start(appContext ?: return, car)
+                val surface = slot.surface ?: Surface(texture).also { slot.surface = it }
+                texture.setDefaultBufferSize(w, h)
+                if (projSurface !== surface || projW != w || projH != h) {
+                    projSurface = surface; projCar = true; projW = w; projH = h
+                    CarAppHost.setSurface(surface, w, h)
+                }
+                slot.carHost = true
+                slot.status = EmbedStatus.READY
+                return
+            }
+            slot.carHost = false
+            if (projCar) { unproject(); dropSurface(slot) }
+            if (CarAppHost.pkg != null) CarAppHost.stop() // навигатор сменили на оконный или хосту отказали
+            if (AaShadowNav.projection) {
+                // ПРОБНИК: вместо навигатора телефона - экран теневой AA (там тот же навигатор в машинном виде)
+                if (slot.handle > 0) { releaseLease(slot); AppLog.i("EMBED nav: окно отдано проекции AA", false) }
+                val surface = slot.surface ?: Surface(texture).also { slot.surface = it }
+                texture.setDefaultBufferSize(AaShadowNav.PROJ_W, AaShadowNav.PROJ_H)
+                if (projSurface !== surface) { projSurface = surface; AaShadowNav.setSurface(surface) }
+                slot.status = EmbedStatus.READY
+                return
+            }
+            if (projSurface != null) { unproject(); dropSurface(slot) } // назад к окну реестра на свежей поверхности
+        }
         val w = slot.wantW
         val h = slot.wantH
         if (w < 128 || h < 128) return
@@ -377,6 +600,7 @@ internal object EmbedHost {
         } else if (slot.geomW != w || slot.geomH != h) {
             cancelTouch(slot)
             AppLog.i("EMBED ${slot.name}: размер ${slot.geomW}x${slot.geomH} -> ${w}x$h", false)
+            slot.fullscreenTracker.resized(SystemClock.uptimeMillis())
             timed(slot, "resize") { EmbeddedSessionRegistry.resize(uid, slot.handle, w, h, densityDpi) }
             texture.setDefaultBufferSize(w, h)
             slot.geomW = w
@@ -395,7 +619,23 @@ internal object EmbedHost {
             val pkg = key.substringBefore('/')
             val cls = key.substringAfter('/')
             AppLog.i("EMBED ${slot.name}: запуск $key handle=${slot.handle} (state=${slot.lastState} stale=${slot.stale})", false)
+            // То же решение о режиме окна, что примет хост (DelegatedDesktopRuntime): его лог в файл не попадает
+            appContext?.packageManager?.let { pm ->
+                val orientation = runCatching {
+                    pm.getActivityInfo(android.content.ComponentName(pkg, if (cls.startsWith('.')) pkg + cls else cls), 0).screenOrientation
+                }.getOrDefault(-1)
+                val all = com.yegorkapomidorka.headswap.dex.EmbeddedDisplayPolicy.packageOrientations(pm, pkg)
+                AppLog.i("EMBED ${slot.name}: окно ${com.yegorkapomidorka.headswap.dex.EmbeddedDisplayPolicy.describeLaunch(pkg, orientation, all)}", false)
+            }
+            if (slot === alice) AppLog.i("ASSIST помощник -> дочерний дисплей, окно ${slot.geomW}x${slot.geomH}", false)
+            if (slot === alice && pkg == com.yegorkapomidorka.headswap.dex.EmbeddedDisplayPolicy.GEMINI_PACKAGE) {
+                appContext?.let { com.yegorkapomidorka.headswap.dex.PhoneAssistant.clearPackage(it, pkg) }
+            }
             timed(slot, "launch") { EmbeddedSessionRegistry.launch(uid, slot.handle, pkg, cls) }
+            // Яндекс-помощник по умолчанию перезапускает себя через MainActivity на экране телефона: ловим и переносим
+            // другое приложение в панели (Алиса открыла Навигатор с маршрутом) - в лаунчер
+            if (slot === alice) appContext?.let { com.yegorkapomidorka.headswap.dex.PhoneAssistant.watch(it,
+                EmbeddedSessionRegistry.childDisplayId(uid, slot.handle), pkg) { t -> main.post { onAssistantOpened?.invoke(t) } } }
             slot.launchedKey = key
             slot.launchedAt = SystemClock.uptimeMillis()
             slot.stale = false
@@ -483,6 +723,7 @@ internal object EmbedHost {
         slot.lastPacket = null
         slot.geomW = 0
         slot.geomH = 0
+        resetFullscreen(slot)
     }
 
     private fun releaseLease(slot: EmbedSlot) {

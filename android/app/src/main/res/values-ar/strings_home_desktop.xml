@@ -22,4 +22,6 @@
 
     <string name="home_desk_btn_activate">تفعيل</string>
     <string name="home_desk_btn_stop">إيقاف</string>
+    <!-- HOG CarLink: строки апстрима 4.1.1 (перевод апстрима) -->
+    <string name="home_desk_sub_usb_debug">فعّل «تصحيح أخطاء USB» في خيارات المطوّر: بدونه تنطفئ شاشة السيارة مع شاشة الهاتف في Android 17.</string>
 </resources>
