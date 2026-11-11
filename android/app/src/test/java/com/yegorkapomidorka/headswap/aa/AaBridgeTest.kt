@@ -874,6 +874,28 @@ class AaBridgeAudioTest {
     }
 
     @Test
+    fun id6TelephonyRingingPausesMediaAtOnce() {
+        // HOG: VW ID.6 (VW BT 5075) - звонок глушит MEDIA сразу, хвост музыки к ГУ не идёт
+        core.peer = FakePeer()
+        core.onHuInfo("VW BT 5075", "VW BT 5075")
+        assertTrue(core.huCallAware)
+        core.onCarlifeStart()
+        core.onMediaStatus(AaMediaStatus(2, "SoundCloud", 10, null, null, null))
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 1)
+        core.onPhoneCallState(1)
+        core.onAudioData(AapMessages.CH_AUDIO_MEDIA, pcm(100), 2)
+        assertEquals(listOf(0x30001, 0x30006, 0x30003), link.audio.map { it.type })
+        assertTrue(logs.any { it.contains("BRIDGE звонок RINGING (телефония)") })
+    }
+
+    @Test
+    fun otherHuTelephonyLeavesMediaAlone() {
+        core.peer = FakePeer()
+        core.onHuInfo("VW BT 1420", "VW BT 1420")
+        assertFalse(core.huCallAware)
+    }
+
+    @Test
     fun delphiTelephonyIdleReleasesPauseWhenPlayerPlaying() {
         // звонок сбросили быстро, плеер AA не успел встать и события play не будет: паузу снимает конец звонка
         core.peer = FakePeer()

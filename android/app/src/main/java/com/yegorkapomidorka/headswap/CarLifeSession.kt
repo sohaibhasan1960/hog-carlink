@@ -245,7 +245,7 @@ class CarLifeSession(
             } catch (_: java.util.concurrent.RejectedExecutionException) {   // сессия уже закрывается
             }
         }
-        AppLog.i("звонки: ${if (callsOn) "слежу (VW CNS2 Delphi: сообщаю ГУ MODULE_STATUS PHONE + TELE_STATE)" else "не слежу (флажок выкл или нет READ_PHONE_STATE)"}")
+        AppLog.i("звонки: ${if (callsOn) "слежу (VW CNS2 Delphi${if (calls.reportToHu) "" else " - только с флажком"} / VW ID.6: сообщаю ГУ MODULE_STATUS PHONE + TELE_STATE)" else "не слежу (флажок выкл или нет READ_PHONE_STATE)"}")
     }
 
     /** Нить cl-sched. Последнее состояние звонка, отправленное ГУ. */
@@ -258,6 +258,8 @@ class CarLifeSession(
      */
     private fun onCallState(state: Int) {
         if (closed.get()) return
+        // без флажка слушаем только ради VW ID.6; HU_INFO мог ещё не прийти - тогда ждём следующего состояния
+        if (!calls.reportToHu && !bridge.huVwId6) return
         // h425: мост узнаёт о звонке первым и независимо от рукопожатия и дедупа ниже: на VW CNS2 Delphi хвост музыки
         // надо гасить до того, как ГУ уйдёт в своё окно звонка; стартовое состояние новой сессии тоже должно дойти до моста
         bridge.onPhoneCallState(state)
@@ -267,8 +269,8 @@ class CarLifeSession(
             AppLog.i("звонки: state=$state до рукопожатия, ГУ не сообщаю")
             return
         }
-        if (!bridge.huVwCns2Delphi) {       // h428-путь проверен только под задачу h425; другим ГУ звонок не сообщаем
-            AppLog.i("звонки: state=$state, ГУ не VW CNS2 Delphi, не сообщаю")
+        if (!bridge.huCallAware) {          // h428-путь: VW CNS2 Delphi (h425) и VW ID.6; другим ГУ звонок не сообщаем
+            AppLog.i("звонки: state=$state, ГУ не VW CNS2 Delphi / ID.6, не сообщаю")
             return
         }
         when (state) {

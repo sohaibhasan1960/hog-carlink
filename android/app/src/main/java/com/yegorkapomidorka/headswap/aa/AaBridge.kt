@@ -345,6 +345,7 @@ class AaBridgeCore(
     private var naviRaisedAt = NEVER          // Honda: когда последний раз ушёл MODULE_STATUS NAVI=1
     private var naviShownSinceRaise = false   // Honda: после последнего NAVI=1 уже был SHOW (переход 0->1 приборкой «израсходован»)
     @Volatile var huVwBt1420 = false           // VW BT 1420 (Павел, канал 20082138): по воздуху без heartbeat на PAUSE рвёт CarLife через ~1 мин
+    @Volatile var huVwId6 = false              // HOG: VW ID.6 (VW BT 5075): звонок сообщаем ГУ и глушим MEDIA сразу, как на Delphi
     @Volatile var huVwCns2Delphi = false       // VW CNS2 Delphi 20082114 (h425): речь AA в голосовой сессии молчит в TTS, шлём в VR
     @Volatile var huIdleVideoHeartbeat = false // 20082114 (h425), Skoda CNS3 21290002 (h625): без видео 5-6 с рвёт USB и вне PAUSE
     private var vrReply = false                // поток ответа ассистента открыт в канале VR (VR_INIT ушёл)
@@ -602,6 +603,7 @@ class AaBridgeCore(
         huVw20082120 = false                   // HU_INFO / STATISTIC_INFO придут заново в этой сессии
         huHonda = false                        // STATISTIC_INFO придёт заново в этой сессии
         huVwBt1420 = false                     // HU_INFO придёт заново в этой сессии
+        huVwId6 = false                        // HU_INFO придёт заново в этой сессии
         huVw20082138 = false                   // HU_INFO / STATISTIC_INFO придут заново в этой сессии
         huId6IdrGuard = false
         huKia20032131 = false                  // STATISTIC_INFO придёт заново в этой сессии
@@ -918,6 +920,7 @@ class AaBridgeCore(
         if (manufacturer == VW_BT_1420_MANUFACTURER) huVwBt1420 = true
         // HOG CarLink: VW ID.6 (VW BT 5075, channel 20082128) - тот же VW CarLife по воздуху, что и VW BT 1420:
         // heartbeat на PAUSE (звонок, меню ГУ) и START сразу с IDR энкодера
+        if (manufacturer == VW_BT_5075_MANUFACTURER) huVwId6 = true
         if (manufacturer == VW_BT_5075_MANUFACTURER && !huVwBt1420) {
             huVwBt1420 = true
             log("BRIDGE ГУ VW BT 5075 (ID.6): профиль VW BT 1420 - heartbeat на PAUSE и быстрый START по воздуху", true)
@@ -1809,9 +1812,15 @@ class AaBridgeCore(
      * MEDIA_STOP) забивал общий USB-поток: видео и звук стояли ~20 с, иногда EIO. Если музыка на паузе заранее,
      * проблемы нет (Дмитрий, лог 24.10 22:13). Поэтому при звонке сразу MEDIA PAUSE и хвост не пересылаем до play AA.
      */
+    /**
+     * ГУ, которым звонок нужен сразу: VW CNS2 Delphi (h425) и VW ID.6 (VW BT 5075, 11.11: на звонке ГУ показывало
+     * окно звонка, а SCO в динамики не шло, MODULE_CONTROL MUSIC=0 от ГУ больше не приходил, хвост MEDIA шёл ещё ~3 с).
+     */
+    val huCallAware get() = huVwCns2Delphi || huVwId6
+
     @Synchronized
     private fun muteMediaOnCall(why: String) {
-        if (!huVwCns2Delphi || huPausedAa || !carlifeStarted) return
+        if (!huCallAware || huPausedAa || !carlifeStarted) return
         val call = currentCall()
         if (call == PhoneCall.IDLE) return
         muteMedia(call, why)
@@ -1845,7 +1854,7 @@ class AaBridgeCore(
         if (prev == call) return
         if (call != PhoneCall.IDLE) {
             when {
-                !huVwCns2Delphi -> log("BRIDGE звонок ${call.name} (телефония): не VW CNS2 Delphi, MEDIA не трогаю", true)
+                !huCallAware -> log("BRIDGE звонок ${call.name} (телефония): не VW CNS2 Delphi / ID.6, MEDIA не трогаю", true)
                 !carlifeStarted -> log("BRIDGE звонок ${call.name} (телефония): CarLife ещё не START, гасить нечего", true)
                 huPausedAa -> log("BRIDGE звонок ${call.name} (телефония): MEDIA уже на паузе", true)
                 else -> muteMedia(call, "телефония")

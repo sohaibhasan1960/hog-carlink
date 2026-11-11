@@ -7,9 +7,13 @@ interface CallStateSource {
 
     fun stop()
 
+    /** Флажок «Сообщать ГУ о звонках». Слушаем телефонию и без него (если есть разрешение): ID.6 звонок нужен всегда. */
+    val reportToHu: Boolean get() = true
+
     object NONE : CallStateSource {
         override fun start(onState: (Int) -> Unit) = false
         override fun stop() = Unit
+        override val reportToHu get() = false
     }
 
     companion object {
