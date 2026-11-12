@@ -71,4 +71,11 @@
     <string name="mf_next">Next</string>
     <string name="mf_prev">Previous</string>
     <string name="mf_listen_short">Listen</string>
+    <string name="mf_exit">Exit</string>
+    <string name="mf_car">Mushaf on the car screen</string>
+    <string name="mf_car_sub">Shown only while the car is stopped</string>
+    <string name="mf_car_moving">Shown only while the car is stopped</string>
+    <string name="mf_car_nospeed">The car does not report its speed, so a stop cannot be confirmed</string>
+    <string name="mf_car_transcode">Not available while the video is re-encoded</string>
+    <string name="mf_car_off">Available once the car screen is connected</string>
 </resources>

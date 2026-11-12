@@ -39,6 +39,9 @@ class VideoSource(
     @Volatile var framesRendered = 0L
         private set
 
+    /** HOG: своя картинка вместо заглушки (мусхаф на стоянке): рисует кадр в (ширина, высота) видимой части. */
+    @Volatile var scene: ((Canvas, Int, Int) -> Unit)? = null
+
     /** Текст заглушки: крупная надпись и живой индикатор вместо видео AA. */
     @Volatile var banner: String? = null
 
@@ -443,7 +446,14 @@ class VideoSource(
     }
 
     private fun draw(c: Canvas) {
-        drawBanner(c, banner ?: "")
+        val s = scene ?: return drawBanner(c, banner ?: "")
+        val a = area ?: return s(c, width, height)
+        c.drawColor(BG)
+        c.save()
+        c.translate(a.left.toFloat(), a.top.toFloat())
+        c.clipRect(0, 0, a.width(), a.height())
+        s(c, a.width(), a.height())
+        c.restore()
     }
 
     companion object {

@@ -64,6 +64,8 @@ class AdhkarMediaService : MediaBrowserService() {
                 val h = HifzPrefs(this)
                 val rep = if (h.repeat == 0) getString(R.string.hf_repeat_inf) else getString(R.string.hf_times, h.repeat)
                 val sub = getString(R.string.hf_car_sub, rep)
+                // HOG: мусхаф на экране машины (на стоянке)
+                out.add(item(MUSHAF, getString(R.string.mf_car), getString(R.string.mf_car_sub), playable = true))
                 for (pg in listOf(h.page, h.page + 1, h.page - 1).filter { it in 1..QuranPages.PAGES }) {
                     out.add(item("HIFZ:$pg", getString(R.string.hf_car_listen, pg, hifzNames(pg)), sub, playable = true))
                 }
@@ -119,6 +121,7 @@ class AdhkarMediaService : MediaBrowserService() {
         private const val QURAN = "quran"
         private const val LIBRARY = "library"
         private const val HIFZ = "hifz"
+        const val MUSHAF = "MUSHAF"
         private const val BOOK = "book:"
     }
 }
@@ -134,6 +137,18 @@ object PrayerSession {
         val s = MediaSession(app, "hog-prayer")
         s.setCallback(object : MediaSession.Callback() {
             override fun onPlayFromMediaId(mediaId: String, extras: Bundle?) {
+                if (mediaId == AdhkarMediaService.MUSHAF) {
+                    val why = com.yegorkapomidorka.headswap.quran.CarMushaf.open(0) ?: return
+                    val msg = app.getString(when (why) {
+                        "moving" -> R.string.mf_car_moving
+                        "nospeed" -> R.string.mf_car_nospeed
+                        "transcode" -> R.string.mf_car_transcode
+                        else -> R.string.mf_car_off
+                    })
+                    s.setPlaybackState(android.media.session.PlaybackState.Builder()
+                        .setState(android.media.session.PlaybackState.STATE_ERROR, 0, 0f).setErrorMessage(msg).build())
+                    return
+                }
                 if (mediaId.startsWith("HIFZ:")) {
                     PrayerPlayer.hifz(app, mediaId.substringAfter(':').toIntOrNull() ?: HifzPrefs(app).page)
                     return

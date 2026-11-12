@@ -66,6 +66,12 @@ object Msg {
     const val MEDIA_INFO = 0x00010035
     const val MEDIA_PROGRESS_BAR = 0x00010036
     const val CAR_DATA_SUBSCRIBE = 0x00010031
+    /** HOG: ответ ГУ на CAR_DATA_SUBSCRIBE - список {moduleID, flag, frequency}; CAR_DATA_START с тем же списком включает поток. */
+    const val CAR_DATA_SUBSCRIBE_RSP = 0x00018032
+    const val CAR_DATA_START = 0x00010033
+    /** Скорость машины от ГУ (CarlifeCarSpeed: 1 speed км/ч, 2 timestamp). */
+    const val CAR_VELOCITY = 0x0001800F
+    const val CAR_GPS = 0x00018010
     const val CONNECT_EXCEPTION = 0x00010037
     const val BT_HFP_CONNECTION = 0x00018042
     const val CARLIFE_DATA_SUBSCRIBE = 0x00018043

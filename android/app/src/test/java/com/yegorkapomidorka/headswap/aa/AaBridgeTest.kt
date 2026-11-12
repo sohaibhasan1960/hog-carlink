@@ -5,6 +5,8 @@ import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Test
 import java.net.InetAddress
 import java.net.ServerSocket
@@ -31,6 +33,11 @@ class FakeLink : CarlifeLink {
 
     override fun hidePlaceholder() {
         hides++
+    }
+
+    @Volatile var scene: ((android.graphics.Canvas, Int, Int) -> Unit)? = null
+    override fun showScene(scene: ((android.graphics.Canvas, Int, Int) -> Unit)?) {
+        this.scene = scene
     }
 
     @Volatile var takeovers = 0
@@ -121,6 +128,44 @@ class AaBridgeCoreTest {
     private val core = AaBridgeCore({ l, _ -> logs.add(l) }, { now }).also { it.attach(link) }
 
     private fun types(b: ByteArray) = AnnexB.nalTypes(b)
+
+    @Test
+    fun mushafOnlyWhileParkedAndBackToAa() {
+        val scene: (android.graphics.Canvas, Int, Int) -> Unit = { _, _, _ -> }
+        val touches = ArrayList<Int>()
+        core.mushafScene = scene
+        core.mushafTouch = { a, _, _, _, _ -> touches += a }
+        core.onCarlifeStart()
+        assertEquals("nospeed", core.enterMushaf())                 // скорость от ГУ ещё не приходила
+        core.onCarSpeed(12)
+        assertEquals("moving", core.enterMushaf())
+        core.onCarSpeed(0)
+        assertNull(core.enterMushaf())
+        assertTrue(core.mushafOn)
+        assertSame(scene, link.scene)
+        val before = link.sent.size
+        core.onCodecConfig(cfg)
+        core.onFrame(idr, 0)                                       // кадры AA на экран не идут
+        assertEquals(before, link.sent.size)
+        core.onCarlifeTouch(0, 10, 10)
+        assertEquals(listOf(0), touches)
+        core.onCarSpeed(5)                                         // поехали - мусхаф убран сразу
+        assertFalse(core.mushafOn)
+        assertNull(link.scene)
+        core.onFrame(idr, 1)                                       // первый IDR AA возвращает картинку AA
+        assertTrue(link.sent.size > before)
+    }
+
+    @Test
+    fun mushafLeavesWhenSpeedGoesStale() {
+        core.mushafScene = { _, _, _ -> }
+        core.onCarlifeStart()
+        core.onCarSpeed(0)
+        assertNull(core.enterMushaf())
+        now += (AaBridgeCore.SPEED_FRESH_MS + 1) * 1_000
+        core.tick()
+        assertFalse(core.mushafOn)
+    }
 
     @Test
     fun hyundaiCn7ForcesTranscode() {

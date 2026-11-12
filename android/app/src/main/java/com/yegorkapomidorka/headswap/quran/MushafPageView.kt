@@ -9,11 +9,12 @@ import android.view.View
 import kotlin.math.min
 
 /**
- * HOG: одна страница мусхафа Медины на Canvas: строки как в печатном (MadaniLayout), слова справа налево,
- * растянутые строки - по ширине, остальные - по центру. Заставка суры - рамка с названием, басмала - по центру.
- * [lit] - код звучащего аята (surah*1000+ayah) или басмалы суры (-surah); его слова подсвечены.
+ * HOG: рисует страницу мусхафа Медины в прямоугольник любого Canvas: строки как в печатном (MadaniLayout), слова справа
+ * налево, растянутые строки - по ширине, остальные - по центру. Заставка суры - рамка с названием, басмала - по центру.
+ * [lit] - код звучащего аята (surah*1000+ayah) или басмалы суры (-surah). Один painter - на телефоне ([MushafPageView])
+ * и на экране машины (CarMushaf, кадры энкодера CarLife). Не потокобезопасен: одна нить на экземпляр.
  */
-class MushafPageView(context: Context, private val font: Typeface) : View(context) {
+class MushafPainter(font: Typeface) {
     var ink = 0xFFF1E9D8.toInt()
     var gold = 0xFFD9B15C.toInt()
     var mark = 0x66D9B15C
@@ -23,42 +24,18 @@ class MushafPageView(context: Context, private val font: Typeface) : View(contex
     private val fill = Paint(Paint.ANTI_ALIAS_FLAG)
     private val box = RectF()
 
-    var page: MadaniLayout.Page? = null
-        set(v) {
-            field = v
-            invalidate()
-        }
-
-    var lit: Int = 0
-        set(v) {
-            if (field == v) return
-            field = v
-            invalidate()
-        }
-
     /** Цифры номера аята шрифт KFGQPC собирает в одну розетку только в одном порядке; проверяем, в каком. */
-    val markDigitsReversed: Boolean by lazy {
+    val markDigitsReversed: Boolean = run {
         val p = Paint().apply { typeface = font; textSize = 100f }
         val probe = MushafText.arabicDigits(253)
         p.measureText(probe.reversed()) < p.measureText(probe)
     }
 
-    /** Код аята под точкой касания или 0. */
-    fun ayahAt(x: Float, y: Float): Int {
-        val p = page ?: return 0
-        val g = geometry(p)
-        val line = ((y - g.top) / g.pitch).toInt() + 1
-        val words = p.lines.firstOrNull { it.number == line } as? MadaniLayout.Words ?: return 0
-        paint.textSize = g.size
-        for (t in placed(words, g)) if (x >= t.second && x <= t.third) return t.first.code
-        return 0
-    }
+    private class Geometry(val r: RectF, val size: Float, val pitch: Float, val top: Float, val pad: Float, val width: Float)
 
-    private class Geometry(val size: Float, val pitch: Float, val top: Float, val pad: Float, val width: Float)
-
-    private fun geometry(p: MadaniLayout.Page): Geometry {
-        val pad = width * 0.035f
-        val w = width - 2 * pad
+    private fun geometry(p: MadaniLayout.Page, r: RectF): Geometry {
+        val pad = r.width() * 0.035f
+        val w = r.width() - 2 * pad
         // размер шрифта: самая длинная растянутая строка влезает с минимальными пробелами
         paint.textSize = 100f
         val space = paint.measureText(" ")
@@ -68,15 +45,14 @@ class MushafPageView(context: Context, private val font: Typeface) : View(contex
             need = maxOf(need, natural)
         }
         val byWidth = if (need > 0) 100f * w / need else 40f
-        val full = p.lineCount == 15
-        val pitchAll = height.toFloat() / p.lineCount
+        val pitchAll = r.height() / p.lineCount
         val size = min(byWidth, pitchAll * 0.62f)
-        val pitch = if (full) pitchAll else min(pitchAll, size * 2.1f)
-        val top = (height - pitch * p.lineCount) / 2f
-        return Geometry(size, pitch, top, pad, w)
+        val pitch = if (p.lineCount == 15) pitchAll else min(pitchAll, size * 2.1f)
+        val top = r.top + (r.height() - pitch * p.lineCount) / 2f
+        return Geometry(r, size, pitch, top, r.left + pad, w)
     }
 
-    /** Слова строки с их левым и правым краем (x), справа налево. */
+    /** Слова строки с левым и правым краем (x), справа налево. */
     private fun placed(l: MadaniLayout.Words, g: Geometry): List<Triple<MadaniLayout.Token, Float, Float>> {
         val widths = l.tokens.map { paint.measureText(it.text) }
         val total = widths.sum()
@@ -93,10 +69,20 @@ class MushafPageView(context: Context, private val font: Typeface) : View(contex
         return out
     }
 
-    override fun onDraw(canvas: Canvas) {
-        val p = page ?: return
-        if (width == 0 || height == 0) return
-        val g = geometry(p)
+    /** Код аята под точкой (x, y) страницы, нарисованной в [r], или 0. */
+    fun ayahAt(p: MadaniLayout.Page, r: RectF, x: Float, y: Float): Int {
+        if (!r.contains(x, y)) return 0
+        val g = geometry(p, r)
+        val line = ((y - g.top) / g.pitch).toInt() + 1
+        val words = p.lines.firstOrNull { it.number == line } as? MadaniLayout.Words ?: return 0
+        paint.textSize = g.size
+        for (t in placed(words, g)) if (x >= t.second && x <= t.third) return t.first.code
+        return 0
+    }
+
+    fun draw(canvas: Canvas, p: MadaniLayout.Page, r: RectF, lit: Int) {
+        if (r.width() <= 0 || r.height() <= 0) return
+        val g = geometry(p, r)
         paint.textSize = g.size
         val fm = paint.fontMetrics
         for (l in p.lines) {
@@ -115,12 +101,11 @@ class MushafPageView(context: Context, private val font: Typeface) : View(contex
                     paint.textSize = g.size
                 }
                 is MadaniLayout.Basmala -> {
-                    val t = BASMALA
-                    val w = paint.measureText(t)
+                    val w = paint.measureText(BASMALA)
                     val x = g.pad + (g.width - w) / 2f
                     if (lit == -l.surah) highlight(canvas, x, x + w, bandTop, g)
                     paint.color = ink
-                    canvas.drawText(t, x, base, paint)
+                    canvas.drawText(BASMALA, x, base, paint)
                 }
                 is MadaniLayout.Words -> for ((t, left, right) in placed(l, g)) {
                     if (lit != 0 && t.code == lit) highlight(canvas, left, right, bandTop, g)
@@ -141,5 +126,38 @@ class MushafPageView(context: Context, private val font: Typeface) : View(contex
     companion object {
         /** Басмала в написании текста Хафс (кодировка Комплекса короля Фахда). */
         const val BASMALA = "بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ"
+    }
+}
+
+/** Страница мусхафа на экране телефона. */
+class MushafPageView(context: Context, font: Typeface) : View(context) {
+    private val painter = MushafPainter(font)
+    private val rect = RectF()
+
+    val markDigitsReversed get() = painter.markDigitsReversed
+
+    var page: MadaniLayout.Page? = null
+        set(v) {
+            field = v
+            invalidate()
+        }
+
+    var lit: Int = 0
+        set(v) {
+            if (field == v) return
+            field = v
+            invalidate()
+        }
+
+    fun ayahAt(x: Float, y: Float): Int {
+        val p = page ?: return 0
+        rect.set(0f, 0f, width.toFloat(), height.toFloat())
+        return painter.ayahAt(p, rect, x, y)
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        val p = page ?: return
+        rect.set(0f, 0f, width.toFloat(), height.toFloat())
+        painter.draw(canvas, p, rect, lit)
     }
 }

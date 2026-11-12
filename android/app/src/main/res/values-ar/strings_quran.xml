@@ -71,4 +71,11 @@
     <string name="mf_next">التالية</string>
     <string name="mf_prev">السابقة</string>
     <string name="mf_listen_short">استمع</string>
+    <string name="mf_exit">خروج</string>
+    <string name="mf_car">المصحف على شاشة السيارة</string>
+    <string name="mf_car_sub">يظهر والسيارة متوقفة فقط</string>
+    <string name="mf_car_moving">يظهر المصحف والسيارة متوقفة فقط</string>
+    <string name="mf_car_nospeed">السيارة لا ترسل سرعتها، فلا يمكن التأكد من أنها متوقفة</string>
+    <string name="mf_car_transcode">غير متاح أثناء تحويل الفيديو</string>
+    <string name="mf_car_off">يتاح بعد اتصال شاشة السيارة</string>
 </resources>

@@ -111,6 +111,20 @@ class QuranScreen(host: MainActivity) : Screen(host) {
                 setOnClickListener { hifz.page = page + 1; buildHifz() }
             }, lp(0, c.dp(48), 1f))
         }, lp(MATCH, WRAP))
+        // HOG: мусхаф на экране машины - только на стоянке (скорость от ГУ)
+        hifzBox.addView(c.tonalButton(c.getString(R.string.mf_car)).apply {
+            setOnClickListener {
+                val why = com.yegorkapomidorka.headswap.quran.CarMushaf.open(hifz.page)
+                val msg = when (why) {
+                    null -> null
+                    "moving" -> R.string.mf_car_moving
+                    "nospeed" -> R.string.mf_car_nospeed
+                    "transcode" -> R.string.mf_car_transcode
+                    else -> R.string.mf_car_off
+                }
+                if (msg != null) android.widget.Toast.makeText(c, msg, android.widget.Toast.LENGTH_LONG).show()
+            }
+        }, lp(MATCH, c.dp(48)))
         if (hifz.done > 0) hifzBox.addView(c.text(c.getString(R.string.hf_progress, hifz.done), 14f, 500, c.clr(R.color.on2)).apply {
             pad(c, 16, 0, 16, 0)
         }, lp(MATCH, WRAP))

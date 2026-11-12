@@ -71,4 +71,11 @@
     <string name="mf_next">Вперёд</string>
     <string name="mf_prev">Назад</string>
     <string name="mf_listen_short">Слушать</string>
+    <string name="mf_exit">Выход</string>
+    <string name="mf_car">Мусхаф на экране машины</string>
+    <string name="mf_car_sub">Только на стоянке</string>
+    <string name="mf_car_moving">Только когда машина стоит</string>
+    <string name="mf_car_nospeed">Машина не сообщает скорость, стоянку не подтвердить</string>
+    <string name="mf_car_transcode">Недоступно при перекодировании видео</string>
+    <string name="mf_car_off">Доступно после подключения экрана машины</string>
 </resources>

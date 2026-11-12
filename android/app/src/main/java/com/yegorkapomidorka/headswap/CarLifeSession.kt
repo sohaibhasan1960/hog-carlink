@@ -248,6 +248,23 @@ class CarLifeSession(
         AppLog.i("звонки: ${if (callsOn) "слежу (VW CNS2 Delphi${if (calls.reportToHu) "" else " - только с флажком"} / VW ID.6: сообщаю ГУ MODULE_STATUS PHONE + TELE_STATE)" else "не слежу (флажок выкл или нет READ_PHONE_STATE)"}")
     }
 
+    /**
+     * HOG: ГУ перечислило данные машины, которые может слать (ID.6: модули 0 и 1). Как Baidu CarDataManager - просим
+     * поток тем же списком (CAR_DATA_START). Нужна скорость: мусхаф на экране машины показываем только на стоянке.
+     */
+    private var carDataStarted = false
+
+    private fun onCarDataOffer(body: ByteArray) {
+        val list = PbReader.parse(body) ?: return
+        val mods = PbReader.all(list, 2).mapNotNull { f -> f.data?.let { PbReader.parse(it) } }
+            .map { "${PbReader.int(it, 1)}/${PbReader.int(it, 2)}/${PbReader.int(it, 3)}" }
+        AppLog.i("данные машины: ГУ предлагает moduleID/flag/частота = $mods")
+        if (carDataStarted || mods.isEmpty()) return
+        carDataStarted = true
+        AppLog.i("-> ГУ: CAR_DATA_START (тот же список) - жду CAR_VELOCITY", true)
+        sendCmd(Msg.CAR_DATA_START, body)
+    }
+
     /** Нить cl-sched. Последнее состояние звонка, отправленное ГУ. */
     private var callState = CallStateSource.IDLE
 
@@ -343,7 +360,7 @@ class CarLifeSession(
             val note = (if (m.truncated) " [TRUNCATED declared=${m.declaredLen}]" else "") +
                 (if (m.resv != 0) " [resv=${m.resv}]" else "") +
                 (if (Schemas.byType[m.type] == null && m.body.isNotEmpty()) " [схемы нет]" else "")
-            val quiet = m.type == Msg.TOUCH_ACTION_MOVE || (m.type == Msg.TOUCH_ACTION && touchCount > 20 && isMove(m.body))
+            val quiet = m.type == Msg.TOUCH_ACTION_MOVE || m.type == Msg.CAR_VELOCITY || m.type == Msg.CAR_GPS || (m.type == Msg.TOUCH_ACTION && touchCount > 20 && isMove(m.body))
             AppLog.msg("RX", chan, inner.size, m.type, m.declaredLen, decoded, inner, ui = !quiet, note = note)
             if (chan == Ch.CMD) onCmd(m) else onTouch(m)
         } else {
@@ -603,6 +620,8 @@ class CarLifeSession(
                 }
             }
             Msg.MD_EXIT -> close("ГУ прислало MD_EXIT")
+            Msg.CAR_DATA_SUBSCRIBE_RSP -> onCarDataOffer(m.body)
+            Msg.CAR_VELOCITY -> PbReader.parse(m.body)?.let { PbReader.int(it, 1) }?.let { bridge.onCarSpeed(it) }
             else -> Unit // всё остальное только в логе
         }
     }
@@ -841,6 +860,7 @@ class CarLifeSession(
             val cur = source
             if (cur != null) {
                 cur.banner = text
+                cur.scene = sceneDraw
                 cur.requestKeyFrame()
                 return
             }
@@ -863,6 +883,7 @@ class CarLifeSession(
                 VideoSource(pendingW, pendingH, pendingFps, if (air) bitratePolicy.current else stubBps, this)
             }
             s.banner = text
+            s.scene = sceneDraw
             try {
                 s.start()
                 source = s
@@ -1254,6 +1275,17 @@ class CarLifeSession(
     } catch (e: Exception) {
         AppLog.e("BRIDGE транскодер не создан", e)
         null
+    }
+
+    /** HOG: мусхаф на стоянке рисуется энкодером заглушки вместо надписи. */
+    @Volatile private var sceneDraw: ((android.graphics.Canvas, Int, Int) -> Unit)? = null
+
+    override fun showScene(scene: ((android.graphics.Canvas, Int, Int) -> Unit)?) {
+        sceneDraw = scene
+        synchronized(srcLock) { source }?.let {
+            it.scene = scene
+            it.requestKeyFrame()
+        }
     }
 
     override fun showPlaceholder(text: String) {

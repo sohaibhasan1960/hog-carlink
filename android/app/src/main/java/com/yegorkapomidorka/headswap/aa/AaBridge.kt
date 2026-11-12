@@ -42,6 +42,9 @@ interface CarlifeLink {
     /** Остановить заглушку: дальше видео идёт из AA (sendVideo). */
     fun hidePlaceholder()
 
+    /** HOG: своя картинка в энкодере заглушки (мусхаф на стоянке) или null - обычная надпись. Показ - [showPlaceholder]. */
+    fun showScene(scene: ((android.graphics.Canvas, Int, Int) -> Unit)?) {}
+
     /** Аудио-сообщение CarLife: канал 3 MEDIA / 4 TTS, тип (INIT/DATA/STOP), тело. false = отброшено. */
     fun sendAudio(channel: Int, type: Int, payload: ByteArray): Boolean
 
@@ -604,6 +607,9 @@ class AaBridgeCore(
         huHonda = false                        // STATISTIC_INFO придёт заново в этой сессии
         huVwBt1420 = false                     // HU_INFO придёт заново в этой сессии
         huVwId6 = false                        // HU_INFO придёт заново в этой сессии
+        mushafOn = false
+        carSpeedKmh = -1
+        carSpeedAt = NEVER
         huVw20082138 = false                   // HU_INFO / STATISTIC_INFO придут заново в этой сессии
         huId6IdrGuard = false
         huKia20032131 = false                  // STATISTIC_INFO придёт заново в этой сессии
@@ -1100,6 +1106,11 @@ class AaBridgeCore(
      * [VideoMode.mapTouch] (без margin-ов 1:1). Один палец уходит в AA так же, как до мультитача (id 0, action_index 0).
      */
     fun onCarlifeTouch(action: Int, x: Int, y: Int, px: Int = 0, py: Int = 0) {
+        if (mushafOn) {                     // HOG: на экране мусхаф - касания ему, не AA
+            lastUserInputMs = clockMs()
+            mushafTouch?.invoke(action and 0xFF, x, y, videoMode.outW, videoMode.outH)
+            return
+        }
         if (desktopInputEnabled) {
             val g = videoMode
             if (volumeSwipe.onTouch(action, x, y, px, py, g.outW, g.outH, huHondaVezel || volumeSwipeProvider())) return
@@ -1818,6 +1829,71 @@ class AaBridgeCore(
      */
     val huCallAware get() = huVwCns2Delphi || huVwId6
 
+    // ---------------- HOG: мусхаф на экране машины, только на стоянке ----------------
+
+    /** Скорость от ГУ (CAR_VELOCITY), км/ч; -1 - не приходила в этой сессии. */
+    @Volatile var carSpeedKmh = -1
+        private set
+    @Volatile private var carSpeedAt = NEVER
+    /** На экране машины мусхаф вместо AA: кадры AA не идут, касания - [mushafTouch]. */
+    @Volatile var mushafOn = false
+        private set
+    /** Рисует кадр мусхафа (ширина, высота видимой части); ставит BridgeService. */
+    @Volatile var mushafScene: ((android.graphics.Canvas, Int, Int) -> Unit)? = null
+    /** Касание ГУ на экране мусхафа: действие (0 down, 1 up, 2 move), x, y, ширина, высота. */
+    @Volatile var mushafTouch: ((Int, Int, Int, Int, Int) -> Unit)? = null
+
+    fun onCarSpeed(kmh: Int) {
+        val prev = carSpeedKmh
+        carSpeedKmh = kmh
+        carSpeedAt = clockMs()
+        if (prev < 0) log("BRIDGE скорость от ГУ: $kmh км/ч (первое значение)", true)
+        else if ((prev == 0) != (kmh == 0)) log("BRIDGE скорость от ГУ: $kmh км/ч", true)
+        if (mushafOn && kmh > 0) synchronized(this) { exitMushaf("машина поехала: $kmh км/ч") }
+    }
+
+    /** Стоянка: ГУ прислало 0 км/ч и не позже [SPEED_FRESH_MS] назад. Без скорости от ГУ мусхаф не показываем. */
+    fun parked(now: Long = clockMs()): Boolean = carSpeedKmh == 0 && now - carSpeedAt <= SPEED_FRESH_MS
+
+    /** Показать мусхаф на экране машины. null - показан, иначе причина отказа: carlife / transcode / nospeed / moving. */
+    @Synchronized
+    fun enterMushaf(): String? {
+        if (mushafOn) return null
+        val scene = mushafScene
+        val why = when {
+            !carlifeStarted || scene == null -> "carlife"
+            transcoder != null || transcodeEnabled || desktopSurfaceEnabled -> "transcode"
+            carSpeedKmh < 0 || clockMs() - carSpeedAt > SPEED_FRESH_MS -> "nospeed"
+            carSpeedKmh > 0 -> "moving"
+            else -> null
+        }
+        if (why != null) {
+            log("BRIDGE мусхаф на экране: отказ ($why, скорость $carSpeedKmh км/ч)", true)
+            return why
+        }
+        mushafOn = true
+        active = Source.PLACEHOLDER
+        gotIdr = false
+        link.showScene(scene)
+        link.showPlaceholder(placeholderText)
+        log("BRIDGE мусхаф на экране: AA скрыт, касания - мусхафу (стоянка, 0 км/ч)", true)
+        return null
+    }
+
+    /** Вернуть AA на экран: заглушка без картинки, пока не придёт IDR от AA (его просим сразу). */
+    @Synchronized
+    fun exitMushaf(why: String) {
+        if (!mushafOn) return
+        mushafOn = false
+        link.showScene(null)
+        val now = clockMs()
+        waitSince = now
+        lastKeyframeRequest = now
+        keyframeRequests++
+        peer?.requestKeyFrame()
+        log("BRIDGE мусхаф убран с экрана ($why): жду IDR от AA", true)
+    }
+
     @Synchronized
     private fun muteMediaOnCall(why: String) {
         if (!huCallAware || huPausedAa || !carlifeStarted) return
@@ -2057,6 +2133,10 @@ class AaBridgeCore(
     }
 
     private fun aaFrame(annexB: ByteArray, ptsUs: Long) {
+        if (mushafOn) {
+            drop("на экране мусхаф (стоянка)")
+            return
+        }
         if (desktopInputEnabled && desktopVideoError != null) {
             drop("desktop video stopped after encoder failure")
             return
@@ -2212,6 +2292,11 @@ class AaBridgeCore(
             keyframeRequests++
             log("BRIDGE повторный ключевой кадр через ${SPS_CROP_KICK_MS} мс после первого (ГУ могла потерять его на смене заглушка -> AA)", true)
             peer?.requestKeyFrame()
+        }
+        if (mushafOn) {
+            if (!parked(now)) exitMushaf(if (carSpeedKmh > 0) "машина поехала: $carSpeedKmh км/ч" else "скорость от ГУ не приходит")
+            waitSince = 0L
+            return
         }
         if (gotIdr || !aaVideoSeen) return
         // HOG: ГУ на своём экране (PAUSE) кадры не берёт - ключевой кадр просить незачем. Каждый запрос - цикл
@@ -3261,6 +3346,8 @@ class AaBridgeCore(
         /** ГУ VW ID с лимитом размера IDR: BT-имя (HU_INFO manufacturer) -> канал прошивки (STATISTIC_INFO); пара обязательна. */
         val VW_ID_IDR_LIMIT_HUS = mapOf(VW_20082128_MANUFACTURER to VW_20082128_CHANNEL)
         const val ID6_CHANNEL = "20082128"                // HOG CarLink: VW ID.6 CROZZ (наша, BT «VW BT 5075»)
+        /** Скорость от ГУ старше этого - не знаем, стоим ли (ID.6 шлёт раз в 500 мс). */
+        const val SPEED_FRESH_MS = 3_000L
         const val VW_BT_5075_MANUFACTURER = "VW BT 5075"  // HOG CarLink: VW ID.6 CROZZ, HU_INFO manufacturer=model, канал 20082128
         const val HYUNDAI_CN7_PRODUCT = "wp_cn7cpe_cn"    // HU_INFO.product Hyundai Elantra CN7 (h218): manufacturer QTI, model "sm6150_au for arm64"
         /** Hyundai Tucson NX4 (Mobis CCNC, h242): HU_INFO board или model = "CCNC", запасной признак - STATISTIC_INFO channel 20022188; по одному производителю Mobis не включаем (другие ГУ Mobis). */

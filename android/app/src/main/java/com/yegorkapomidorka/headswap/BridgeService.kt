@@ -1363,6 +1363,12 @@ class BridgeService : Service() {
             val core = AaBridgeCore(log, clockUs = { SystemClock.elapsedRealtimeNanos() / 1_000 })
             core.micModeProvider = { aaPrefs.micMode }
             val audio = getSystemService(AudioManager::class.java)
+            // HOG: мусхаф на экране машины (только на стоянке, решает core по скорости от ГУ)
+            com.yegorkapomidorka.headswap.quran.CarMushaf.init(this)
+            core.mushafScene = { c, w, h -> com.yegorkapomidorka.headswap.quran.CarMushaf.draw(c, w, h) }
+            core.mushafTouch = { a, x, y, w, h -> com.yegorkapomidorka.headswap.quran.CarMushaf.onTouch(a, x, y, w, h) }
+            com.yegorkapomidorka.headswap.quran.CarMushaf.onEnter = { core.enterMushaf() }
+            com.yegorkapomidorka.headswap.quran.CarMushaf.onExit = { core.exitMushaf("кнопка «خروج»") }
             core.phoneCallProvider = {
                 when (audio?.mode) {
                     AudioManager.MODE_RINGTONE -> PhoneCall.RINGING
