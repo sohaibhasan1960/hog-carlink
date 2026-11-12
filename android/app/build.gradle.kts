@@ -19,8 +19,8 @@ android {
         applicationId = "com.hog.carlink"
         minSdk = 29
         targetSdk = 37
-        versionCode = 93
-        versionName = "4.1.1-hog.31"
+        versionCode = 97
+        versionName = "4.1.1-hog.32"
         // «По воздуху» (беспровод): с 2.0.0 включён во всех сборках; выключить для проверки: gradlew assembleRelease -Pwlbeta=false
         buildConfigField("boolean", "WIRELESS_BETA", (project.findProperty("wlbeta") != "false").toString())
     }
