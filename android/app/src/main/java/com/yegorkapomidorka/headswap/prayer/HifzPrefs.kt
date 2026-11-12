@@ -19,6 +19,11 @@ class HifzPrefs(ctx: Context) {
         get() = sp.getInt("repeat", 3).let { r -> if (r in QuranPages.REPEATS) r else 3 }
         set(v) = sp.edit().putInt("repeat", v).apply()
 
+    /** Сколько раз подряд звучит каждый аят (1 - без повтора аята; страница повторяется отдельно - [repeat]). */
+    var ayahRepeat: Int
+        get() = sp.getInt("ayahRepeat", 1).let { r -> if (r in QuranPages.AYAH_REPEATS) r else 1 }
+        set(v) = sp.edit().putInt("ayahRepeat", v).apply()
+
     /** Страниц за одно прослушивание (1..5). */
     var pagesPerSession: Int
         get() = sp.getInt("pages", 1).coerceIn(1, MAX_PAGES)

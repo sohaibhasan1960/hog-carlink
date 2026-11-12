@@ -394,7 +394,7 @@ class PrayerPlayer : Service() {
         }
         val voice = prefs.voice
         val repeat = prefs.repeat
-        val queue = QuranPages.queue(page, prefs.pagesPerSession, repeat)
+        val queue = QuranPages.queue(page, prefs.pagesPerSession, repeat, prefs.ayahRepeat)
         hifzQueue = queue
         try {
             val e = androidx.media3.exoplayer.ExoPlayer.Builder(this)

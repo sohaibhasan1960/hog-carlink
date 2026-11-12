@@ -78,4 +78,7 @@
     <string name="mf_car_nospeed">The car does not report its speed, so a stop cannot be confirmed</string>
     <string name="mf_car_transcode">Not available while the video is re-encoded</string>
     <string name="mf_car_off">Available once the car screen is connected</string>
+    <string name="hf_ayah_repeat">Repeat each verse</string>
+    <string name="hf_ayah_once">Once</string>
+    <string name="hf_speed">Recitation speed</string>
 </resources>

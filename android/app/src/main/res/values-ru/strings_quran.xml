@@ -78,4 +78,7 @@
     <string name="mf_car_nospeed">Машина не сообщает скорость, стоянку не подтвердить</string>
     <string name="mf_car_transcode">Недоступно при перекодировании видео</string>
     <string name="mf_car_off">Доступно после подключения экрана машины</string>
+    <string name="hf_ayah_repeat">Повтор каждого аята</string>
+    <string name="hf_ayah_once">Один раз</string>
+    <string name="hf_speed">Скорость чтения</string>
 </resources>

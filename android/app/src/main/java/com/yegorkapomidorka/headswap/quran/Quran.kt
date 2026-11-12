@@ -199,7 +199,8 @@ object Quran {
     fun prev(surah: Int): Int? = if (surah > 1) surah - 1 else null
 
     /** Скорости чтения (кнопка в машине перебирает по кругу). */
-    val SPEEDS = floatArrayOf(1f, 1.5f, 2f)
+    /** HOG: медленнее для заучивания (0.75), чуть быстрее для повторения (1.25). */
+    val SPEEDS = floatArrayOf(0.75f, 1f, 1.25f, 1.5f, 2f)
 
     fun snapSpeed(v: Float): Float = SPEEDS.minByOrNull { kotlin.math.abs(it - v) } ?: 1f
 

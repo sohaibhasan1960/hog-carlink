@@ -83,8 +83,16 @@ class MushafActivity : Activity() {
         prev = button(getString(R.string.mf_prev)) { turn(-1) }
         val play = button(getString(R.string.mf_listen_short)) { listen() }
         next = button(getString(R.string.mf_next)) { turn(+1) }
+        val speed = button(Quran.speedLabel(com.yegorkapomidorka.headswap.prayer.QuranPrefs(this).speed)) {}
+        speed.setOnClickListener {
+            val q = com.yegorkapomidorka.headswap.prayer.QuranPrefs(this)
+            q.speed = Quran.nextSpeed(q.speed)
+            if (PrayerPlayer.quranActive) PrayerPlayer.control(this, PrayerPlayer.ACTION_Q_SPEED_SET)
+            speed.text = Quran.speedLabel(q.speed)
+        }
         bar.addView(prev, LinearLayout.LayoutParams(0, dp(52), 1f))
         bar.addView(play, LinearLayout.LayoutParams(0, dp(52), 1f).apply { marginStart = dp(8); marginEnd = dp(8) })
+        bar.addView(speed, LinearLayout.LayoutParams(0, dp(52), 0.8f).apply { marginEnd = dp(8) })
         bar.addView(next, LinearLayout.LayoutParams(0, dp(52), 1f))
         root.addView(head, LinearLayout.LayoutParams(-1, -2))
         root.addView(view, LinearLayout.LayoutParams(-1, 0, 1f))

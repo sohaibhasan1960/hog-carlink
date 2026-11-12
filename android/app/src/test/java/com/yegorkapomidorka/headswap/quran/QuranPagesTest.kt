@@ -64,6 +64,13 @@ class QuranPagesTest {
     }
 
     @Test
+    fun ayahRepeatPlaysEachAyahInARow() {
+        val q = QuranPages.queue(2, 1, 1, 3)
+        assertEquals(1 + 3 * QuranPages.ayahs(2).size, q.size)          // басмала один раз
+        assertEquals(listOf(0, 2001, 2001, 2001, 2002), q.take(5).map { it.ayah })
+    }
+
+    @Test
     fun blockStartIsTheStartOfTheSameRepeat() {
         val q = QuranPages.queue(2, 1, 2)
         val secondRep = q.indexOfFirst { it.rep == 2 }

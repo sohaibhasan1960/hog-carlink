@@ -174,13 +174,14 @@ object QuranPages {
     data class Item(val page: Int, val rep: Int, val file: String, val ayah: Int)
 
     /** Элементы страницы по порядку, с басмалой перед началом суры ([files]). */
-    private fun items(page: Int, rep: Int): List<Item> {
+    private fun items(page: Int, rep: Int, ayahRepeat: Int = 1): List<Item> {
         val out = ArrayList<Item>()
         for (c in ayahs(page)) {
             val s = c / 1000
             val a = c % 1000
             if (a == 1 && s != 1 && s != 9) out += Item(page, rep, BASMALA, 0)
-            out += Item(page, rep, "%03d%03d.mp3".format(s, a), c)
+            val item = Item(page, rep, "%03d%03d.mp3".format(s, a), c)
+            repeat(ayahRepeat.coerceAtLeast(1)) { out += item }
         }
         return out
     }
@@ -189,12 +190,12 @@ object QuranPages {
      * Очередь заучивания: [pages] страниц начиная с [start], каждая [repeat] раз подряд (страница целиком, потом
      * повтор). [repeat] = 0 - «без конца»: одна страница, плеер крутит её по кругу. За 604-й страницей не идём.
      */
-    fun queue(start: Int, pages: Int, repeat: Int): List<Item> {
+    fun queue(start: Int, pages: Int, repeat: Int, ayahRepeat: Int = 1): List<Item> {
         val first = start.coerceIn(1, PAGES)
-        if (repeat == 0) return items(first, 1)
+        if (repeat == 0) return items(first, 1, ayahRepeat)
         val last = (first + pages.coerceAtLeast(1) - 1).coerceAtMost(PAGES)
         val out = ArrayList<Item>()
-        for (p in first..last) for (r in 1..repeat) out += items(p, r)
+        for (p in first..last) for (r in 1..repeat) out += items(p, r, ayahRepeat)
         return out
     }
 
@@ -210,4 +211,7 @@ object QuranPages {
 
     /** Повторы страницы на выбор; 0 - без конца (пока не нажать «стоп» или «следующая»). */
     val REPEATS = intArrayOf(1, 3, 5, 7, 10, 20, 0)
+
+    /** Повтор каждого аята подряд (как «тكرار الآية» в приложениях для заучивания). */
+    val AYAH_REPEATS = intArrayOf(1, 2, 3, 5, 7, 10)
 }

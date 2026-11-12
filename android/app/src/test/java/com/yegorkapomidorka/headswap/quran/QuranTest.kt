@@ -67,11 +67,12 @@ class QuranTest {
 
     @Test
     fun speedCycleAndLabels() {
-        assertEquals(1.5f, Quran.nextSpeed(1f))
+        assertEquals(1.25f, Quran.nextSpeed(1f))
         assertEquals(2f, Quran.nextSpeed(1.5f))
-        assertEquals(1f, Quran.nextSpeed(2f))
-        assertEquals(1.5f, Quran.snapSpeed(1.3f))    // старое значение - ближайшее допустимое
-        assertEquals(1f, Quran.snapSpeed(0.5f))
+        assertEquals(0.75f, Quran.nextSpeed(2f))
+        assertEquals(1.25f, Quran.snapSpeed(1.3f))   // старое значение - ближайшее допустимое
+        assertEquals(0.75f, Quran.snapSpeed(0.5f))
+        assertEquals("×0.75", Quran.speedLabel(0.75f))
         assertEquals("×1", Quran.speedLabel(1f))
         assertEquals("×1.5", Quran.speedLabel(1.5f))
         assertEquals("×2", Quran.speedLabel(2f))

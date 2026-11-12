@@ -86,7 +86,7 @@ object CarMushaf {
         follow()
         val now = PrayerPlayer.hifzNowPage
         val lit = if (now == spread || now == spread + 1) MushafActivity.litCode(PrayerPlayer.hifzNowAyah, PrayerPlayer.hifzNowNext) else 0
-        val key = "$w×$h:$spread:$now:$lit:${data != null}"
+        val key = "$w×$h:$spread:$now:$lit:${data != null}:${app?.let { com.yegorkapomidorka.headswap.prayer.QuranPrefs(it).speed }}"
         var b = cache
         if (b == null || b.width != w || b.height != h) {
             b = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
@@ -123,9 +123,9 @@ object CarMushaf {
         val right = RectF(cx + gap / 2f, gap / 2f, cx + gap / 2f + pageW, areaH)
         val left = RectF(cx - gap / 2f - pageW, gap / 2f, cx - gap / 2f, areaH)
         val bar = RectF(0f, h - barH, w.toFloat(), h.toFloat())
-        val bw = (w - 5 * gap) / 4f
-        // справа налево: السابقة, استمع, التالية, خروج
-        val buttons = (0 until 4).map { i ->
+        val bw = (w - 6 * gap) / 5f
+        // справа налево: السابقة, استمع, السرعة, التالية, خروج
+        val buttons = (0 until 5).map { i ->
             val r = w - gap - i * (bw + gap)
             RectF(r - bw, bar.top + barH * 0.12f, r, bar.bottom - barH * 0.12f)
         }
@@ -152,19 +152,21 @@ object CarMushaf {
             small.textSize = h * 0.032f
             c.drawText(MushafText.arabicDigits(p), r.centerX(), r.bottom + h * 0.012f + small.textSize * 0.6f, small)
         }
-        val names = listOf(R.string.mf_prev, R.string.mf_listen_short, R.string.mf_next, R.string.mf_exit)
+        val speed = Quran.speedLabel(com.yegorkapomidorka.headswap.prayer.QuranPrefs(ctx).speed)
+        val names = listOf(ctx.getString(R.string.mf_prev), ctx.getString(R.string.mf_listen_short), speed,
+            ctx.getString(R.string.mf_next), ctx.getString(R.string.mf_exit))
         label.textSize = l.bar.height() * 0.32f
         for ((i, r) in l.buttons.withIndex()) {
             val enabled = when (i) {
                 0 -> spread > 1
-                2 -> spread + 2 <= QuranPages.PAGES
+                3 -> spread + 2 <= QuranPages.PAGES
                 else -> true
             }
             btn.color = if (i == 1) GOLD_DIM else BTN
             c.drawRoundRect(r, r.height() * 0.25f, r.height() * 0.25f, btn)
             label.color = if (enabled) INK else DIM
             val fm = label.fontMetrics
-            c.drawText(ctx.getString(names[i]), r.centerX(), r.centerY() - (fm.ascent + fm.descent) / 2f, label)
+            c.drawText(names[i], r.centerX(), r.centerY() - (fm.ascent + fm.descent) / 2f, label)
         }
     }
 
@@ -200,8 +202,14 @@ object CarMushaf {
             when (i) {
                 0 -> turn(-2)
                 1 -> listen(spread)
-                2 -> turn(+2)
-                3 -> onExit?.invoke()
+                2 -> {
+                    val ctx = app ?: return
+                    val q = com.yegorkapomidorka.headswap.prayer.QuranPrefs(ctx)
+                    q.speed = Quran.nextSpeed(q.speed)
+                    if (PrayerPlayer.quranActive) PrayerPlayer.control(ctx, PrayerPlayer.ACTION_Q_SPEED_SET)
+                }
+                3 -> turn(+2)
+                4 -> onExit?.invoke()
             }
             return
         }
