@@ -68,5 +68,7 @@
     <string name="hf_car_sub">التكرار: %s</string>
     <string name="mf_title">المصحف</string>
     <string name="mf_head">الصفحة %1$s · %2$s · الجزء %3$s</string>
-    <string name="mf_listen">استمع لهذه الصفحة</string>
+    <string name="mf_next">التالية</string>
+    <string name="mf_prev">السابقة</string>
+    <string name="mf_listen_short">استمع</string>
 </resources>

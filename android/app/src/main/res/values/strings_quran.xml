@@ -68,5 +68,7 @@
     <string name="hf_car_sub">Repeat: %s</string>
     <string name="mf_title">Mushaf</string>
     <string name="mf_head">Page %1$s · %2$s · juz %3$s</string>
-    <string name="mf_listen">Listen to this page</string>
+    <string name="mf_next">Next</string>
+    <string name="mf_prev">Previous</string>
+    <string name="mf_listen_short">Listen</string>
 </resources>

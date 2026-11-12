@@ -68,5 +68,7 @@
     <string name="hf_car_sub">Повтор: %s</string>
     <string name="mf_title">Мусхаф</string>
     <string name="mf_head">Страница %1$s · %2$s · джуз %3$s</string>
-    <string name="mf_listen">Слушать страницу</string>
+    <string name="mf_next">Вперёд</string>
+    <string name="mf_prev">Назад</string>
+    <string name="mf_listen_short">Слушать</string>
 </resources>
