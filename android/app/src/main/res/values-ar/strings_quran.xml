@@ -66,4 +66,7 @@
     <string name="hf_done">اكتملت الصفحات %1$d–%2$d. في المرة القادمة: الصفحة %3$d</string>
     <string name="hf_car_listen">استمع: الصفحة %1$d · %2$s</string>
     <string name="hf_car_sub">التكرار: %s</string>
+    <string name="mf_title">المصحف</string>
+    <string name="mf_head">الصفحة %1$s · %2$s · الجزء %3$s</string>
+    <string name="mf_listen">استمع لهذه الصفحة</string>
 </resources>

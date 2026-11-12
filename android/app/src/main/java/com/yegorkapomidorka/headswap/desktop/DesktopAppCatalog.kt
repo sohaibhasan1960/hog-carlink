@@ -16,10 +16,13 @@ internal object DesktopAppCatalog {
         val key: String get() = "$packageName/$className"
     }
 
+    /** Свои экраны HOG, которые лаунчер рабочего стола показывает на машине (остальное своё скрыто). */
+    const val OWN_MUSHAF = "com.yegorkapomidorka.headswap.quran.MushafActivity"
+
     fun select(entries: List<Entry>, ownPackage: String, locale: Locale = Locale.getDefault()): List<Entry> {
         val collator = Collator.getInstance(locale).apply { strength = Collator.PRIMARY }
         return entries.asSequence()
-            .filter { it.enabled && it.exported && it.packageName.isNotBlank() && it.className.isNotBlank() && it.packageName != ownPackage }
+            .filter { it.enabled && it.exported && it.packageName.isNotBlank() && it.className.isNotBlank() && (it.packageName != ownPackage || it.className == OWN_MUSHAF) }
             .map { it.copy(label = it.label.trim().ifEmpty { it.packageName }) }
             .distinctBy { it.key }
             .sortedWith { a, b -> collator.compare(a.label, b.label).takeIf { it != 0 } ?: a.key.compareTo(b.key) }

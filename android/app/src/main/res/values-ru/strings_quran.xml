@@ -66,4 +66,7 @@
     <string name="hf_done">Страницы %1$d–%2$d пройдены. В следующий раз: страница %3$d</string>
     <string name="hf_car_listen">Слушать: страница %1$d · %2$s</string>
     <string name="hf_car_sub">Повтор: %s</string>
+    <string name="mf_title">Мусхаф</string>
+    <string name="mf_head">Страница %1$s · %2$s · джуз %3$s</string>
+    <string name="mf_listen">Слушать страницу</string>
 </resources>

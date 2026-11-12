@@ -486,6 +486,9 @@ class PrayerPlayer : Service() {
         if (q.isEmpty()) return
         val i = e.currentMediaItemIndex.coerceIn(0, q.size - 1)
         val item = q[i]
+        hifzNowPage = item.page
+        hifzNowAyah = item.ayah
+        hifzNowNext = q.getOrNull(i + 1)?.ayah ?: -1
         val state = when {
             !quranPrepared -> android.media.session.PlaybackState.STATE_BUFFERING
             quranPaused -> android.media.session.PlaybackState.STATE_PAUSED
@@ -1051,6 +1054,8 @@ class PrayerPlayer : Service() {
         exo?.release()
         exo = null
         quranActive = false
+        hifzNowPage = 0
+        hifzNowAyah = -1
         adhkarActive = false
         adhkarPaused = false
         quranPrepared = false
@@ -1121,6 +1126,10 @@ class PrayerPlayer : Service() {
 
         /** Сура загружена (играет или на паузе): кнопки машины управляют ею, а не азкарами. */
         @Volatile var quranActive = false
+        /** План заучивания: страница и аят (код surah*1000+ayah, 0 - басмала), которые сейчас звучат; 0 / -1 - тишина. Читает MushafActivity. */
+        @Volatile var hifzNowPage = 0
+        @Volatile var hifzNowAyah = -1
+        @Volatile var hifzNowNext = -1
 
         /** Азкары записью (живой голос или своя запись): пауза, перемотка и следующий/предыдущий зикр из машины. */
         @Volatile var adhkarActive = false

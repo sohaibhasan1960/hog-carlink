@@ -106,7 +106,9 @@ internal class DelegatedDesktopRuntime(private val context: Context, private val
         val fullClassName = if (className.startsWith('.')) packageName + className else className
         // Алиса - не LAUNCHER-activity: открывается по ASSIST, список запуска её не знает
         val assist = EmbeddedDisplayPolicy.assistLaunch(packageName, fullClassName)
-        launch(id, ComponentName(packageName, fullClassName), ownActivity = false, requireLauncher = !assist, assist = assist)
+        // HOG: свой мусхаф - не LAUNCHER (иконки на телефоне нет), открывается явным компонентом
+        val mushaf = packageName == context.packageName && fullClassName == com.yegorkapomidorka.headswap.desktop.DesktopAppCatalog.OWN_MUSHAF
+        launch(id, ComponentName(packageName, fullClassName), ownActivity = mushaf, requireLauncher = !assist && !mushaf, assist = assist)
     }
 
     private fun launch(id: Int, component: ComponentName, ownActivity: Boolean, requireLauncher: Boolean, assist: Boolean = false) {

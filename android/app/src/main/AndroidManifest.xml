@@ -201,6 +201,17 @@
             android:configChanges="orientation|screenSize|smallestScreenSize|keyboardHidden"
             android:theme="@style/Theme.Headswap.Desktop" />
 
+        <!-- HOG: страница мусхафа (план заучивания); лаунчер рабочего стола показывает её на экране машины.
+             exported: на рабочем столе через shell её открывает am start (данных не отдаёт, только номер страницы) -->
+        <activity
+            android:name=".quran.MushafActivity"
+            android:exported="true"
+            android:label="@string/mf_title"
+            android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout"
+            android:theme="@android:style/Theme.DeviceDefault.NoActionBar" />
+
         <!-- кнопка «Стоп» в уведомлении -->
         <receiver
             android:name=".ui.StopReceiver"

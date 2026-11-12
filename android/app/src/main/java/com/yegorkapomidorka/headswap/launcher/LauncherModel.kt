@@ -216,7 +216,10 @@ internal object LauncherModel {
                         runCatching { info.loadLabel(pm).toString() }.getOrDefault(a.packageName),
                         enabled = a.enabled && a.applicationInfo.enabled, exported = a.exported)
                 }
-            }.getOrElse { AppLog.i("Launcher catalog: ${it.javaClass.simpleName}", false); emptyList() }
+            }.getOrElse { AppLog.i("Launcher catalog: ${it.javaClass.simpleName}", false); emptyList() } +
+                // HOG: мусхаф на экране машины (своя activity, в лаунчер телефона не попадает)
+                DesktopAppCatalog.Entry(appCtx.packageName, DesktopAppCatalog.OWN_MUSHAF,
+                    appCtx.getString(com.yegorkapomidorka.headswap.R.string.mf_title), enabled = true, exported = true)
             val selected = DesktopAppCatalog.select(found, appCtx.packageName)
             main.post { catalog = selected; catalogLoaded = true; applyShadowNav() } // выбранный навигатор известен только с каталогом
         }

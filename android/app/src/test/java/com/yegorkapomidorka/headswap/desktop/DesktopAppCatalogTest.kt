@@ -23,6 +23,13 @@ class DesktopAppCatalogTest {
         assertEquals(listOf(good), DesktopAppCatalog.select(candidates, "headswap", Locale.US))
     }
 
+    @Test fun ownMushafIsTheOnlyOwnScreenOnTheCarDesktop() {
+        val mushaf = DesktopAppCatalog.Entry("headswap", DesktopAppCatalog.OWN_MUSHAF, "Mushaf")
+        val result = DesktopAppCatalog.select(listOf(mushaf, DesktopAppCatalog.Entry("headswap", "headswap.Setup", "HeadSwap")),
+            "headswap", Locale.US)
+        assertEquals(listOf(mushaf), result)
+    }
+
     @Test fun sameNamedAppsRemainDistinctAndEmptyLabelsHaveReadableFallback() {
         val result = DesktopAppCatalog.select(listOf(
             DesktopAppCatalog.Entry("second", "second.Main", "Maps"),

@@ -104,7 +104,7 @@ class QuranScreen(host: MainActivity) : Screen(host) {
                 setOnClickListener { hifz.page = page - 1; buildHifz() }
             }, lp(0, c.dp(48), 1f))
             addView(c.tonalButton(c.getString(R.string.qr_read)).apply {
-                setOnClickListener { readPage(hifz.page) }
+                setOnClickListener { com.yegorkapomidorka.headswap.quran.MushafActivity.open(c, hifz.page) }
             }, lp(0, c.dp(48), 1f))
             addView(c.tonalButton(c.getString(R.string.hf_next)).apply {
                 isEnabled = page < QuranPages.PAGES
@@ -159,44 +159,6 @@ class QuranScreen(host: MainActivity) : Screen(host) {
                 d.dismiss()
                 buildHifz()
             }.show()
-    }
-
-    /** Текст страницы мусхафа (аяты Tanzil этой страницы) в окне с прокруткой. */
-    private fun readPage(page: Int) {
-        val c = ctx
-        val codes = QuranPages.ayahs(page).toHashSet()
-        Thread({
-            val lines = try {
-                c.resources.openRawResource(R.raw.quran_uthmani).bufferedReader(Charsets.UTF_8).useLines { seq ->
-                    seq.mapNotNull { line ->
-                        val parts = line.split('|', limit = 3)
-                        val s = parts.getOrNull(0)?.toIntOrNull() ?: return@mapNotNull null
-                        val a = parts.getOrNull(1)?.toIntOrNull() ?: return@mapNotNull null
-                        if (s * 1000 + a in codes) parts[2] + " ﴿" + arabicDigits(a) + "﴾" else null
-                    }.toList()
-                }
-            } catch (e: Exception) {
-                AppLog.e("حفظ: текст страницы не прочитан", e)
-                emptyList()
-            }
-            main.post {
-                val builder = AlertDialog.Builder(host)
-                val tv = TextView(c).apply {
-                    text = lines.joinToString(" ")
-                    textSize = 22f
-                    setLineSpacing(0f, 1.6f)
-                    setTextColor(c.dialogTextColor(builder.context))
-                    textDirection = View.TEXT_DIRECTION_RTL
-                    setTextIsSelectable(true)
-                    pad(c, 20, 12, 20, 12)
-                }
-                builder.setTitle(c.getString(R.string.hf_page_title, page, pageNames(page)))
-                    .setView(ScrollView(c).apply { addView(tv) })
-                    .setPositiveButton(c.getString(R.string.hf_play, page)) { _, _ -> hifz.page = page; PrayerPlayer.hifz(c, page) }
-                    .setNegativeButton(android.R.string.ok, null)
-                    .show()
-            }
-        }, "hifz-text").start()
     }
 
     private fun buildTop() {
