@@ -62,6 +62,10 @@ object Actions {
     }
 
     fun startBridge(ctx: Context) {
+        if (com.yegorkapomidorka.headswap.support.AccountGate.required(ctx)) {      // HOG CarLink: активация - вход Google
+            AppLog.i("сервис не запускаю: нет входа Google")
+            return
+        }
         AppLog.i("запускаю сервис")
         ctx.startForegroundService(Intent(ctx, BridgeService::class.java))
     }

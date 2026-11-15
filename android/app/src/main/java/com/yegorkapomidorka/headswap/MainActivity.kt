@@ -142,6 +142,25 @@ class MainActivity : Activity() {
         handler.post(refresh)
         Updater.maybeCheck(this)
         com.yegorkapomidorka.headswap.support.AutoReport.onAppVisible(this)
+        gateAccount()
+    }
+
+    /** HOG CarLink: без входа Google (часть активации) - только экран входа, поверх всего остального. */
+    private fun gateAccount() {
+        if (current() is com.yegorkapomidorka.headswap.ui.AccountScreen) return
+        if (!com.yegorkapomidorka.headswap.support.AccountGate.required(this)) return
+        AppLog.i("активация: нет входа Google, показываю экран входа")
+        push("account", com.yegorkapomidorka.headswap.ui.AccountScreen(this))
+    }
+
+    /** Вход выполнен: убрать экран входа из стека. */
+    fun accountDone() {
+        for (i in stack.indices.reversed()) {
+            if (stack[i] !is com.yegorkapomidorka.headswap.ui.AccountScreen || i == stack.lastIndex) continue
+            stack.removeAt(i)
+            keys.removeAt(i)
+        }
+        if (current() is com.yegorkapomidorka.headswap.ui.AccountScreen) back()
     }
 
     override fun onPause() {

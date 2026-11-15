@@ -52,4 +52,8 @@
     <string name="sup_google_failed">Вход не удался: %1$s</string>
     <string name="sup_google_no_account">На телефоне нет аккаунта Google. Добавьте его в Настройки > Аккаунты и повторите.</string>
     <string name="sup_google_no_provider">Служба входа телефона не готова. В настройках найдите «Пароли» или «Диспетчер учётных данных», выберите Google и повторите.</string>
+    <!-- HOG CarLink: активация входом Google (ui/AccountScreen) -->
+    <string name="acc_title">Активация HOG CarLink</string>
+    <string name="acc_why">Войдите через аккаунт Google, чтобы активировать приложение. Подключение к машине работает только после входа, а запросы в поддержку привязаны к аккаунту.</string>
+    <string name="acc_note">Используются только имя и почта. Нужно один раз на телефон.</string>
 </resources>

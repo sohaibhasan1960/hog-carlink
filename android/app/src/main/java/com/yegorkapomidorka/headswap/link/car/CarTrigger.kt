@@ -17,6 +17,11 @@ object CarTrigger {
     fun near(ctx: Context, source: String) {
         if (!BuildConfig.WIRELESS_BETA) return
         WLog.ev(WLog.TRIGGER, "car-near", "src" to source)
+        if (com.yegorkapomidorka.headswap.support.AccountGate.required(ctx)) {      // не активировано: нет входа Google
+            AppLog.i("$source: машина рядом, но нет входа Google - мост не запускаю")
+            WLog.ev(WLog.TRIGGER, "no-account", "src" to source)
+            return
+        }
         try {
             ctx.startForegroundService(Intent(ctx, BridgeService::class.java).setAction(BridgeService.ACTION_WIFI_B_AUTO))
         } catch (e: Exception) {      // ForegroundServiceStartNotAllowedException и пр.: из фона без исключений запуск запрещён

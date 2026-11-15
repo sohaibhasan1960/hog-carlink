@@ -28,7 +28,8 @@ object GoogleSignIn {
     private const val KEY_ID_TOKEN = "com.google.android.libraries.identity.googleid.BUNDLE_KEY_ID_TOKEN"
 
     /** Системный Credential Manager есть с Android 14. */
-    val supported: Boolean get() = Build.VERSION.SDK_INT >= 34
+    const val MIN_SDK = 34
+    val supported: Boolean get() = Build.VERSION.SDK_INT >= MIN_SDK
 
     sealed class Result {
         object Ok : Result()

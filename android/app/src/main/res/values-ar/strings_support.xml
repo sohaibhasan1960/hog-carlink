@@ -52,4 +52,8 @@
     <string name="sup_google_failed">تعذّر تسجيل الدخول: %1$s</string>
     <string name="sup_google_no_account">لا يوجد حساب Google في هذا الهاتف. أضِفه من الإعدادات ← الحسابات، ثم حاول مرة أخرى.</string>
     <string name="sup_google_no_provider">خدمة تسجيل الدخول في الهاتف غير جاهزة. ابحث في إعدادات الهاتف عن «كلمات المرور» أو «مدير بيانات الاعتماد» واختر Google، ثم حاول مرة أخرى.</string>
+    <!-- HOG CarLink: التفعيل بتسجيل الدخول بحساب Google (ui/AccountScreen) -->
+    <string name="acc_title">تفعيل HOG CarLink</string>
+    <string name="acc_why">سجّل الدخول بحساب Google لتفعيل التطبيق. لن يتصل بالسيارة قبل تسجيل الدخول، وتبقى طلبات الدعم مرتبطة بحسابك.</string>
+    <string name="acc_note">يُستخدم اسمك وبريدك فقط. يلزم ذلك مرة واحدة لكل هاتف.</string>
 </resources>
