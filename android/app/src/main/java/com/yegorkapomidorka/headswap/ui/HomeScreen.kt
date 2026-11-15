@@ -235,6 +235,15 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         if (st.primary == null && st.outline != OutlineAction.OPEN_AA) {
             footer.addView(c.outlineButton(c.getString(R.string.home_btn_open_aa), R.drawable.ic_open).apply { setOnClickListener { Actions.openAaSettings(c) } })
         }
+        // HOG: без исключения из оптимизации батареи система гасит мост в фоне (Honor возвращает ограничение сам)
+        if (!Readiness.batteryOk(c)) {
+            footer.addView(c.outlineButton(c.getString(R.string.home_btn_battery), R.drawable.ic_open).apply {
+                setOnClickListener {
+                    Readiness.requestIgnoreBattery(c)
+                    if (Readiness.isHonor()) Readiness.openHonorLaunch(c)
+                }
+            })
+        }
         if (st.phase == Phase.RECONNECTING) updateGrace(st)
     }
 

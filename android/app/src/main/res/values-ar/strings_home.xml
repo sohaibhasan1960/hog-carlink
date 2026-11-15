@@ -130,4 +130,5 @@
     <!-- HOG CarLink: CarConnectActivity -->
     <string name="cc_title">جارٍ الاتصال بالسيارة…</string>
     <string name="cc_sub">يتصل الهاتف بشبكة واي فاي السيارة. ستُغلق هذه النافذة وحدها.</string>
+    <string name="home_btn_battery">السماح بالعمل في الخلفية (البطارية)</string>
 </resources>

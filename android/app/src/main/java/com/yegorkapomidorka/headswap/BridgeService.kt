@@ -1369,6 +1369,8 @@ class BridgeService : Service() {
             core.mushafTouch = { a, x, y, w, h -> com.yegorkapomidorka.headswap.quran.CarMushaf.onTouch(a, x, y, w, h) }
             com.yegorkapomidorka.headswap.quran.CarMushaf.onEnter = { core.enterMushaf() }
             com.yegorkapomidorka.headswap.quran.CarMushaf.onExit = { core.exitMushaf("кнопка «خروج»") }
+            com.yegorkapomidorka.headswap.aa.PhoneSpeed.onUpdate = { kmh -> core.onPhoneSpeed(kmh) }
+            com.yegorkapomidorka.headswap.aa.PhoneSpeed.start(this)
             core.phoneCallProvider = {
                 when (audio?.mode) {
                     AudioManager.MODE_RINGTONE -> PhoneCall.RINGING
@@ -1531,6 +1533,7 @@ class BridgeService : Service() {
         }
         stopRequested = true
         alive = false
+        com.yegorkapomidorka.headswap.aa.PhoneSpeed.stop()
         autoMode = false
         cancelAutoOff()
         cancelHint()

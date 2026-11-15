@@ -120,6 +120,13 @@ class QuranScreen(host: MainActivity) : Screen(host) {
         // HOG: мусхаф на экране машины - только на стоянке (скорость от ГУ)
         hifzBox.addView(c.tonalButton(c.getString(R.string.mf_car)).apply {
             setOnClickListener {
+                if (!com.yegorkapomidorka.headswap.aa.PhoneSpeed.permitted(c)) {
+                    // без «Разрешить всегда» GPS в фоне молчит, а ID.6 своей скорости не шлёт
+                    AlertDialog.Builder(host).setTitle(R.string.mf_car).setMessage(R.string.mf_loc_why)
+                        .setPositiveButton(R.string.mf_loc_open) { _, _ -> Readiness.appDetails(c) }
+                        .setNegativeButton(android.R.string.cancel, null).show()
+                    return@setOnClickListener
+                }
                 val why = com.yegorkapomidorka.headswap.quran.CarMushaf.open(hifz.page)
                 val msg = when (why) {
                     null -> null

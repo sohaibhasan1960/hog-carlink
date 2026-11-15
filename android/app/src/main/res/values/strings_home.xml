@@ -136,4 +136,5 @@
     <!-- HOG CarLink: CarConnectActivity -->
     <string name="cc_title">Connecting to the car…</string>
     <string name="cc_sub">Joining the car Wi-Fi. This closes by itself.</string>
+    <string name="home_btn_battery">Allow running in the background</string>
 </resources>

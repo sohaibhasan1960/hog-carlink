@@ -157,6 +157,20 @@ class AaBridgeCoreTest {
     }
 
     @Test
+    fun mushafUsesPhoneGpsWhenHeadUnitIsSilent() {
+        core.mushafScene = { _, _, _ -> }
+        core.onCarlifeStart()
+        core.onPhoneSpeed(12f)
+        assertEquals("moving", core.enterMushaf())
+        core.onPhoneSpeed(1.5f)                                    // дрожание GPS на месте - стоянка
+        assertNull(core.enterMushaf())
+        core.onPhoneSpeed(5f)                                      // между порогами - ещё стоим
+        assertTrue(core.mushafOn)
+        core.onPhoneSpeed(7f)
+        assertFalse(core.mushafOn)
+    }
+
+    @Test
     fun mushafLeavesWhenSpeedGoesStale() {
         core.mushafScene = { _, _, _ -> }
         core.onCarlifeStart()

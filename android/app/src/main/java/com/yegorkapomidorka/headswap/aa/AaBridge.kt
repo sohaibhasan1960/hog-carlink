@@ -1852,8 +1852,31 @@ class AaBridgeCore(
         if (mushafOn && kmh > 0) synchronized(this) { exitMushaf("машина поехала: $kmh км/ч") }
     }
 
-    /** Стоянка: ГУ прислало 0 км/ч и не позже [SPEED_FRESH_MS] назад. Без скорости от ГУ мусхаф не показываем. */
-    fun parked(now: Long = clockMs()): Boolean = carSpeedKmh == 0 && now - carSpeedAt <= SPEED_FRESH_MS
+    /** Скорость по GPS телефона ([PhoneSpeed]), км/ч; -1 - нет. Запасной источник, когда ГУ скорость не шлёт. */
+    @Volatile var phoneSpeedKmh = -1f
+        private set
+    @Volatile private var phoneSpeedAt = NEVER
+
+    fun onPhoneSpeed(kmh: Float) {
+        phoneSpeedKmh = kmh
+        phoneSpeedAt = clockMs()
+        if (mushafOn && !carFresh(phoneSpeedAt) && kmh >= PHONE_MOVE_KMH) synchronized(this) {
+            exitMushaf("машина поехала (GPS телефона ${"%.0f".format(kmh)} км/ч)")
+        }
+    }
+
+    private fun carFresh(now: Long) = carSpeedKmh >= 0 && now - carSpeedAt <= SPEED_FRESH_MS
+    private fun phoneFresh(now: Long) = phoneSpeedKmh >= 0 && now - phoneSpeedAt <= SPEED_FRESH_MS
+
+    /**
+     * Стоянка: свежая скорость от ГУ = 0, а если ГУ не шлёт - свежая скорость GPS телефона меньше [PHONE_PARK_KMH]
+     * (на светофоре тоже). Ни того, ни другого - не знаем, мусхаф не показываем.
+     */
+    fun parked(now: Long = clockMs()): Boolean = when {
+        carFresh(now) -> carSpeedKmh == 0
+        phoneFresh(now) -> phoneSpeedKmh < PHONE_PARK_KMH
+        else -> false
+    }
 
     /** Показать мусхаф на экране машины. null - показан, иначе причина отказа: carlife / transcode / nospeed / moving. */
     @Synchronized
@@ -1863,12 +1886,12 @@ class AaBridgeCore(
         val why = when {
             !carlifeStarted || scene == null -> "carlife"
             transcoder != null || transcodeEnabled || desktopSurfaceEnabled -> "transcode"
-            carSpeedKmh < 0 || clockMs() - carSpeedAt > SPEED_FRESH_MS -> "nospeed"
-            carSpeedKmh > 0 -> "moving"
+            !carFresh(clockMs()) && !phoneFresh(clockMs()) -> "nospeed"
+            !parked() -> "moving"
             else -> null
         }
         if (why != null) {
-            log("BRIDGE мусхаф на экране: отказ ($why, скорость $carSpeedKmh км/ч)", true)
+            log("BRIDGE мусхаф на экране: отказ ($why, скорость ГУ $carSpeedKmh, GPS $phoneSpeedKmh км/ч)", true)
             return why
         }
         mushafOn = true
@@ -1876,7 +1899,7 @@ class AaBridgeCore(
         gotIdr = false
         link.showScene(scene)
         link.showPlaceholder(placeholderText)
-        log("BRIDGE мусхаф на экране: AA скрыт, касания - мусхафу (стоянка, 0 км/ч)", true)
+        log("BRIDGE мусхаф на экране: AA скрыт, касания - мусхафу (стоянка: ГУ $carSpeedKmh, GPS $phoneSpeedKmh км/ч)", true)
         return null
     }
 
@@ -2294,7 +2317,7 @@ class AaBridgeCore(
             peer?.requestKeyFrame()
         }
         if (mushafOn) {
-            if (!parked(now)) exitMushaf(if (carSpeedKmh > 0) "машина поехала: $carSpeedKmh км/ч" else "скорость от ГУ не приходит")
+            if (!parked(now)) exitMushaf("не стоянка: ГУ $carSpeedKmh, GPS $phoneSpeedKmh км/ч")
             waitSince = 0L
             return
         }
@@ -3348,6 +3371,9 @@ class AaBridgeCore(
         const val ID6_CHANNEL = "20082128"                // HOG CarLink: VW ID.6 CROZZ (наша, BT «VW BT 5075»)
         /** Скорость от ГУ старше этого - не знаем, стоим ли (ID.6 шлёт раз в 500 мс). */
         const val SPEED_FRESH_MS = 3_000L
+        /** GPS телефона на месте дрожит до 2-3 км/ч: стоянка ниже 4, «поехали» от 6. */
+        const val PHONE_PARK_KMH = 4f
+        const val PHONE_MOVE_KMH = 6f
         const val VW_BT_5075_MANUFACTURER = "VW BT 5075"  // HOG CarLink: VW ID.6 CROZZ, HU_INFO manufacturer=model, канал 20082128
         const val HYUNDAI_CN7_PRODUCT = "wp_cn7cpe_cn"    // HU_INFO.product Hyundai Elantra CN7 (h218): manufacturer QTI, model "sm6150_au for arm64"
         /** Hyundai Tucson NX4 (Mobis CCNC, h242): HU_INFO board или model = "CCNC", запасной признак - STATISTIC_INFO channel 20022188; по одному производителю Mobis не включаем (другие ГУ Mobis). */
