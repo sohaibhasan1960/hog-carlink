@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- HOG CarLink: seller details for a brand build (-Pbrand=...); empty in HOG itself. -->
+<resources>
+    <string name="seller_name" translatable="false"></string>
+    <string name="seller_phone" translatable="false"></string>
+    <string name="seller_whatsapp" translatable="false"></string>
+    <string name="seller_address" translatable="false"></string>
+</resources>

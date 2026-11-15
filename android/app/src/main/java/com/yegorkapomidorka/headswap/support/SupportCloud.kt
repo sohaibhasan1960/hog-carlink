@@ -77,12 +77,23 @@ class SupportCloud(ctx: Context) {
         }
         val r = http("POST", "$SIGN_UP?key=$API_KEY", JSONObject().put("returnSecureToken", true).toString(), null)
         isOwner = false
+        if (googleEmail.isNotBlank()) {
+            // новый анонимный uid: вход Google и лицензия были у прежнего - войти заново (AccountGate покажет экран входа)
+            AppLog.i("поддержка: сессия Google потеряна, нужен повторный вход", true)
+            sp.edit().remove(K_G_EMAIL).remove(K_G_NAME).apply()
+        }
+        clearLicense()
         return store(r.getString("idToken"), r.getString("refreshToken"), r.getString("localId"), r.getString("expiresIn"))
     }
 
     /** Вход Google привязан к этому телефону: почта и имя для экрана поддержки; пусто - анонимно. */
     val googleEmail: String get() = sp.getString(K_G_EMAIL, "") ?: ""
     val googleName: String get() = sp.getString(K_G_NAME, "") ?: ""
+
+    /** Сборка продавца: телефон без службы входа Google - лицензия запрашивается анонимно и ждёт владельца. */
+    var skipGoogle: Boolean
+        get() = sp.getBoolean(K_SKIP_GOOGLE, false)
+        set(v) = sp.edit().putBoolean(K_SKIP_GOOGLE, v).apply()
 
     /**
      * Вход Google (ID-токен из Credential Manager): привязать к текущему анонимному аккаунту - uid, владелец и запросы
@@ -205,6 +216,118 @@ class SupportCloud(ctx: Context) {
         http("DELETE", "$DOC_BASE/requests/$id", null, token())
     }
 
+    // ---------------- лицензия (сборка продавца) ----------------
+
+    data class License(
+        val uid: String,
+        val email: String,
+        val name: String,
+        val brand: String,
+        val model: String,
+        val status: String,
+        val createdAt: String,
+        /** Окончание подписки, мс; 0 - нет. */
+        val expiresAt: Long,
+    )
+
+    /** Лицензия этого телефона по последней проверке (кэш на случай, когда сети нет). */
+    val cachedLicenseStatus: String get() = sp.getString(K_LIC_STATUS, "") ?: ""
+    val cachedLicenseExpires: Long get() = sp.getLong(K_LIC_EXP, 0L)
+    val cachedLicenseUid: String get() = sp.getString(K_LIC_UID, "") ?: ""
+
+    fun clearLicense() = sp.edit().remove(K_LIC_STATUS).remove(K_LIC_EXP).remove(K_LIC_UID).apply()
+
+    private fun cache(l: License) =
+        sp.edit().putString(K_LIC_STATUS, l.status).putLong(K_LIC_EXP, l.expiresAt).putString(K_LIC_UID, l.uid).apply()
+
+    /** Условия продавца (sellers/{brand}): автоодобрение и срок подписки в днях. Нет записи - вручную, 0 дней. */
+    @Throws(IOException::class)
+    fun seller(brand: String): Pair<Boolean, Int> {
+        val t = token()
+        return try {
+            val f = http("GET", "$DOC_BASE/sellers/$brand", null, t).optJSONObject("fields")
+            (f?.optJSONObject("autoApprove")?.optBoolean("booleanValue") == true) to
+                (f?.optJSONObject("termDays")?.optString("integerValue")?.toIntOrNull() ?: 0)
+        } catch (e: HttpError) {
+            if (e.code == 404 || e.code == 403) false to 0 else throw e
+        }
+    }
+
+    /** Своя лицензия с сервера (и в кэш); null - ещё нет. */
+    @Throws(IOException::class)
+    fun myLicense(): License? {
+        val t = token()
+        val doc = try {
+            http("GET", "$DOC_BASE/licenses/${uid!!}", null, t)
+        } catch (e: HttpError) {
+            if (e.code == 404) return null else throw e
+        }
+        return parseLicense(doc).also { cache(it) }
+    }
+
+    /**
+     * Первая лицензия этого аккаунта. [active] - автоодобрение продавца (только со входом Google): подписка на [termDays]
+     * дней сразу; иначе - «pending», ждёт владельца. Правила Firestore проверяют и то, и другое.
+     */
+    @Throws(IOException::class)
+    fun createLicense(brand: String, model: String, active: Boolean, termDays: Int): License {
+        val t = token()
+        val exp = if (active) Licensing.expiryFor(System.currentTimeMillis(), termDays) else 0L
+        val fields = JSONObject().put("email", sv(googleEmail)).put("name", sv(googleName.take(80))).put("brand", sv(brand))
+            .put("model", sv(model.take(80))).put("status", sv(if (active) "active" else "pending"))
+            .put("expiresAt", JSONObject().put("timestampValue", rfc3339(Date(exp))))
+        val write = JSONObject()
+            .put("update", JSONObject().put("name", "$DOC_ROOT/licenses/${uid!!}").put("fields", fields))
+            .put("updateTransforms", JSONArray().put(JSONObject().put("fieldPath", "createdAt").put("setToServerValue", "REQUEST_TIME")))
+            .put("currentDocument", JSONObject().put("exists", false))
+        http("POST", "$BASE:commit", JSONObject().put("writes", JSONArray().put(write)).toString(), t)
+        AppLog.i("лицензия: создана (${if (active) "активна на $termDays дн." else "ждёт одобрения"})", true)
+        return myLicense() ?: throw IOException("лицензия не читается после записи")
+    }
+
+    /** Все лицензии, новые сверху (только владелец). */
+    @Throws(IOException::class)
+    fun licenses(limit: Int = 300): List<License> {
+        val t = token()
+        val q = JSONObject().put("structuredQuery", JSONObject()
+            .put("from", JSONArray().put(JSONObject().put("collectionId", "licenses")))
+            .put("orderBy", JSONArray().put(JSONObject().put("field", JSONObject().put("fieldPath", "createdAt")).put("direction", "DESCENDING")))
+            .put("limit", limit))
+        val arr = httpArray("$DOC_BASE:runQuery", q.toString(), t)
+        return (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.optJSONObject("document") }.map { parseLicense(it) }
+    }
+
+    /** Владелец: статус и срок лицензии. */
+    @Throws(IOException::class)
+    fun setLicense(uid: String, status: String, expiresAt: Long) {
+        val fields = JSONObject().put("status", sv(status)).put("expiresAt", JSONObject().put("timestampValue", rfc3339(Date(expiresAt))))
+        val mask = listOf("status", "expiresAt").joinToString("&") { "updateMask.fieldPaths=$it" }
+        http("PATCH", "$DOC_BASE/licenses/$uid?$mask", JSONObject().put("fields", fields).toString(), token())
+    }
+
+    data class Seller(val brand: String, val autoApprove: Boolean, val termDays: Int)
+
+    /** Владелец: все продавцы (sellers). */
+    @Throws(IOException::class)
+    fun sellers(): List<Seller> {
+        val q = JSONObject().put("structuredQuery", JSONObject()
+            .put("from", JSONArray().put(JSONObject().put("collectionId", "sellers"))))
+        val arr = httpArray("$DOC_BASE:runQuery", q.toString(), token())
+        return (0 until arr.length()).mapNotNull { arr.optJSONObject(it)?.optJSONObject("document") }.map { d ->
+            val f = d.optJSONObject("fields")
+            Seller(d.optString("name").substringAfterLast('/'), f?.optJSONObject("autoApprove")?.optBoolean("booleanValue") == true,
+                f?.optJSONObject("termDays")?.optString("integerValue")?.toIntOrNull() ?: 0)
+        }
+    }
+
+    /** Владелец: условия продавца. */
+    @Throws(IOException::class)
+    fun setSeller(brand: String, autoApprove: Boolean, termDays: Int) {
+        val fields = JSONObject().put("autoApprove", JSONObject().put("booleanValue", autoApprove))
+            .put("termDays", JSONObject().put("integerValue", termDays.toString()))
+        http("PATCH", "$DOC_BASE/sellers/$brand", JSONObject().put("fields", fields).toString(), token())
+    }
+
     // ---------------- сеть ----------------
 
     class HttpError(val code: Int, val body: String) : IOException("HTTP $code: ${body.take(200)}")
@@ -270,6 +393,10 @@ class SupportCloud(ctx: Context) {
         private const val K_OWNER_SEEN = "ownerSeen"
         private const val K_REPLY_SEEN = "replySeen:"
         private const val K_SENT = "sent"
+        private const val K_LIC_STATUS = "licStatus"
+        private const val K_LIC_EXP = "licExpires"
+        private const val K_LIC_UID = "licUid"
+        private const val K_SKIP_GOOGLE = "skipGoogle"
 
         fun sv(s: String): JSONObject = JSONObject().put("stringValue", s)
 
@@ -280,6 +407,26 @@ class SupportCloud(ctx: Context) {
         fun field(fields: JSONObject?, name: String): String {
             val v = fields?.optJSONObject(name) ?: return ""
             return v.optString("stringValue", v.optString("timestampValue", ""))
+        }
+
+        fun parseLicense(doc: JSONObject): License {
+            val f = doc.optJSONObject("fields")
+            return License(
+                uid = doc.optString("name").substringAfterLast('/'), email = field(f, "email"), name = field(f, "name"),
+                brand = field(f, "brand"), model = field(f, "model"), status = field(f, "status"),
+                createdAt = field(f, "createdAt"), expiresAt = parseTime(field(f, "expiresAt")),
+            )
+        }
+
+        /** RFC 3339 из Firestore («2026-11-15T10:00:00Z», с долями секунды или без) -> мс; не разобрать - 0. */
+        fun parseTime(s: String): Long {
+            if (s.isBlank()) return 0L
+            val base = s.substringBefore('.').removeSuffix("Z")
+            return try {
+                SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US).apply { timeZone = TimeZone.getTimeZone("UTC") }.parse(base)?.time ?: 0L
+            } catch (_: Exception) {
+                0L
+            }
         }
 
         /** Ответ runQuery: элементы без document (пустой результат) пропускаются. */

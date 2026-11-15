@@ -72,7 +72,7 @@ class UpdatePrefs(ctx: Context) {
  */
 object Updater {
     /** HOG CarLink: обновление из своих релизов включено (UpdateLogic.REPO); у апстрима 4.0 выключено. */
-    const val ENABLED = UpdateLogic.ENABLED
+    val ENABLED: Boolean get() = UpdateLogic.ENABLED
 
     enum class Step { IDLE, CHECKING, DOWNLOADING, INSTALLING }
 

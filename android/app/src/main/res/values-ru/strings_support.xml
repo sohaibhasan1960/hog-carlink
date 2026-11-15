@@ -56,4 +56,37 @@
     <string name="acc_title">Активация HOG CarLink</string>
     <string name="acc_why">Войдите через аккаунт Google, чтобы активировать приложение. Подключение к машине работает только после входа, а запросы в поддержку привязаны к аккаунту.</string>
     <string name="acc_note">Используются только имя и почта. Нужно один раз на телефон.</string>
+    <!-- HOG CarLink: seller builds and subscriptions (support/Licensing, ui/LicensesScreen) -->
+    <string name="acc_no_google">Активировать без Google (одобрит владелец)</string>
+    <string name="acc_lic_checking">Проверяю подписку…</string>
+    <string name="acc_lic_pending">Запрос на активацию отправлен. Приложение заработает сразу после одобрения.</string>
+    <string name="acc_lic_suspended">Подписка на этом телефоне остановлена. Свяжитесь с продавцом.</string>
+    <string name="acc_lic_expired">Подписка закончилась. Свяжитесь с продавцом для продления.</string>
+    <string name="acc_lic_offline">Не удалось проверить подписку. Подключитесь к интернету и повторите.</string>
+    <string name="acc_retry">Проверить снова</string>
+    <string name="seller_title">Продавец</string>
+    <string name="seller_call">Позвонить %1$s</string>
+    <string name="seller_wa">WhatsApp</string>
+    <string name="lic_title">Подписчики</string>
+    <string name="lic_sellers">Продавцы</string>
+    <string name="lic_customers">Подписчики</string>
+    <string name="lic_loading">Загрузка…</string>
+    <string name="lic_auto">Автоматическое одобрение</string>
+    <string name="lic_auto_sub">Новый клиент со входом Google активируется сразу на срок ниже</string>
+    <string name="lic_term_days">Срок подписки, дней</string>
+    <string name="lic_save">Сохранить</string>
+    <string name="lic_new_seller">Код нового продавца (латиница)</string>
+    <string name="lic_add">Добавить</string>
+    <string name="lic_no_google">Без аккаунта Google</string>
+    <string name="lic_state_ok">Активна до %1$s</string>
+    <string name="lic_state_expired">Закончилась %1$s</string>
+    <string name="lic_state_pending">Ждёт одобрения</string>
+    <string name="lic_state_suspended">Остановлена</string>
+    <string name="lic_plus_month">+30 дней</string>
+    <string name="lic_plus_year">+1 год</string>
+    <string name="lic_suspend">Остановить</string>
+    <string name="lic_resume">Включить</string>
+    <string name="lic_saving">Сохраняю…</string>
+    <string name="lic_failed">Ошибка: %1$s</string>
+    <string name="lic_none">Подписчиков пока нет.</string>
 </resources>

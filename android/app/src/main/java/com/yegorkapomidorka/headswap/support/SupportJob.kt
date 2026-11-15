@@ -48,7 +48,7 @@ class SupportJob : JobService() {
         /** Запланировать, если есть что проверять (владелец или клиент с запросами). */
         fun schedule(ctx: Context) {
             val c = SupportCloud(ctx)
-            if (!c.isOwner && !c.hasSent) return
+            if (!c.isOwner && !c.hasSent && !com.yegorkapomidorka.headswap.AppBrand.isSeller) return
             // планирование не должно ронять приложение (hog.15 падал на старте без ACCESS_NETWORK_STATE)
             try {
                 val js = ctx.getSystemService(JobScheduler::class.java) ?: return
@@ -68,6 +68,8 @@ class SupportJob : JobService() {
         /** Одна проверка (блокирующая): новые запросы для владельца, новые ответы для клиента. */
         fun check(ctx: Context) {
             val c = SupportCloud(ctx)
+            // сборка продавца: продление или остановка подписки доходит до телефона без открытия приложения
+            if (com.yegorkapomidorka.headswap.AppBrand.isSeller && c.uid != null) Licensing.refreshQuietly(ctx)
             if (c.isOwner) {
                 val list = c.all(50)
                 val seen = c.ownerSeen

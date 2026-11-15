@@ -7,6 +7,7 @@ import com.yegorkapomidorka.headswap.dex.ActivationToken
 class HeadswapApp : Application() {
     override fun onCreate() {
         super.onCreate()
+        AppBrand.init(this)
         // current() создаёт токен через синхронный commit(): не на главном потоке
         Thread({
             try {

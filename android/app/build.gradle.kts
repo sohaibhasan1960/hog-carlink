@@ -11,18 +11,37 @@ val releaseProps = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
+// HOG CarLink: seller build (-Pbrand=<id>). Name, number and logo live outside the public repo:
+// ../../brands/<brand>/ (brand.properties + res/), or -PbrandDir=<path>.
+val brandId: String? = (project.findProperty("brand") as String?)?.takeIf { it.isNotBlank() }
+val brandDir: File? = brandId?.let { id ->
+    (project.findProperty("brandDir") as String?)?.let { file(it) } ?: rootProject.file("../../brands/$id")
+}
+val brandProps = Properties().apply {
+    val f = brandDir?.resolve("brand.properties")
+    if (brandId != null) {
+        require(f != null && f.exists()) { "brand '$brandId': no ${f}" }
+        f.reader(Charsets.UTF_8).use { load(it) }
+    }
+}
+
 android {
     namespace = "com.yegorkapomidorka.headswap"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "com.hog.carlink"
+        applicationId = brandProps.getProperty("applicationId") ?: "com.hog.carlink"
         minSdk = 29
         targetSdk = 37
         versionCode = 97
         versionName = "4.1.1-hog.32"
+        // seller build: its own version line (brand.properties), independent of HOG releases
+        brandProps.getProperty("versionCode")?.let { versionCode = it.toInt() }
+        brandProps.getProperty("versionName")?.let { versionName = it }
         // «По воздуху» (беспровод): с 2.0.0 включён во всех сборках; выключить для проверки: gradlew assembleRelease -Pwlbeta=false
         buildConfigField("boolean", "WIRELESS_BETA", (project.findProperty("wlbeta") != "false").toString())
+        // seller build: its id ("" in HOG); the licence (subscription) is checked only there
+        buildConfigField("String", "BRAND", "\"${brandId ?: ""}\"")
     }
 
     buildFeatures {
@@ -105,9 +124,50 @@ val copyLogdiagRules = tasks.register<CopyLogdiagRules>("copyLogdiagRules") {
     rules.set(rootProject.layout.projectDirectory.file("../tools/logdiag_rules.json"))
 }
 
+// Seller build: copies of the string files with "HOG CarLink" replaced by the seller's app name.
+abstract class BrandStrings : DefaultTask() {
+    @get:InputDirectory
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val mainRes: DirectoryProperty
+
+    @get:Input
+    abstract val appName: Property<String>
+
+    @get:OutputDirectory
+    abstract val outDir: DirectoryProperty
+
+    @TaskAction
+    fun run() {
+        val out = outDir.get().asFile
+        out.deleteRecursively()
+        val res = mainRes.get().asFile
+        res.listFiles { f -> f.isDirectory && f.name.startsWith("values") }.orEmpty().forEach { dir ->
+            dir.listFiles { f -> f.name.endsWith(".xml") }.orEmpty().forEach { f ->
+                val text = f.readText(Charsets.UTF_8)
+                if ("HOG CarLink" in text) {
+                    val dst = File(out, "${dir.name}/${f.name}")
+                    dst.parentFile.mkdirs()
+                    dst.writeText(text.replace("HOG CarLink", appName.get()), Charsets.UTF_8)
+                }
+            }
+        }
+    }
+}
+
+val brandStrings = brandId?.let {
+    tasks.register<BrandStrings>("brandStrings") {
+        mainRes.set(layout.projectDirectory.dir("src/main/res"))
+        appName.set(brandProps.getProperty("appName") ?: error("brand.properties: appName"))
+    }
+}
+
 androidComponents {
     onVariants { variant ->
         variant.sources.assets?.addGeneratedSourceDirectory(copyLogdiagRules, CopyLogdiagRules::outDir)
+        if (brandStrings != null) {
+            variant.sources.res?.addGeneratedSourceDirectory(brandStrings, BrandStrings::outDir)
+            variant.sources.res?.addStaticSourceDirectory(brandDir!!.resolve("res").path)
+        }
     }
 }
 

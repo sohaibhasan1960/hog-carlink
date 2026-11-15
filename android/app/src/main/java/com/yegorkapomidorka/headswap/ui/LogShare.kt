@@ -223,7 +223,7 @@ object LogShare {
             "?"
         }
         return buildString {
-            appendLine("HOG CarLink $ver")
+            appendLine("${com.yegorkapomidorka.headswap.AppBrand.name} $ver" + if (com.yegorkapomidorka.headswap.AppBrand.isSeller) " (${com.yegorkapomidorka.headswap.BuildConfig.BRAND}, ${com.yegorkapomidorka.headswap.BuildConfig.APPLICATION_ID})" else "")
             appendLine("الوقت: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z", Locale.US).format(Date())}")
             appendLine("الجهاز: ${Build.MANUFACTURER} ${Build.MODEL}, Android ${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT}), ${Build.DISPLAY}")
             appendLine("مدة التشغيل: ${SystemClock.elapsedRealtime() / 1000} ث")

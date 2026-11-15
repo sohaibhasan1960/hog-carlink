@@ -37,6 +37,11 @@ class SupportScreen(host: MainActivity) : Screen(host) {
     init {
         val c = ctx
         val body = c.vbox(12).apply { pad(c, 16, 4, 16, 24) }
+        // сборка продавца: его логотип и связь с ним первыми
+        if (com.yegorkapomidorka.headswap.AppBrand.isSeller) {
+            body.addView(SellerCard.logo(c), lp(MATCH, c.dp(100)))
+            body.addView(SellerCard.contacts(c), lp(MATCH, WRAP))
+        }
         ownerBox = c.vbox(10)
         body.addView(ownerBox, lp(MATCH, WRAP))
 
@@ -78,7 +83,7 @@ class SupportScreen(host: MainActivity) : Screen(host) {
         } catch (_: Exception) {
             ""
         }
-        body.addView(c.text("HOG CarLink $ver", 12f, 400, c.clr(R.color.on2)).apply {
+        body.addView(c.text("${c.getString(R.string.app_name)} $ver", 12f, 400, c.clr(R.color.on2)).apply {
             gravity = Gravity.CENTER
             pad(c, 0, 16, 0, 8)
             setOnLongClickListener { askOwnerCode(); true }
@@ -242,6 +247,7 @@ class SupportScreen(host: MainActivity) : Screen(host) {
         val c = ctx
         ownerBox.removeAllViews()
         if (!cloud.isOwner) return
+        ownerBox.addView(c.containerButton(c.getString(R.string.lic_title)).apply { setOnClickListener { host.showLicenses() } }, lp(MATCH, WRAP))
         ownerBox.addView(c.sectionTitle(c.getString(R.string.sup_inbox)))
         when {
             list == null -> ownerBox.addView(c.text(c.getString(R.string.sup_offline), 14f, 400, c.clr(R.color.warn)))

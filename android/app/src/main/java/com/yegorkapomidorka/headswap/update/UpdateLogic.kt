@@ -6,7 +6,8 @@ package com.yegorkapomidorka.headswap.update
  */
 object UpdateLogic {
     /** HOG CarLink: свои релизы (тег v2.6.0-hog.N, файл hog-carlink-<версия>.apk), подписанные своим ключом. */
-    const val ENABLED = true
+    // HOG CarLink: сборка продавца (-Pbrand) с GitHub HOG не обновляется: там другой пакет
+    val ENABLED = com.yegorkapomidorka.headswap.BuildConfig.BRAND.isEmpty()
     const val REPO = "sohaibhasan1960/hog-carlink"
     const val APK_PREFIX = "hog-carlink-"
     const val API_LATEST = "https://api.github.com/repos/$REPO/releases/latest"

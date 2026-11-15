@@ -56,4 +56,37 @@
     <string name="acc_title">Activate HOG CarLink</string>
     <string name="acc_why">Sign in with your Google account to activate the app. The car connects only after sign-in, and your support requests stay linked to your account.</string>
     <string name="acc_note">Only your name and email are used. This is needed once per phone.</string>
+    <!-- HOG CarLink: seller builds and subscriptions (support/Licensing, ui/LicensesScreen) -->
+    <string name="acc_no_google">Activate without Google (owner approval)</string>
+    <string name="acc_lic_checking">Checking the subscription…</string>
+    <string name="acc_lic_pending">The activation request was sent. The app works as soon as it is approved.</string>
+    <string name="acc_lic_suspended">The subscription on this phone is stopped. Contact the seller.</string>
+    <string name="acc_lic_expired">The subscription has ended. Contact the seller to renew it.</string>
+    <string name="acc_lic_offline">Could not check the subscription. Connect to the internet and try again.</string>
+    <string name="acc_retry">Check again</string>
+    <string name="seller_title">Seller</string>
+    <string name="seller_call">Call %1$s</string>
+    <string name="seller_wa">WhatsApp</string>
+    <string name="lic_title">Subscribers</string>
+    <string name="lic_sellers">Sellers</string>
+    <string name="lic_customers">Subscribers</string>
+    <string name="lic_loading">Loading…</string>
+    <string name="lic_auto">Automatic approval</string>
+    <string name="lic_auto_sub">A new customer who signs in with Google is activated immediately for the term below</string>
+    <string name="lic_term_days">Subscription term, days</string>
+    <string name="lic_save">Save</string>
+    <string name="lic_new_seller">New seller id (latin letters)</string>
+    <string name="lic_add">Add</string>
+    <string name="lic_no_google">Without Google account</string>
+    <string name="lic_state_ok">Active until %1$s</string>
+    <string name="lic_state_expired">Ended on %1$s</string>
+    <string name="lic_state_pending">Waiting for approval</string>
+    <string name="lic_state_suspended">Stopped</string>
+    <string name="lic_plus_month">+30 days</string>
+    <string name="lic_plus_year">+1 year</string>
+    <string name="lic_suspend">Stop</string>
+    <string name="lic_resume">Activate</string>
+    <string name="lic_saving">Saving…</string>
+    <string name="lic_failed">Failed: %1$s</string>
+    <string name="lic_none">No subscribers yet.</string>
 </resources>

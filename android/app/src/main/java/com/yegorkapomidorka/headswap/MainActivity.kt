@@ -267,6 +267,9 @@ class MainActivity : Activity() {
     /** HOG CarLink: поддержка внутри приложения (запросы клиента, входящие владельца). */
     fun showSupport() = push("support", com.yegorkapomidorka.headswap.ui.SupportScreen(this))
 
+    /** HOG CarLink: владелец - подписчики сборок продавцов. */
+    fun showLicenses() = push("licenses", com.yegorkapomidorka.headswap.ui.LicensesScreen(this))
+
     /** HOG CarLink: время намаза, азан, икама, азкары. */
     fun showPrayer() = push("prayer", com.yegorkapomidorka.headswap.ui.PrayerScreen(this))
 

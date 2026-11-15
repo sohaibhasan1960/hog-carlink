@@ -303,7 +303,7 @@ class VideoSource(
 
         text.textSize = kicker
         text.color = HOG_GOLD
-        c.drawText("HOG CarLink", x, y, text)
+        c.drawText(AppBrand.name, x, y, text)
         y += kicker * 0.8f
 
         text.textSize = titleSize

@@ -69,7 +69,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
                 addView(c.icon(R.drawable.ic_logo, 22, c.clr(R.color.onlogo)), FrameLayout.LayoutParams(c.dp(22), c.dp(22), Gravity.CENTER))
             }
             addView(chip, lp(c.dp(32), c.dp(32)))
-            addView(c.text("HOG CarLink", 22f, 600).apply { letterSpacing = -0.01f }, lp(WRAP, WRAP).margins(c, 10))
+            addView(c.text(c.getString(R.string.app_name), 22f, 600).apply { letterSpacing = -0.01f }, lp(WRAP, WRAP).margins(c, 10))
             addView(modeChip, lp(WRAP, WRAP).margins(c, 8))
             addView(View(c), lp(0, 1, 1f))
             addView(c.iconButton(R.drawable.ic_settings, c.clr(R.color.on2), c.getString(R.string.home_settings)).apply {

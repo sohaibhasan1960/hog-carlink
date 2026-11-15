@@ -280,10 +280,25 @@ class BridgeService : Service() {
                 stopSelf()
                 return START_NOT_STICKY
             }
+            if (com.yegorkapomidorka.headswap.support.AccountGate.required(this)) {
+                AppLog.i("сервис: перезапуск системой, но приложение не активировано")
+                finish()
+                return START_NOT_STICKY
+            }
             onStickyRestart()
             return stickiness()
         }
         startForegroundTyped(n)
+        // HOG CarLink: не активировано (вход Google / подписка продавца) - мост не поднимаем ни из какого пути запуска
+        if (intent.action != ACTION_STOP && intent.action != ACTION_WIFI_B_AUTO_OFF &&
+            com.yegorkapomidorka.headswap.support.AccountGate.required(this)) {
+            AppLog.i("сервис: приложение не активировано, мост не запускаю (${intent.action})")
+            if (session == null && host == null && !linkWaiting) {
+                finish()
+                return START_NOT_STICKY
+            }
+            return stickiness()
+        }
         command(intent)
         return stickiness()
     }
