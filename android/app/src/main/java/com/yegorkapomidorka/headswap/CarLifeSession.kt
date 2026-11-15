@@ -256,13 +256,16 @@ class CarLifeSession(
 
     private fun onCarDataOffer(body: ByteArray) {
         val list = PbReader.parse(body) ?: return
-        val mods = PbReader.all(list, 2).mapNotNull { f -> f.data?.let { PbReader.parse(it) } }
+        val entries = PbReader.all(list, 2).mapNotNull { it.data }
+        val mods = entries.mapNotNull { PbReader.parse(it) }
             .map { "${PbReader.int(it, 1)}/${PbReader.int(it, 2)}/${PbReader.int(it, 3)}" }
         AppLog.i("данные машины: ГУ предлагает moduleID/flag/частота = $mods")
-        if (carDataStarted || mods.isEmpty()) return
+        if (carDataStarted || entries.isEmpty()) return
         carDataStarted = true
-        AppLog.i("-> ГУ: CAR_DATA_START (тот же список) - жду CAR_VELOCITY", true)
-        sendCmd(Msg.CAR_DATA_START, body)
+        // 13.11: CAR_DATA_START всем списком ID.6 молча проигнорировала. Как Baidu CarDataManager - по модулю на
+        // сообщение (CarlifeVehicleInfo {moduleID, flag, frequency}), в том виде, в каком ГУ его предложила.
+        AppLog.i("-> ГУ: CAR_DATA_START по модулю (${entries.size}) - жду CAR_VELOCITY / CAR_GPS", true)
+        for (e in entries) sendCmd(Msg.CAR_DATA_START, e)
     }
 
     /** Нить cl-sched. Последнее состояние звонка, отправленное ГУ. */

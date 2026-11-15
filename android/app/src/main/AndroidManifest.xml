@@ -226,6 +226,11 @@
                 <action android:name="android.bluetooth.device.action.ACL_CONNECTED" />
                 <action android:name="android.bluetooth.device.action.ACL_DISCONNECTED" />
             </intent-filter>
+            <!-- HOG: после перезагрузки машина часто уже подключена по Bluetooth раньше нас - ACL_CONNECTED не будет -->
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
         </receiver>
 
         <!-- HOG CarLink: система привязывает сервис, когда выбранная машина подключилась по Bluetooth -->

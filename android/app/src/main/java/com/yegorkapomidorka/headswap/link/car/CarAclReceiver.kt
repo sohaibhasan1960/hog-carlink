@@ -19,6 +19,7 @@ import com.yegorkapomidorka.headswap.link.diag.WLog
 class CarAclReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
+        if (action == Intent.ACTION_BOOT_COMPLETED || action == Intent.ACTION_MY_PACKAGE_REPLACED) return afterBoot(context, action)
         if (action != BluetoothDevice.ACTION_ACL_CONNECTED && action != BluetoothDevice.ACTION_ACL_DISCONNECTED) return
         if (!BuildConfig.WIRELESS_BETA) return
         val mac = CarProfile(context).btMac ?: return
@@ -34,6 +35,26 @@ class CarAclReceiver : BroadcastReceiver() {
         } else {
             WLog.ev(WLog.TRIGGER, "acl-disconnected", "dev" to WLog.maskMac(addr))
             CarTrigger.gone(context, "acl")
+        }
+    }
+
+    /**
+     * HOG: после перезагрузки (или обновления) телефон часто подключается к машине по Bluetooth ещё до нас, и
+     * ACL_CONNECTED уже не придёт (лог 15.11: перезагрузка 05:25, машина ждала до переподключения в 05:39).
+     * Машина уже подключена (A2DP/HEADSET) - запускаем то же, что и по ACL.
+     */
+    private fun afterBoot(context: Context, action: String) {
+        if (!BuildConfig.WIRELESS_BETA) return
+        val mac = CarProfile(context).btMac ?: return
+        AppLog.init(context)
+        val pending = goAsync()
+        com.yegorkapomidorka.headswap.link.bt.CarBtState.check(context, mac) { connected ->
+            try {
+                WLog.ev(WLog.TRIGGER, "boot-check", "action" to action.substringAfterLast('.'), "connected" to connected)
+                if (connected) CarTrigger.near(context, "boot")
+            } finally {
+                pending.finish()
+            }
         }
     }
 
