@@ -123,7 +123,7 @@ class LicensesScreen(host: MainActivity) : Screen(host) {
             Licensing.State.EXPIRED -> c.getString(R.string.lic_state_expired, date(l.expiresAt))
             Licensing.State.PENDING -> c.getString(R.string.lic_state_pending)
             Licensing.State.SUSPENDED -> c.getString(R.string.lic_state_suspended)
-            Licensing.State.NONE -> l.status
+            Licensing.State.NONE, Licensing.State.REFUSED -> l.status
         }
         box.addView(c.text(stateText, 14f, 500, c.clr(if (st == Licensing.State.OK) R.color.ok else R.color.warn)))
         val row = c.hbox(8)

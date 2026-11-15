@@ -37,6 +37,9 @@ class AccountGateTest {
         assertEquals(Licensing.State.NONE, Licensing.state("", 0, now))
         assertEquals(now + 30 * Licensing.DAY_MS, Licensing.expiryFor(now, 30))
         assertEquals(now, Licensing.expiryFor(now, -5))
+        // без сверки с сервером больше недели кэш не действует
+        assertEquals(Licensing.State.OK, Licensing.cachedState("active", now + 30 * Licensing.DAY_MS, now - Licensing.DAY_MS, now))
+        assertEquals(Licensing.State.NONE, Licensing.cachedState("active", now + 30 * Licensing.DAY_MS, now - 8 * Licensing.DAY_MS, now))
     }
 
     @Test

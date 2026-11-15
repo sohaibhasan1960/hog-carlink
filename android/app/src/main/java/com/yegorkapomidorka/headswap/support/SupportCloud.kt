@@ -72,6 +72,8 @@ class SupportCloud(ctx: Context) {
                 val r = http("POST", "$SECURE_TOKEN?key=$API_KEY", body, null, form = true)
                 return store(r.getString("id_token"), r.getString("refresh_token"), r.getString("user_id"), r.getString("expires_in"))
             } catch (e: HttpError) {
+                // 5xx / 429 - временно: не терять вход Google и лицензию, повторим позже
+                if (e.code != 400 && e.code != 401 && e.code != 403) throw e
                 AppLog.i("поддержка: токен не обновился (${e.code}), вхожу заново", true)
             }
         }
@@ -235,10 +237,14 @@ class SupportCloud(ctx: Context) {
     val cachedLicenseExpires: Long get() = sp.getLong(K_LIC_EXP, 0L)
     val cachedLicenseUid: String get() = sp.getString(K_LIC_UID, "") ?: ""
 
-    fun clearLicense() = sp.edit().remove(K_LIC_STATUS).remove(K_LIC_EXP).remove(K_LIC_UID).apply()
+    fun clearLicense() = sp.edit().remove(K_LIC_STATUS).remove(K_LIC_EXP).remove(K_LIC_UID).remove(K_LIC_CHECKED).apply()
+
+    /** Когда лицензия последний раз сверялась с сервером (мс). */
+    val cachedLicenseCheckedAt: Long get() = sp.getLong(K_LIC_CHECKED, 0L)
 
     private fun cache(l: License) =
-        sp.edit().putString(K_LIC_STATUS, l.status).putLong(K_LIC_EXP, l.expiresAt).putString(K_LIC_UID, l.uid).apply()
+        sp.edit().putString(K_LIC_STATUS, l.status).putLong(K_LIC_EXP, l.expiresAt).putString(K_LIC_UID, l.uid)
+            .putLong(K_LIC_CHECKED, System.currentTimeMillis()).apply()
 
     /** Условия продавца (sellers/{brand}): автоодобрение и срок подписки в днях. Нет записи - вручную, 0 дней. */
     @Throws(IOException::class)
@@ -397,6 +403,7 @@ class SupportCloud(ctx: Context) {
         private const val K_LIC_EXP = "licExpires"
         private const val K_LIC_UID = "licUid"
         private const val K_SKIP_GOOGLE = "skipGoogle"
+        private const val K_LIC_CHECKED = "licChecked"
 
         fun sv(s: String): JSONObject = JSONObject().put("stringValue", s)
 

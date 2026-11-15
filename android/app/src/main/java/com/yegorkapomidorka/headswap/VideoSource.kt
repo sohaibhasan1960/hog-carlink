@@ -364,6 +364,12 @@ class VideoSource(
      * [size] - высота всего знака с чертой, центр в ([cx], [cy]). Плоские цвета: слабый энкодер не любит градиенты.
      */
     private fun drawHog(c: Canvas, cx: Float, cy: Float, size: Float, p: Paint) {
+        AppBrand.logo?.let { b ->      // сборка продавца: его логотип вместо знака HOG
+            val h = size * 1.6f
+            val w = h * b.width / b.height
+            c.drawBitmap(b, null, android.graphics.RectF(cx - w / 2f, cy - h / 2f, cx + w / 2f, cy + h / 2f), Paint(Paint.FILTER_BITMAP_FLAG))
+            return
+        }
         val k = size / 26.5f
         c.save()
         c.translate(cx - 54f * k, cy - 54.25f * k)

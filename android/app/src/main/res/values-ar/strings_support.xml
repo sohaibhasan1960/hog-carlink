@@ -89,4 +89,5 @@
     <string name="lic_saving">جارٍ الحفظ…</string>
     <string name="lic_failed">تعذّر: %1$s</string>
     <string name="lic_none">لا يوجد مشتركون بعد.</string>
+    <string name="acc_lic_refused">التفعيل التلقائي غير متاح لهذا البائع بعد. تواصل مع البائع.</string>
 </resources>

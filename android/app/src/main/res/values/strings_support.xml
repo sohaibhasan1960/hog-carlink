@@ -89,4 +89,5 @@
     <string name="lic_saving">Saving…</string>
     <string name="lic_failed">Failed: %1$s</string>
     <string name="lic_none">No subscribers yet.</string>
+    <string name="acc_lic_refused">Automatic activation is not available for this seller yet. Contact the seller.</string>
 </resources>

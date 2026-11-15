@@ -74,6 +74,7 @@ class AccountScreen(host: MainActivity) : Screen(host) {
                 Licensing.State.SUSPENDED -> R.string.acc_lic_suspended
                 Licensing.State.EXPIRED -> R.string.acc_lic_expired
                 Licensing.State.NONE -> R.string.acc_lic_offline
+                Licensing.State.REFUSED -> R.string.acc_lic_refused
                 Licensing.State.OK -> R.string.acc_lic_checking
             }
             box.addView(centered(c.getString(text), 17f), lp(MATCH, WRAP))

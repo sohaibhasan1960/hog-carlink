@@ -299,6 +299,7 @@ class BridgeService : Service() {
             }
             return stickiness()
         }
+        com.yegorkapomidorka.headswap.support.Licensing.refreshInBackground(this)
         command(intent)
         return stickiness()
     }

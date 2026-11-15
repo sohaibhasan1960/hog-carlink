@@ -89,4 +89,5 @@
     <string name="lic_saving">Сохраняю…</string>
     <string name="lic_failed">Ошибка: %1$s</string>
     <string name="lic_none">Подписчиков пока нет.</string>
+    <string name="acc_lic_refused">Автоматическая активация для этого продавца пока недоступна. Свяжитесь с продавцом.</string>
 </resources>

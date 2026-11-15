@@ -16,7 +16,15 @@ import java.io.IOException
 object Licensing {
     const val DAY_MS = 24 * 60 * 60 * 1000L
 
-    enum class State { OK, PENDING, SUSPENDED, EXPIRED, NONE }
+    /** REFUSED - сервер отказал в создании лицензии (у продавца нет записи / автоодобрение выключено). */
+    enum class State { OK, PENDING, SUSPENDED, EXPIRED, NONE, REFUSED }
+
+    /** Без сверки с сервером дольше этого срока лицензия по кэшу не считается: остановка доходит до телефона. */
+    const val MAX_OFFLINE_MS = 7 * DAY_MS
+
+    /** Чистая логика для тестов: состояние по кэшу с учётом давности проверки. */
+    fun cachedState(status: String, expiresAt: Long, checkedAt: Long, now: Long): State =
+        if (now - checkedAt > MAX_OFFLINE_MS) State.NONE else state(status, expiresAt, now)
 
     /** Чистая логика для тестов. */
     fun state(status: String, expiresAt: Long, now: Long): State = when (status) {
@@ -33,10 +41,17 @@ object Licensing {
         if (!AppBrand.isSeller) return State.OK
         val c = SupportCloud(ctx)
         if (c.cachedLicenseUid.isEmpty() || c.cachedLicenseUid != c.uid) return State.NONE
-        return state(c.cachedLicenseStatus, c.cachedLicenseExpires, System.currentTimeMillis())
+        return cachedState(c.cachedLicenseStatus, c.cachedLicenseExpires, c.cachedLicenseCheckedAt, System.currentTimeMillis())
     }
 
     fun valid(ctx: Context): Boolean = cached(ctx) == State.OK
+
+    /** Мост запускается: сверить лицензию в фоне (продление или остановка без открытия приложения). */
+    fun refreshInBackground(ctx: Context) {
+        if (!AppBrand.isSeller) return
+        val app = ctx.applicationContext
+        Thread({ refreshQuietly(app) }, "license-refresh").start()
+    }
 
     /**
      * Проверить на сервере, а если лицензии ещё нет - создать (автоодобрение продавца со входом Google, иначе ждать).
@@ -57,9 +72,12 @@ object Licensing {
         return s
     }
 
-    /** То же без исключений: сеть недоступна - по кэшу. */
+    /** То же без исключений: сеть недоступна - по кэшу, отказ сервера - REFUSED. */
     fun refreshQuietly(ctx: Context): State = try {
         refresh(ctx)
+    } catch (e: SupportCloud.HttpError) {
+        AppLog.i("лицензия: сервер отказал (${e.code}): ${e.body.take(200)}", true)
+        if (e.code == 403) State.REFUSED else cached(ctx)
     } catch (e: Exception) {
         AppLog.i("лицензия: проверка не удалась (${e.javaClass.simpleName}: ${e.message}), по кэшу", true)
         cached(ctx)

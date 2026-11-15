@@ -68,7 +68,9 @@ class HomeScreen(host: MainActivity) : Screen(host) {
                 background = c.shape(c.clr(R.color.logo_bg), 10)
                 addView(c.icon(R.drawable.ic_logo, 22, c.clr(R.color.onlogo)), FrameLayout.LayoutParams(c.dp(22), c.dp(22), Gravity.CENTER))
             }
-            addView(chip, lp(c.dp(32), c.dp(32)))
+            // сборка продавца: его логотип вместо знака HOG
+            if (com.yegorkapomidorka.headswap.AppBrand.isSeller) addView(SellerCard.logo(c), lp(c.dp(72), c.dp(32)))
+            else addView(chip, lp(c.dp(32), c.dp(32)))
             addView(c.text(c.getString(R.string.app_name), 22f, 600).apply { letterSpacing = -0.01f }, lp(WRAP, WRAP).margins(c, 10))
             addView(modeChip, lp(WRAP, WRAP).margins(c, 8))
             addView(View(c), lp(0, 1, 1f))
