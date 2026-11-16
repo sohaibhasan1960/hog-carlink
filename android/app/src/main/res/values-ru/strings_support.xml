@@ -57,7 +57,7 @@
     <string name="acc_why">Войдите через аккаунт Google, чтобы активировать приложение. Подключение к машине работает только после входа, а запросы в поддержку привязаны к аккаунту.</string>
     <string name="acc_note">Используются только имя и почта. Нужно один раз на телефон.</string>
     <!-- HOG CarLink: seller builds and subscriptions (support/Licensing, ui/LicensesScreen) -->
-    <string name="acc_no_google">Активировать без Google (одобрит владелец)</string>
+    <string name="acc_no_google">Активировать без аккаунта Google</string>
     <string name="acc_lic_checking">Проверяю подписку…</string>
     <string name="acc_lic_pending">Запрос на активацию отправлен. Приложение заработает сразу после одобрения.</string>
     <string name="acc_lic_suspended">Подписка на этом телефоне остановлена. Свяжитесь с продавцом.</string>

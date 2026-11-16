@@ -57,7 +57,7 @@
     <string name="acc_why">سجّل الدخول بحساب Google لتفعيل التطبيق. لن يتصل بالسيارة قبل تسجيل الدخول، وتبقى طلبات الدعم مرتبطة بحسابك.</string>
     <string name="acc_note">يُستخدم اسمك وبريدك فقط. يلزم ذلك مرة واحدة لكل هاتف.</string>
     <!-- HOG CarLink: seller builds and subscriptions (support/Licensing, ui/LicensesScreen) -->
-    <string name="acc_no_google">التفعيل بدون حساب Google (بموافقة المالك)</string>
+    <string name="acc_no_google">التفعيل بدون حساب Google</string>
     <string name="acc_lic_checking">جارٍ التحقق من الاشتراك…</string>
     <string name="acc_lic_pending">أُرسل طلب التفعيل. سيعمل التطبيق فور الموافقة عليه.</string>
     <string name="acc_lic_suspended">الاشتراك على هذا الهاتف موقوف. تواصل مع البائع.</string>

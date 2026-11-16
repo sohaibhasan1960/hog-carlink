@@ -54,7 +54,7 @@ object Licensing {
     }
 
     /**
-     * Проверить на сервере, а если лицензии ещё нет - создать (автоодобрение продавца со входом Google, иначе ждать).
+     * Проверить на сервере, а если лицензии ещё нет - создать (автоодобрение продавца - сразу активна, иначе ждать владельца).
      * Блокирующий вызов: не с главной нити.
      */
     @Throws(IOException::class)
@@ -64,7 +64,7 @@ object Licensing {
         c.token()
         val lic = c.myLicense() ?: run {
             val (auto, days) = c.seller(BuildConfig.BRAND)
-            val active = auto && days > 0 && c.googleEmail.isNotBlank()
+            val active = auto && days > 0     // автоодобрение продавца: сразу, без ожидания владельца (и без Google)
             c.createLicense(BuildConfig.BRAND, "${Build.MANUFACTURER} ${Build.MODEL}", active, days)
         }
         val s = state(lic.status, lic.expiresAt, System.currentTimeMillis())

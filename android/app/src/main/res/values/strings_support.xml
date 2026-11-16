@@ -57,7 +57,7 @@
     <string name="acc_why">Sign in with your Google account to activate the app. The car connects only after sign-in, and your support requests stay linked to your account.</string>
     <string name="acc_note">Only your name and email are used. This is needed once per phone.</string>
     <!-- HOG CarLink: seller builds and subscriptions (support/Licensing, ui/LicensesScreen) -->
-    <string name="acc_no_google">Activate without Google (owner approval)</string>
+    <string name="acc_no_google">Activate without a Google account</string>
     <string name="acc_lic_checking">Checking the subscription…</string>
     <string name="acc_lic_pending">The activation request was sent. The app works as soon as it is approved.</string>
     <string name="acc_lic_suspended">The subscription on this phone is stopped. Contact the seller.</string>
