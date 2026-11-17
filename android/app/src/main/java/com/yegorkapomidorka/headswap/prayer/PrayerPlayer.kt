@@ -343,6 +343,7 @@ class PrayerPlayer : Service() {
         QuranPrefs(this).speed = v
         val mp = player
         exo?.setPlaybackSpeed(v)
+        if (current == What.HIFZ) exo?.let { HifzAudio.trim(it, HifzPrefs(this).trimPauses) }
         if (mp != null && quranPrepared && !quranPaused) applySpeed(mp)
         AppLog.i("Коран: скорость ${com.yegorkapomidorka.headswap.quran.Quran.speedLabel(v)}")
         quranState()
@@ -397,10 +398,12 @@ class PrayerPlayer : Service() {
         val queue = QuranPages.queue(page, prefs.pagesPerSession, repeat, prefs.ayahRepeat)
         hifzQueue = queue
         try {
-            val e = androidx.media3.exoplayer.ExoPlayer.Builder(this)
+            val e = androidx.media3.exoplayer.ExoPlayer.Builder(this, HifzAudio.renderers(this))
                 .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(HifzCache.dataSource(this)))
+                .setLoadControl(HifzAudio.loadControl())
                 .build()
             exo = e
+            HifzAudio.trim(e, prefs.trimPauses)
             e.setAudioAttributes(androidx.media3.common.AudioAttributes.Builder().setUsage(androidx.media3.common.C.USAGE_MEDIA)
                 .setContentType(androidx.media3.common.C.AUDIO_CONTENT_TYPE_SPEECH).build(), false)
             e.setWakeMode(androidx.media3.common.C.WAKE_MODE_NETWORK)
@@ -450,7 +453,7 @@ class PrayerPlayer : Service() {
             e.prepare()
             hifzState(0)
             notify(title, getString(R.string.qr_loading))
-            AppLog.i("حفظ: страница $page, страниц ${prefs.pagesPerSession}, повторов $repeat, ${voice.folder}, файлов ${queue.size}")
+            AppLog.i("حفظ: страница $page, страниц ${prefs.pagesPerSession}, повторов $repeat, ${voice.folder}, файлов ${queue.size}, тишина ${if (prefs.trimPauses) "сокращается" else "как в записи"}")
         } catch (e: Exception) {
             AppLog.e("حفظ: поток не запустился", e)
             finish("حفظ: поток не запустился")

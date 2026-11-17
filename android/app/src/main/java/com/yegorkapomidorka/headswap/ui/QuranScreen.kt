@@ -101,6 +101,11 @@ class QuranScreen(host: MainActivity) : Screen(host) {
             buildHifz()
         }, lp(MATCH, WRAP))
         hifzBox.addView(valueRow(c.getString(R.string.hf_voice), voiceName(hifz.voice)) { pickVoice() }, lp(MATCH, WRAP))
+        hifzBox.addView(ToggleRow(c, c.getString(R.string.hf_trim), c.getString(R.string.hf_trim_sub), hifz.trimPauses) {
+            hifz.trimPauses = it
+            // играет - сразу, тем же действием, что и скорость
+            if (PrayerPlayer.quranActive) PrayerPlayer.control(c, PrayerPlayer.ACTION_Q_SPEED_SET)
+        }.view, lp(MATCH, WRAP))
         hifzBox.addView(c.primaryButton(c.getString(R.string.hf_play, page), heightDp = 56, sp = 17f).apply {
             setOnClickListener { PrayerPlayer.hifz(c, hifz.page) }
         }, lp(MATCH, WRAP))

@@ -34,6 +34,14 @@ class HifzPrefs(ctx: Context) {
             ?: QuranPages.Voice.HUSARY_MUALLIM
         set(v) = sp.edit().putString("voice", v.name).apply()
 
+    /**
+     * Сокращать долгую тишину в записях (у «المعلّم» после каждого аята 3-4 с на повтор за чтецом, у ряда чтецов
+     * 1-2 с в начале файла): тишина длиннее 0.7 с ужимается до 0.5 с, короткие паузы чтения не трогаются.
+     */
+    var trimPauses: Boolean
+        get() = sp.getBoolean("trimPauses", true)
+        set(v) = sp.edit().putBoolean("trimPauses", v).apply()
+
     /** Дослушанных до конца страниц всего (прогресс плана). */
     var done: Int
         get() = sp.getInt("done", 0)
