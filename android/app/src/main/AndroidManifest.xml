@@ -293,6 +293,11 @@
                 <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
+        <!-- HOG CarLink: «شاشة تسلا» - страница для браузера Tesla (tesla/TeslaWeb), держит процесс, пока включена -->
+        <service
+            android:name=".tesla.TeslaWebService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice" />
         <meta-data
             android:name="com.google.android.gms.car.application"
             android:resource="@xml/automotive_app_desc" />

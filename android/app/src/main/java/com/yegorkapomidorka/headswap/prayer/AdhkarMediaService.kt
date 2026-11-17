@@ -24,9 +24,25 @@ import java.time.format.DateTimeFormatter
  * Для приложений не из Play в Android Auto нужно включить «Неизвестные источники» (настройки разработчика AA).
  */
 class AdhkarMediaService : MediaBrowserService() {
+    private val main = android.os.Handler(android.os.Looper.getMainLooper())
+    /** Индикатор намаза в названии вкладки: обновлять каждые 30 с, пока Android Auto держит сервис. */
+    private val tick = object : Runnable {
+        override fun run() {
+            notifyChildrenChanged(ROOT)
+            notifyChildrenChanged(TIMES)
+            main.postDelayed(this, 30_000)
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         sessionToken = PrayerSession.get(this).sessionToken
+        main.postDelayed(tick, 30_000)
+    }
+
+    override fun onDestroy() {
+        main.removeCallbacks(tick)
+        super.onDestroy()
     }
 
     /** Подсказка Android Auto: списки, а не сетка - длинные арабские названия сур и глав в сетке обрезаются. */
@@ -50,7 +66,9 @@ class AdhkarMediaService : MediaBrowserService() {
                 // одна книга - сразу её главы, несколько - список книг
                 if (books.size == 1) out.add(item(BOOK + books[0].id, AudioBook.displayName(books[0].name), getString(R.string.ab_chapters, books[0].chapters.size), playable = false))
                 else if (books.isNotEmpty()) out.add(item(LIBRARY, getString(R.string.ab_title), getString(R.string.ab_books, books.size), playable = false))
-                out.add(item(TIMES, getString(R.string.pr_car_times), PrayerPrefs(this).place.ifBlank { null }, playable = false))
+                // HOG: как в Hocom - следующий намаз / отсчёт икамы прямо в названии вкладки
+                val ind = PrayerIndicatorText.now(this)
+                out.add(item(TIMES, ind?.short ?: getString(R.string.pr_car_times), PrayerPrefs(this).place.ifBlank { null }, playable = false))
             }
             QURAN -> {
                 val q = QuranPrefs(this)
@@ -80,6 +98,9 @@ class AdhkarMediaService : MediaBrowserService() {
                 if (day == null) {
                     out.add(item(PrayerPlayer.What.TEST_ADHAN.name, getString(R.string.pr_no_place), null, playable = true))
                 } else {
+                    PrayerIndicatorText.now(this)?.let { ind ->
+                        out.add(item(PrayerPlayer.What.TEST_ADHAN.name + ":" + ind.state.prayer.name, ind.short, ind.tip, playable = true))
+                    }
                     val hm = DateTimeFormatter.ofPattern("HH:mm")
                     for (p in Prayer.values()) {
                         val t = hm.format(Instant.ofEpochMilli(day[p]).atZone(zone))

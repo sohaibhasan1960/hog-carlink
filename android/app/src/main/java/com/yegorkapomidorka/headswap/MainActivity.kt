@@ -144,6 +144,9 @@ class MainActivity : Activity() {
         com.yegorkapomidorka.headswap.support.AutoReport.onAppVisible(this)
         // HOG: из фона Android не даёт мосту микрофон телефона (AA слышит тишину); на экране - даёт
         BridgeService.requestMicType(this)
+        // HOG: «شاشة تسلا» включена, а процесс перезапускался - поднять страницу снова (приложение на экране)
+        if (com.yegorkapomidorka.headswap.tesla.TeslaWeb.enabled(this) && !com.yegorkapomidorka.headswap.tesla.TeslaWeb.running)
+            com.yegorkapomidorka.headswap.tesla.TeslaWebService.apply(this)
         gateAccount()
     }
 

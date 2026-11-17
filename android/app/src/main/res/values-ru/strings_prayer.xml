@@ -95,4 +95,13 @@
     <string name="pr_speed_bit">Чуть быстрее</string>
     <string name="pr_speed_normal">Обычная</string>
     <string name="pr_human_offline">Нет интернета для записей: дальше голосом телефона</string>
+    <string name="pr_jumuah">Джума</string>
+    <string name="pr_ind_next">%1$s %2$s · через %3$s</string>
+    <string name="pr_ind_soon">Скоро азан: %1$s</string>
+    <string name="pr_ind_iqama">Икама %1$s через %2$s</string>
+    <string name="pr_ind_tip">Азан %1$s: %2$s — икама: %3$s</string>
+    <string name="pr_ind_tip_friday">Азан %1$s: %2$s</string>
+    <string name="pr_ind_left">до икамы</string>
+    <string name="pr_ind_h">ч</string>
+    <string name="pr_ind_m">мин</string>
 </resources>

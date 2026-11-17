@@ -95,4 +95,13 @@
     <string name="pr_speed_bit">A little faster</string>
     <string name="pr_speed_normal">Normal</string>
     <string name="pr_human_offline">No internet for the recordings: continuing with the phone voice</string>
+    <string name="pr_jumuah">Jumuah</string>
+    <string name="pr_ind_next">%1$s %2$s · in %3$s</string>
+    <string name="pr_ind_soon">%1$s adhan is near</string>
+    <string name="pr_ind_iqama">%1$s iqama in %2$s</string>
+    <string name="pr_ind_tip">%1$s adhan: %2$s — iqama: %3$s</string>
+    <string name="pr_ind_tip_friday">%1$s adhan: %2$s</string>
+    <string name="pr_ind_left">left to iqama</string>
+    <string name="pr_ind_h">h</string>
+    <string name="pr_ind_m">min</string>
 </resources>

@@ -158,6 +158,23 @@ class QuranScreen(host: MainActivity) : Screen(host) {
         if (hifz.done > 0) hifzBox.addView(c.text(c.getString(R.string.hf_progress, hifz.done), 14f, 500, c.clr(R.color.on2)).apply {
             pad(c, 16, 0, 16, 0)
         }, lp(MATCH, WRAP))
+        // HOG: «شاشة تسلا» - мусхаф и план в браузере Tesla (у неё нет CarLife / Android Auto)
+        val tesla = com.yegorkapomidorka.headswap.tesla.TeslaWeb
+        hifzBox.addView(ToggleRow(c, c.getString(R.string.tesla_title), c.getString(R.string.tesla_sub), tesla.enabled(c)) { on ->
+            tesla.setEnabled(c, on)
+            com.yegorkapomidorka.headswap.tesla.TeslaWebService.apply(c)
+            hifzBox.postDelayed({ buildHifz() }, 400)
+        }.view, lp(MATCH, WRAP))
+        if (tesla.enabled(c)) {
+            val ips = tesla.addresses()
+            val text = if (ips.isEmpty()) c.getString(R.string.tesla_no_ip)
+                else c.getString(R.string.tesla_steps) + "\n" + ips.joinToString("\n") { tesla.url(c, it) }
+            hifzBox.addView(c.text(text, 15f, 500).apply {
+                pad(c, 16, 0, 16, 0)
+                lineHeight = c.dp(22)
+                setTextIsSelectable(true)
+            }, lp(MATCH, WRAP))
+        }
         hifzBox.addView(c.text(c.getString(R.string.hf_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
     }
 

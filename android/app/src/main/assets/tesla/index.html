@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HOG · المصحف</title>
+<!-- HOG CarLink: страница для браузера Tesla (сервер - TeslaWeb.kt). Мусхаф за чтецом, кнопки плана, индикатор намаза. -->
+<style>
+@font-face { font-family: hafs; src: url(/font.ttf); }
+:root { --bg:#14171c; --ink:#f1e9d8; --gold:#d9b15c; --dim:#8a857b; --btn:#2a2f37; --mark:rgba(217,177,92,.4); --green:#0f3d2e; }
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin:0; height:100%; background:var(--bg); color:var(--ink); font-family: system-ui, sans-serif; overflow:hidden; }
+#top { position:absolute; top:0; left:0; right:0; height:9vh; display:flex; align-items:center; justify-content:space-between; padding:0 2vw; }
+#pill { display:flex; align-items:center; gap:.6em; padding:.45em 1.1em; border-radius:999px; background:rgba(255,255,255,.12);
+  font-size:2.6vh; white-space:nowrap; transition:background .4s, box-shadow .4s; }
+#pill.gold { background:linear-gradient(90deg,#b8893a,#e2c06d); color:#1b1408; }
+#pill.soon { animation:glow 1.4s ease-in-out infinite; }
+@keyframes glow { 0%,100% { box-shadow:0 0 0 0 rgba(226,192,109,.0);} 50% { box-shadow:0 0 18px 4px rgba(226,192,109,.55);} }
+#pageno { color:var(--dim); font-size:2.4vh; }
+#sheet { position:absolute; top:9vh; bottom:13vh; left:3vw; right:3vw; }
+.line { position:absolute; left:0; right:0; display:flex; align-items:center; font-family:hafs; white-space:nowrap; }
+.line.j { justify-content:space-between; }
+.line.c { justify-content:center; gap:.3em; }
+.tok.mark { color:var(--gold); }
+.tok.lit, .bas.lit { background:var(--mark); border-radius:.15em; }
+.banner { border:.08em solid var(--gold); border-radius:.3em; color:var(--gold); justify-content:center; }
+.bas { margin:0 auto; }
+#bar { position:absolute; bottom:0; left:0; right:0; height:13vh; display:flex; gap:1.5vw; padding:1.5vh 2vw; }
+#bar button { flex:1; border:0; border-radius:1.6vh; background:var(--btn); color:var(--ink); font-size:3.2vh; font-weight:700; }
+#bar button.main { background:#6b552a; }
+#bar button:disabled { color:var(--dim); }
+#iqama { position:absolute; left:3vw; bottom:16vh; width:132px; height:132px; border-radius:50%; display:none;
+  align-items:center; justify-content:center; flex-direction:column; color:#fff; transform:scale(.6); opacity:0; transition:transform .35s, opacity .35s; }
+#iqama.on { display:flex; transform:scale(1); opacity:1; }
+#iqama .ring { position:absolute; inset:0; border-radius:50%; }
+#iqama .core { position:absolute; inset:7px; border-radius:50%; background:var(--green); }
+#iqama div.t { position:relative; text-align:center; line-height:1.15; }
+#iqama .n { color:var(--gold); font-size:15px; }
+#iqama .c { font-size:30px; font-weight:700; font-variant-numeric:tabular-nums; }
+#iqama .l { font-size:11px; opacity:.85; }
+#iqama.last .c { animation:beat 1s ease-in-out infinite; }
+@keyframes beat { 50% { transform:scale(1.12); } }
+#msg { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--dim); font-size:3vh; }
+</style>
+</head>
+<body>
+<div id="top"><div id="pill" style="display:none"><span>☾</span><span id="pilltext"></span></div><div id="pageno"></div></div>
+<div id="sheet"></div>
+<div id="msg">…</div>
+<div id="iqama"><div class="ring"></div><div class="core"></div>
+  <div class="t"><div class="n"></div><div class="c"></div><div class="l"></div></div></div>
+<div id="bar">
+  <button id="prev"></button><button id="play" class="main"></button><button id="speed"></button><button id="next"></button>
+</div>
+<script>
+const K = new URLSearchParams(location.search).get('k') || '';
+const BASMALA = 'بِسۡمِ ٱللَّهِ ٱلرَّحۡمَٰنِ ٱلرَّحِيمِ';
+let st = null, shown = 0, hold = false, data = null, reversed = false, remainAt = 0;
+const $ = id => document.getElementById(id);
+const cv = document.createElement('canvas').getContext('2d');
+function width(t, px) { cv.font = px + 'px hafs'; return cv.measureText(t).width; }
+function digits(n) { return String(n).replace(/\d/g, d => '٠١٢٣٤٥٦٧٨٩'[d]); }
+
+async function cmd(a, p) {
+  await fetch('/cmd?a=' + a + '&k=' + K + (p ? '&p=' + p : '')).catch(() => {});
+  poll();
+}
+async function show(n) {
+  n = Math.max(1, Math.min(604, n));
+  shown = n;
+  data = await (await fetch('/page?n=' + n + '&r=' + (reversed ? 1 : 0))).json();
+  render();
+}
+function render() {
+  const sheet = $('sheet');
+  sheet.innerHTML = '';
+  $('msg').style.display = data ? 'none' : 'flex';
+  if (!data) return;
+  $('pageno').textContent = digits(data.page);
+  const W = sheet.clientWidth, H = sheet.clientHeight, n = data.count || 15;
+  let need = 0;
+  for (const l of data.lines) if (l.t === 'w') {
+    const nat = l.w.reduce((s, t) => s + width(t[0], 100), 0) + width(' ', 100) * 0.6 * (l.w.length - 1);
+    need = Math.max(need, nat);
+  }
+  const pitchAll = H / n;
+  const size = Math.min(need > 0 ? 100 * W * 0.96 / need : 40, pitchAll * 0.62);
+  const pitch = n === 15 ? pitchAll : Math.min(pitchAll, size * 2.1);
+  const top = (H - pitch * n) / 2;
+  const lit = st && st.page === data.page ? st.lit : 0;
+  for (const l of data.lines) {
+    const d = document.createElement('div');
+    d.className = 'line';
+    d.style.top = (top + pitch * (l.n - 1)) + 'px';
+    d.style.height = pitch + 'px';
+    d.style.fontSize = size + 'px';
+    if (l.t === 'w') {
+      d.classList.add(l.c ? 'c' : 'j');
+      for (const t of l.w) {
+        const s = document.createElement('span');
+        s.className = 'tok' + (t[2] ? ' mark' : '') + (lit && t[1] === lit ? ' lit' : '');
+        s.textContent = t[0];
+        d.appendChild(s);
+      }
+    } else if (l.t === 'b') {
+      d.classList.add('banner');
+      d.style.fontSize = (size * 0.9) + 'px';
+      d.style.top = (top + pitch * (l.n - 1) + pitch * 0.12) + 'px';
+      d.style.height = (pitch * 0.76) + 'px';
+      d.textContent = l.name;
+    } else {
+      const s = document.createElement('span');
+      s.className = 'bas' + (lit === -l.s ? ' lit' : '');
+      s.textContent = BASMALA;
+      d.appendChild(s);
+    }
+    sheet.appendChild(d);
+  }
+}
+function buttons() {
+  if (!st) return;
+  const L = st.labels;
+  $('prev').textContent = L.prev; $('next').textContent = L.next;
+  $('prev').disabled = shown <= 1; $('next').disabled = shown >= 604;
+  const here = st.active && st.page === shown;
+  $('play').textContent = here && st.playing ? L.pause : L.play;
+  $('speed').textContent = st.speed;
+}
+function prayer() {
+  const p = st && st.prayer;
+  $('pill').style.display = p ? 'flex' : 'none';
+  if (!p) { $('iqama').className = ''; return; }
+  $('pilltext').textContent = p.title;
+  $('pilltext').title = p.tip;
+  $('pill').className = (p.phase !== 'NEXT' ? 'gold' : '') + (p.phase === 'SOON' ? ' soon' : '');
+  const q = $('iqama');
+  if (p.phase === 'IQAMA') {
+    const left = Math.max(0, p.remainMs - (Date.now() - remainAt));
+    const s = Math.ceil(left / 1000);
+    q.querySelector('.n').textContent = p.name;
+    q.querySelector('.c').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+    q.querySelector('.l').textContent = p.left;
+    const deg = 360 * left / Math.max(1, p.spanMs);
+    q.querySelector('.ring').style.background = 'conic-gradient(#d9b15c ' + deg + 'deg, rgba(255,255,255,.15) 0)';
+    q.className = 'on' + (left < 60000 ? ' last' : '');
+  } else q.className = '';
+}
+async function poll() {
+  try {
+    st = await (await fetch('/state', { cache: 'no-store' })).json();
+    remainAt = Date.now();
+    if (!shown) await show(st.page);
+    else if (st.active && !hold && st.page !== shown) await show(st.page);
+    else render();
+    buttons(); prayer();
+  } catch (e) { }
+}
+$('prev').onclick = () => { hold = true; show(shown - 1).then(buttons); };
+$('next').onclick = () => { hold = true; show(shown + 1).then(buttons); };
+$('speed').onclick = () => cmd('speed');
+$('play').onclick = () => {
+  const here = st && st.active && st.page === shown;
+  if (here) cmd(st.playing ? 'pause' : 'resume');
+  else { hold = false; cmd('play', shown); }
+};
+let x0 = 0;
+$('sheet').addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+$('sheet').addEventListener('touchend', e => {
+  const dx = e.changedTouches[0].clientX - x0;
+  if (Math.abs(dx) > innerWidth * 0.12) { hold = true; show(shown + (dx > 0 ? 1 : -1)).then(buttons); }
+});
+addEventListener('resize', render);
+document.fonts.load('40px hafs').then(() => {
+  const probe = digits(253);
+  reversed = width([...probe].reverse().join(''), 100) < width(probe, 100);
+  poll();
+  setInterval(poll, 800);
+  setInterval(prayer, 250);
+});
+</script>
+</body>
+</html>

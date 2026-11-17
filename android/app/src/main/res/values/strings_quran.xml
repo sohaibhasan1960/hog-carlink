@@ -91,4 +91,11 @@
     <string name="mf_drive_sub">For a passenger reading along with the reciter</string>
     <string name="mf_drive_warn">The mushaf will stay on the car screen while the car is moving. It is meant for a passenger. The driver must keep his eyes on the road.</string>
     <string name="mf_drive_ok">Turn on</string>
+    <string name="tesla_title">Tesla screen</string>
+    <string name="tesla_sub">Mushaf, memorization plan and prayer indicator in the car browser</string>
+    <string name="tesla_steps">1. Turn on the phone hotspot.
+2. Connect the Tesla to the phone network in the car Wi-Fi settings.
+3. Open the Tesla browser and type this address:</string>
+    <string name="tesla_no_ip">No network yet: turn on the hotspot, then come back here.</string>
+    <string name="tesla_notif">Tesla screen is on</string>
 </resources>

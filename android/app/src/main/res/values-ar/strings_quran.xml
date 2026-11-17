@@ -91,4 +91,11 @@
     <string name="mf_drive_sub">للراكب الذي يقرأ مع القارئ</string>
     <string name="mf_drive_warn">سيبقى المصحف ظاهرًا على شاشة السيارة أثناء الحركة. هذا الخيار للراكب، وعلى السائق أن يُبقي نظره على الطريق.</string>
     <string name="mf_drive_ok">تفعيل</string>
+    <string name="tesla_title">شاشة تسلا</string>
+    <string name="tesla_sub">المصحف وخطة الحفظ ومؤشر الصلاة في متصفح السيارة</string>
+    <string name="tesla_steps">١. فعّل نقطة الاتصال في الهاتف.
+٢. صِل تسلا بشبكة الهاتف من إعدادات الواي فاي في السيارة.
+٣. افتح متصفح تسلا واكتب هذا العنوان:</string>
+    <string name="tesla_no_ip">لا توجد شبكة بعد: فعّل نقطة الاتصال ثم ارجع إلى هنا.</string>
+    <string name="tesla_notif">شاشة تسلا تعمل</string>
 </resources>

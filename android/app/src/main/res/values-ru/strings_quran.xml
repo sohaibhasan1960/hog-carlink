@@ -91,4 +91,11 @@
     <string name="mf_drive_sub">Для пассажира, читающего вслед за чтецом</string>
     <string name="mf_drive_warn">Мусхаф останется на экране машины и в движении. Это для пассажира: водитель должен смотреть на дорогу.</string>
     <string name="mf_drive_ok">Включить</string>
+    <string name="tesla_title">Экран Tesla</string>
+    <string name="tesla_sub">Мусхаф, план заучивания и индикатор намаза в браузере машины</string>
+    <string name="tesla_steps">1. Включите точку доступа на телефоне.
+2. Подключите Tesla к сети телефона в настройках Wi-Fi машины.
+3. Откройте браузер Tesla и введите адрес:</string>
+    <string name="tesla_no_ip">Сети ещё нет: включите точку доступа и вернитесь сюда.</string>
+    <string name="tesla_notif">Экран Tesla работает</string>
 </resources>
