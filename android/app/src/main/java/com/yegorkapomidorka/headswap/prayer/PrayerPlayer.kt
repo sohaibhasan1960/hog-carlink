@@ -144,7 +144,7 @@ class PrayerPlayer : Service() {
             What.DHIKR -> playShortDhikr(text ?: "")
             What.QURAN -> playQuran(surah, intent.getLongExtra(EXTRA_POS, 0L))
             What.BOOK -> playBook(intent.getLongExtra(EXTRA_POS, -1L))
-            What.HIFZ -> playHifz(intent.getIntExtra(EXTRA_PAGE, HifzPrefs(this).page))
+            What.HIFZ -> playHifz(intent.getIntExtra(EXTRA_PAGE, HifzPrefs(this).page), showOnCar = true)
             What.MORNING, What.EVENING -> {
                 // своя запись азкаров (файл с телефона) вместо синтеза речи
                 val file = PrayerPrefs(this).adhkarUri(what == What.MORNING)
@@ -387,7 +387,8 @@ class PrayerPlayer : Service() {
     private var hifzShown = -1
 
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
-    private fun playHifz(page0: Int) {
+    /** [showOnCar] - новый запуск плана (не листание): мусхаф сам выходит на экран машины. */
+    private fun playHifz(page0: Int, showOnCar: Boolean = false) {
         val prefs = HifzPrefs(this)
         val page = page0.coerceIn(1, QuranPages.PAGES)
         hifzPage = page
@@ -419,7 +420,7 @@ class PrayerPlayer : Service() {
                 main.post {
                     if (gen != hifzBuildGen || current != What.HIFZ || exo != null) return@post
                     hifzNoMerge = !ok
-                    playHifz(page)
+                    playHifz(page, showOnCar)
                     hifzNoMerge = false
                 }
             }, "hifz-page-build").start()
@@ -488,6 +489,8 @@ class PrayerPlayer : Service() {
             e.prepare()
             hifzState(0)
             notify(title, getString(R.string.qr_loading))
+            // HOG: план заиграл - мусхаф сам на экран машины (мост жив, стоянка или режим пассажира); «خروج» его убирает
+            if (showOnCar) com.yegorkapomidorka.headswap.quran.CarMushaf.showFor(page)
             AppLog.i("حفظ: страница $page, страниц ${prefs.pagesPerSession}, повторов $repeat, ${voice.folder}, файлов ${queue.size}, " +
                 "${if (merged != null) "одним звуком" else "по файлам"}, тишина ${if (prefs.trimPauses) "сокращается" else "как в записи"}", true)
         } catch (e: Exception) {
