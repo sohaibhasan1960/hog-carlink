@@ -104,4 +104,5 @@
     <string name="pr_ind_left">left to iqama</string>
     <string name="pr_ind_h">h</string>
     <string name="pr_ind_m">min</string>
+    <string name="pr_ind_tab_iqama">%1$s iqama %2$s</string>
 </resources>

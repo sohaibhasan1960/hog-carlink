@@ -21,6 +21,8 @@ object PrayerIndicatorText {
         val short: String,
         /** Подсказка: «أذان العصر: 2:58 م — الإقامة: 3:08 م». */
         val tip: String,
+        /** Название вкладки без отсчёта, меняется только со сменой намаза: «العصر 2:58 م» / «إقامة العصر 3:08 م». */
+        val tab: String,
     )
 
     fun now(ctx: Context, now: Long = System.currentTimeMillis()): Shown? {
@@ -45,6 +47,8 @@ object PrayerIndicatorText {
         }
         val tip = if (s.friday) ctx.getString(R.string.pr_ind_tip_friday, name, t(s.adhanAt))
             else ctx.getString(R.string.pr_ind_tip, name, t(s.adhanAt), t(s.iqamaAt))
-        return Shown(s, name, title, short, tip)
+        val tab = if (s.phase == PrayerIndicator.Phase.IQAMA) ctx.getString(R.string.pr_ind_tab_iqama, name, t(s.iqamaAt))
+            else "$name ${t(s.adhanAt)}"
+        return Shown(s, name, title, short, tip, tab)
     }
 }

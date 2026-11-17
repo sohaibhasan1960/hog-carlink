@@ -55,7 +55,13 @@ object HifzPageAudio {
     }
 
     /** Собрать страницу (сеть + декодирование, секунды): не с главной нити. null - не вышло, играть по файлам. */
-    fun build(ctx: Context, voice: QuranPages.Voice, page: Int): Page? {
+    fun build(ctx: Context, voice: QuranPages.Voice, page: Int): Page? =
+        // одна и та же страница из двух нитей (заранее + запуск) - вторая ждёт и берёт готовую
+        synchronized(locks.getOrPut("${voice.name}:$page") { Any() }) { buildLocked(ctx, voice, page) }
+
+    private val locks = java.util.concurrent.ConcurrentHashMap<String, Any>()
+
+    private fun buildLocked(ctx: Context, voice: QuranPages.Voice, page: Int): Page? {
         cached(ctx, voice, page)?.let { return it }
         val t0 = System.currentTimeMillis()
         val files = QuranPages.files(page)

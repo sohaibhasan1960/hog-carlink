@@ -25,19 +25,28 @@ import java.time.format.DateTimeFormatter
  */
 class AdhkarMediaService : MediaBrowserService() {
     private val main = android.os.Handler(android.os.Looper.getMainLooper())
-    /** Индикатор намаза в названии вкладки: обновлять каждые 30 с, пока Android Auto держит сервис. */
+    /**
+     * Индикатор намаза: строка с отсчётом во вкладке «مواقيت» обновляется раз в минуту, а название вкладки (без отсчёта,
+     * только намаз и время) - лишь когда оно меняется: обновление корня перестраивает вкладки Android Auto.
+     */
+    private var lastTab: String? = null
     private val tick = object : Runnable {
         override fun run() {
-            notifyChildrenChanged(ROOT)
+            val tab = PrayerIndicatorText.now(this@AdhkarMediaService)?.tab
+            if (tab != lastTab) {
+                lastTab = tab
+                notifyChildrenChanged(ROOT)
+            }
             notifyChildrenChanged(TIMES)
-            main.postDelayed(this, 30_000)
+            main.postDelayed(this, 60_000)
         }
     }
 
     override fun onCreate() {
         super.onCreate()
         sessionToken = PrayerSession.get(this).sessionToken
-        main.postDelayed(tick, 30_000)
+        lastTab = PrayerIndicatorText.now(this)?.tab
+        main.postDelayed(tick, 60_000)
     }
 
     override fun onDestroy() {
@@ -68,7 +77,7 @@ class AdhkarMediaService : MediaBrowserService() {
                 else if (books.isNotEmpty()) out.add(item(LIBRARY, getString(R.string.ab_title), getString(R.string.ab_books, books.size), playable = false))
                 // HOG: как в Hocom - следующий намаз / отсчёт икамы прямо в названии вкладки
                 val ind = PrayerIndicatorText.now(this)
-                out.add(item(TIMES, ind?.short ?: getString(R.string.pr_car_times), PrayerPrefs(this).place.ifBlank { null }, playable = false))
+                out.add(item(TIMES, ind?.tab ?: getString(R.string.pr_car_times), PrayerPrefs(this).place.ifBlank { null }, playable = false))
             }
             QURAN -> {
                 val q = QuranPrefs(this)

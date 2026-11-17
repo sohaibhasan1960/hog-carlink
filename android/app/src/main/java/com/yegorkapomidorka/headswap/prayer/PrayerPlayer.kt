@@ -531,6 +531,12 @@ class PrayerPlayer : Service() {
             e.prepare()
             hifzState(0)
             notify(title, getString(R.string.qr_loading))
+            // HOG: пока звучит эта страница, следующие две собрать заранее - каждая новая начнётся сразу, без сети
+            if (merged != null) {
+                val next = ((pages.last() + 1)..(pages.last() + PREFETCH_PAGES)).filter { it <= QuranPages.PAGES }
+                val app = applicationContext
+                Thread({ for (n in next) HifzPageAudio.build(app, voice, n) }, "hifz-prefetch").apply { priority = Thread.MIN_PRIORITY }.start()
+            }
             // HOG: план заиграл - мусхаф сам на экран машины (мост жив, стоянка или режим пассажира); «خروج» его убирает
             if (showOnCar) com.yegorkapomidorka.headswap.quran.CarMushaf.showFor(page)
             AppLog.i("حفظ: страница $page, страниц ${prefs.pagesPerSession}, повторов $repeat, ${voice.folder}, файлов ${queue.size}, " +
@@ -1246,6 +1252,8 @@ class PrayerPlayer : Service() {
         @Volatile var quranActive = false
         /** Сура / план на паузе (кнопка تشغيل/إيقاف мусхафа в машине). */
         @Volatile var quranPausedNow = false
+        /** Сколько следующих страниц плана собирать заранее одним звуком. */
+        const val PREFETCH_PAGES = 2
         /** План заучивания: страница и аят (код surah*1000+ayah, 0 - басмала), которые сейчас звучат; 0 / -1 - тишина. Читает MushafActivity. */
         @Volatile var hifzNowPage = 0
         @Volatile var hifzNowAyah = -1
