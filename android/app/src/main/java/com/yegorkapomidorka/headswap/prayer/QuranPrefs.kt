@@ -21,6 +21,14 @@ class QuranPrefs(ctx: Context) {
         get() = sp.getLong("last_pos", 0)
         set(v) = sp.edit().putLong("last_pos", v).apply()
 
+    /**
+     * HOG: мусхаф на экране машины и во время движения - для пассажира, читающего вслед за чтецом. Выключено по
+     * умолчанию; включает владелец телефона сам, с предупреждением. Выключено - мусхаф только на стоянке.
+     */
+    var mushafDriving: Boolean
+        get() = sp.getBoolean("mushafDriving", false)
+        set(v) = sp.edit().putBoolean("mushafDriving", v).apply()
+
     /** После суры - следующая. */
     var continuous: Boolean
         get() = sp.getBoolean("continuous", true)

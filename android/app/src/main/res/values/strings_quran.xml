@@ -85,4 +85,10 @@
     <string name="hf_speed">Recitation speed</string>
     <string name="mf_loc_why">The mushaf shows on the car screen only while the car is stopped (including at traffic lights). Your car does not report its speed, so HOG uses the phone GPS. Allow location «All the time» for HOG CarLink: Permissions → Location → Allow all the time.</string>
     <string name="mf_loc_open">Open permissions</string>
+    <string name="mf_play">Play</string>
+    <string name="mf_pause">Pause</string>
+    <string name="mf_drive">Show the mushaf while driving</string>
+    <string name="mf_drive_sub">For a passenger reading along with the reciter</string>
+    <string name="mf_drive_warn">The mushaf will stay on the car screen while the car is moving. It is meant for a passenger. The driver must keep his eyes on the road.</string>
+    <string name="mf_drive_ok">Turn on</string>
 </resources>

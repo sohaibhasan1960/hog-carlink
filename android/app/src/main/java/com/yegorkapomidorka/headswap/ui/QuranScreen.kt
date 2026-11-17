@@ -125,7 +125,7 @@ class QuranScreen(host: MainActivity) : Screen(host) {
         // HOG: мусхаф на экране машины - только на стоянке (скорость от ГУ)
         hifzBox.addView(c.tonalButton(c.getString(R.string.mf_car)).apply {
             setOnClickListener {
-                if (!com.yegorkapomidorka.headswap.aa.PhoneSpeed.permitted(c)) {
+                if (!QuranPrefs(c).mushafDriving && !com.yegorkapomidorka.headswap.aa.PhoneSpeed.permitted(c)) {
                     // без «Разрешить всегда» GPS в фоне молчит, а ID.6 своей скорости не шлёт
                     AlertDialog.Builder(host).setTitle(R.string.mf_car).setMessage(R.string.mf_loc_why)
                         .setPositiveButton(R.string.mf_loc_open) { _, _ -> Readiness.appDetails(c) }
@@ -143,6 +143,18 @@ class QuranScreen(host: MainActivity) : Screen(host) {
                 if (msg != null) android.widget.Toast.makeText(c, msg, android.widget.Toast.LENGTH_LONG).show()
             }
         }, lp(MATCH, c.dp(48)))
+        // HOG: и в движении - для пассажира; включение только с предупреждением
+        hifzBox.addView(ToggleRow(c, c.getString(R.string.mf_drive), c.getString(R.string.mf_drive_sub), QuranPrefs(c).mushafDriving) { on ->
+            if (!on) {
+                QuranPrefs(c).mushafDriving = false
+                return@ToggleRow
+            }
+            AlertDialog.Builder(host).setTitle(R.string.mf_drive).setMessage(R.string.mf_drive_warn)
+                .setPositiveButton(R.string.mf_drive_ok) { _, _ -> QuranPrefs(c).mushafDriving = true; buildHifz() }
+                .setNegativeButton(android.R.string.cancel) { _, _ -> buildHifz() }
+                .setOnCancelListener { buildHifz() }
+                .show()
+        }.view, lp(MATCH, WRAP))
         if (hifz.done > 0) hifzBox.addView(c.text(c.getString(R.string.hf_progress, hifz.done), 14f, 500, c.clr(R.color.on2)).apply {
             pad(c, 16, 0, 16, 0)
         }, lp(MATCH, WRAP))

@@ -613,6 +613,8 @@ class AaBridgeCore(
         huVwBt1420 = false                     // HU_INFO придёт заново в этой сессии
         huVwId6 = false                        // HU_INFO придёт заново в этой сессии
         mushafOn = false
+        mushafResume = false
+        mushafParkedSince = NEVER
         carSpeedKmh = -1
         carSpeedAt = NEVER
         huVw20082138 = false                   // HU_INFO / STATISTIC_INFO придут заново в этой сессии
@@ -1843,6 +1845,14 @@ class AaBridgeCore(
     /** На экране машины мусхаф вместо AA: кадры AA не идут, касания - [mushafTouch]. */
     @Volatile var mushafOn = false
         private set
+    /**
+     * HOG: мусхаф убран, потому что машина поехала (не кнопкой «خروج»): вернуть его сам, когда машина снова
+     * простоит [MUSHAF_RESUME_MS]. Во время движения на экране AA, звук плана идёт дальше.
+     */
+    @Volatile private var mushafResume = false
+    /** HOG: мусхаф и при движении (QuranPrefs.mushafDriving, для пассажира); ставит BridgeService. */
+    @Volatile var mushafWhileDriving: () -> Boolean = { false }
+    @Volatile private var mushafParkedSince = NEVER
     /** Рисует кадр мусхафа (ширина, высота видимой части); ставит BridgeService. */
     @Volatile var mushafScene: ((android.graphics.Canvas, Int, Int) -> Unit)? = null
     /** Касание ГУ на экране мусхафа: действие (0 down, 1 up, 2 move), x, y, ширина, высота. */
@@ -1854,7 +1864,7 @@ class AaBridgeCore(
         carSpeedAt = clockMs()
         if (prev < 0) log("BRIDGE скорость от ГУ: $kmh км/ч (первое значение)", true)
         else if ((prev == 0) != (kmh == 0)) log("BRIDGE скорость от ГУ: $kmh км/ч", true)
-        if (mushafOn && kmh > 0) synchronized(this) { exitMushaf("машина поехала: $kmh км/ч") }
+        if (mushafOn && kmh > 0 && !mushafWhileDriving()) synchronized(this) { exitMushaf("машина поехала: $kmh км/ч", resume = true) }
     }
 
     /** Скорость по GPS телефона ([PhoneSpeed]), км/ч; -1 - нет. Запасной источник, когда ГУ скорость не шлёт. */
@@ -1865,8 +1875,8 @@ class AaBridgeCore(
     fun onPhoneSpeed(kmh: Float) {
         phoneSpeedKmh = kmh
         phoneSpeedAt = clockMs()
-        if (mushafOn && !carFresh(phoneSpeedAt) && kmh >= PHONE_MOVE_KMH) synchronized(this) {
-            exitMushaf("машина поехала (GPS телефона ${"%.0f".format(kmh)} км/ч)")
+        if (mushafOn && !mushafWhileDriving() && !carFresh(phoneSpeedAt) && kmh >= PHONE_MOVE_KMH) synchronized(this) {
+            exitMushaf("машина поехала (GPS телефона ${"%.0f".format(kmh)} км/ч)", resume = true)
         }
     }
 
@@ -1891,6 +1901,7 @@ class AaBridgeCore(
         val why = when {
             !carlifeStarted || scene == null -> "carlife"
             transcoder != null || transcodeEnabled || desktopSurfaceEnabled -> "transcode"
+            mushafWhileDriving() -> null       // владелец разрешил и в движении (пассажир)
             !carFresh(clockMs()) && !phoneFresh(clockMs()) -> "nospeed"
             !parked() -> "moving"
             else -> null
@@ -1900,6 +1911,8 @@ class AaBridgeCore(
             return why
         }
         mushafOn = true
+        mushafResume = false
+        mushafParkedSince = NEVER
         active = Source.PLACEHOLDER
         gotIdr = false
         link.showScene(scene)
@@ -1910,9 +1923,12 @@ class AaBridgeCore(
 
     /** Вернуть AA на экран: заглушка без картинки, пока не придёт IDR от AA (его просим сразу). */
     @Synchronized
-    fun exitMushaf(why: String) {
+    fun exitMushaf(why: String, resume: Boolean = false) {
+        if (!resume) mushafResume = false       // «خروج» водителя: сам не возвращаем
         if (!mushafOn) return
         mushafOn = false
+        mushafResume = resume
+        mushafParkedSince = NEVER
         link.showScene(null)
         val now = clockMs()
         waitSince = now
@@ -2322,9 +2338,19 @@ class AaBridgeCore(
             peer?.requestKeyFrame()
         }
         if (mushafOn) {
-            if (!parked(now)) exitMushaf("не стоянка: ГУ $carSpeedKmh, GPS $phoneSpeedKmh км/ч")
+            if (!mushafWhileDriving() && !parked(now)) exitMushaf("не стоянка: ГУ $carSpeedKmh, GPS $phoneSpeedKmh км/ч", resume = true)
             waitSince = 0L
             return
+        }
+        // HOG: мусхаф убирали из-за движения - машина снова стоит MUSHAF_RESUME_MS: вернуть его на экран
+        if (mushafResume) {
+            if (!parked(now) && !mushafWhileDriving()) mushafParkedSince = NEVER
+            else if (mushafParkedSince == NEVER) mushafParkedSince = now
+            else if (now - mushafParkedSince >= MUSHAF_RESUME_MS) {
+                log("BRIDGE мусхаф: машина стоит ${(now - mushafParkedSince) / 1000} с - возвращаю на экран", true)
+                if (enterMushaf() != null) mushafResume = false
+                if (mushafOn) return
+            }
         }
         if (gotIdr || !aaVideoSeen) return
         // HOG: ГУ на своём экране (PAUSE) кадры не берёт - ключевой кадр просить незачем. Каждый запрос - цикл
@@ -3192,6 +3218,10 @@ class AaBridgeCore(
     }
 
     companion object {
+
+        /** Сколько машина должна простоять, чтобы мусхаф вернулся сам (не мигать в пробке «стоп-поехал»). */
+
+        const val MUSHAF_RESUME_MS = 3_000L
         const val DUP_DOWN_MS = 30L
 
         /** DOWN - дубль, если прошлый DOWN той же точки ещё не отпущен и пришёл не раньше [DUP_DOWN_MS] назад. */

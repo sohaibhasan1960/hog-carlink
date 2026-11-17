@@ -51,6 +51,10 @@ class PrayerPlayer : Service() {
     private var quranSurah = 0
     private var quranPrepared = false
     private var quranPaused = false
+        set(v) {
+            field = v
+            quranPausedNow = v
+        }
     /** Пауза из-за временной потери фокуса (звонок): по возврату фокуса чтение продолжается само. */
     private var pausedByFocus = false
     /** Аудиокнига (BOOK): файл с главами; глава и позиция - по положению в файле. */
@@ -1133,6 +1137,8 @@ class PrayerPlayer : Service() {
 
         /** Сура загружена (играет или на паузе): кнопки машины управляют ею, а не азкарами. */
         @Volatile var quranActive = false
+        /** Сура / план на паузе (кнопка تشغيل/إيقاف мусхафа в машине). */
+        @Volatile var quranPausedNow = false
         /** План заучивания: страница и аят (код surah*1000+ayah, 0 - басмала), которые сейчас звучат; 0 / -1 - тишина. Читает MushafActivity. */
         @Volatile var hifzNowPage = 0
         @Volatile var hifzNowAyah = -1

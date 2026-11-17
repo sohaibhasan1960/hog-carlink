@@ -85,4 +85,10 @@
     <string name="hf_speed">Скорость чтения</string>
     <string name="mf_loc_why">Мусхаф на экране машины - только когда машина стоит (и на светофоре). Ваша машина не сообщает скорость, поэтому HOG берёт GPS телефона. Разрешите HOG CarLink геолокацию «Всегда»: Разрешения → Геоданные → Разрешить в любом режиме.</string>
     <string name="mf_loc_open">Открыть разрешения</string>
+    <string name="mf_play">Играть</string>
+    <string name="mf_pause">Пауза</string>
+    <string name="mf_drive">Мусхаф и во время движения</string>
+    <string name="mf_drive_sub">Для пассажира, читающего вслед за чтецом</string>
+    <string name="mf_drive_warn">Мусхаф останется на экране машины и в движении. Это для пассажира: водитель должен смотреть на дорогу.</string>
+    <string name="mf_drive_ok">Включить</string>
 </resources>

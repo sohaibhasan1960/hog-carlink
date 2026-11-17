@@ -85,4 +85,10 @@
     <string name="hf_speed">سرعة التلاوة</string>
     <string name="mf_loc_why">يظهر المصحف على شاشة السيارة والسيارة متوقفة فقط، ومنها الوقوف عند الإشارة. سيارتك لا ترسل سرعتها، لذلك يعتمد HOG على GPS الهاتف. اسمح لـ HOG CarLink بالموقع «طوال الوقت»: الأذونات ← الموقع ← السماح طوال الوقت.</string>
     <string name="mf_loc_open">فتح الأذونات</string>
+    <string name="mf_play">تشغيل</string>
+    <string name="mf_pause">إيقاف</string>
+    <string name="mf_drive">عرض المصحف أثناء القيادة</string>
+    <string name="mf_drive_sub">للراكب الذي يقرأ مع القارئ</string>
+    <string name="mf_drive_warn">سيبقى المصحف ظاهرًا على شاشة السيارة أثناء الحركة. هذا الخيار للراكب، وعلى السائق أن يُبقي نظره على الطريق.</string>
+    <string name="mf_drive_ok">تفعيل</string>
 </resources>
