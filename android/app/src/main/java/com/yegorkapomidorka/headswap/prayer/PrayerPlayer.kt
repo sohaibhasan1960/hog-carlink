@@ -379,6 +379,10 @@ class PrayerPlayer : Service() {
     // ---------------- заучивание по страницам (план حفظ) ----------------
 
     private var hifzQueue: List<QuranPages.Item> = emptyList()
+    /** Сборка страниц одним звуком (HifzPageAudio): номер запуска - опоздавшая сборка не перебивает новую страницу. */
+    private var hifzBuildGen = 0
+    /** Сборка не вышла (сеть, декодер): этот запуск играет по файлам. */
+    private var hifzNoMerge = false
     private var hifzPage = 1
     private var hifzShown = -1
 
@@ -401,9 +405,31 @@ class PrayerPlayer : Service() {
         val repeat = prefs.repeat
         val queue = QuranPages.queue(page, prefs.pagesPerSession, repeat, prefs.ayahRepeat)
         hifzQueue = queue
+        // страницы одним звуком без щелей между аятами; ещё не собраны - собрать в фоне и прийти сюда снова
+        val pages = queue.map { it.page }.distinct()
+        val merged = if (hifzNoMerge) null else pages.associateWith { HifzPageAudio.cached(this, voice, it) }
+        if (merged != null && merged.values.any { it == null }) {
+            val gen = ++hifzBuildGen
+            notify(title, getString(R.string.qr_loading))
+            PrayerSession.quran(this, getString(R.string.hf_title), getString(R.string.qr_loading),
+                android.media.session.PlaybackState.STATE_BUFFERING, 0L, 0L, QuranPrefs(this).speed)
+            val app = applicationContext
+            Thread({
+                val ok = pages.all { HifzPageAudio.build(app, voice, it) != null }
+                main.post {
+                    if (gen != hifzBuildGen || current != What.HIFZ || exo != null) return@post
+                    hifzNoMerge = !ok
+                    playHifz(page)
+                    hifzNoMerge = false
+                }
+            }, "hifz-page-build").start()
+            return
+        }
+        hifzBuildGen++
         try {
+            val sources = if (merged != null) androidx.media3.datasource.DefaultDataSource.Factory(this) else HifzCache.dataSource(this)
             val e = androidx.media3.exoplayer.ExoPlayer.Builder(this, HifzAudio.renderers(this))
-                .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(HifzCache.dataSource(this)))
+                .setMediaSourceFactory(androidx.media3.exoplayer.source.DefaultMediaSourceFactory(sources))
                 .setLoadControl(HifzAudio.loadControl())
                 .build()
             exo = e
@@ -453,7 +479,8 @@ class PrayerPlayer : Service() {
                     notify(getString(R.string.hf_title), getString(R.string.qr_net_error), ongoing = false)
                 }
             })
-            e.setMediaItems(queue.map { androidx.media3.common.MediaItem.fromUri(voice.url(it.file)) })
+            e.setMediaItems(if (merged != null) mergedItems(queue, merged.mapValues { it.value!! })
+                else queue.map { androidx.media3.common.MediaItem.fromUri(voice.url(it.file)) })
             // «без конца»: одна страница по кругу
             e.repeatMode = if (repeat == 0) androidx.media3.common.Player.REPEAT_MODE_ALL else androidx.media3.common.Player.REPEAT_MODE_OFF
             e.setPlaybackSpeed(QuranPrefs(this).speed)
@@ -461,10 +488,36 @@ class PrayerPlayer : Service() {
             e.prepare()
             hifzState(0)
             notify(title, getString(R.string.qr_loading))
-            AppLog.i("حفظ: страница $page, страниц ${prefs.pagesPerSession}, повторов $repeat, ${voice.folder}, файлов ${queue.size}, тишина ${if (prefs.trimPauses) "сокращается" else "как в записи"}", true)
+            AppLog.i("حفظ: страница $page, страниц ${prefs.pagesPerSession}, повторов $repeat, ${voice.folder}, файлов ${queue.size}, " +
+                "${if (merged != null) "одним звуком" else "по файлам"}, тишина ${if (prefs.trimPauses) "сокращается" else "как в записи"}", true)
         } catch (e: Exception) {
             AppLog.e("حفظ: поток не запустился", e)
             finish("حفظ: поток не запустился")
+        }
+    }
+
+    /**
+     * Очередь плана кусками собранных страниц: элемент очереди = отрезок WAV его файла. Номер файла в странице
+     * идёт по порядку QuranPages.files; повтор аята подряд (одинаковые элементы) - тот же отрезок.
+     */
+    private fun mergedItems(queue: List<QuranPages.Item>, pages: Map<Int, HifzPageAudio.Page>): List<androidx.media3.common.MediaItem> {
+        var prev: QuranPages.Item? = null
+        var cursor = 0
+        return queue.map { it ->
+            val pv = prev
+            cursor = when {
+                pv == null || pv.page != it.page || pv.rep != it.rep -> 0
+                pv == it -> cursor
+                else -> cursor + 1
+            }
+            prev = it
+            val p = pages.getValue(it.page)
+            val i = cursor.coerceAtMost(p.startMs.size - 1)
+            androidx.media3.common.MediaItem.Builder()
+                .setUri(android.net.Uri.fromFile(p.wav))
+                .setClippingConfiguration(androidx.media3.common.MediaItem.ClippingConfiguration.Builder()
+                    .setStartPositionMs(p.startMs[i]).setEndPositionMs(p.endMs[i]).build())
+                .build()
         }
     }
 
