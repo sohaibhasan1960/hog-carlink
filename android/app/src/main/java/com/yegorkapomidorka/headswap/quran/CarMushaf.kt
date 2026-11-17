@@ -100,7 +100,8 @@ object CarMushaf {
     @Synchronized
     fun draw(c: Canvas, w: Int, h: Int) {
         val lit = follow()
-        val playing = PrayerPlayer.quranActive && PrayerPlayer.hifzNowPage > 0 && !PrayerPlayer.quranPausedNow
+        // «إيقاف» только на звучащей странице; на другой странице кнопка - «تشغيل» с неё
+        val playing = PrayerPlayer.quranActive && PrayerPlayer.hifzNowPage == page && !PrayerPlayer.quranPausedNow
         val key = "$w×$h:$page:$top:$lit:$playing:${data != null}:${app?.let { com.yegorkapomidorka.headswap.prayer.QuranPrefs(it).speed }}"
         var b = cache
         if (b == null || b.width != w || b.height != h) {
@@ -120,9 +121,9 @@ object CarMushaf {
         val now = PrayerPlayer.hifzNowPage
         if (now <= 0) return 0
         val a = PrayerPlayer.hifzNowAyah
+        // листнул сам - страница остаётся его, пока не нажмёт تشغيل (раньше следующий аят возвращал к чтецу)
         if (a != seenAyah) {
             seenAyah = a
-            userTurnAt = 0L
             userScrollAt = 0L
         }
         if (userTurnAt == 0L && page != now) {
@@ -283,14 +284,13 @@ object CarMushaf {
         if (pt.ayahAt(p, pageRect(l.view, p.lineCount), x, y) != 0) listen(page)
     }
 
-    /** Играет план - пауза; на паузе - дальше с того же места; не играет - слушать страницу на экране. */
+    /** На экране звучащая страница: пауза / дальше. Другая страница (листнул) или тишина - читать страницу на экране. */
     private fun playPause() {
         val ctx = app ?: return
+        val here = PrayerPlayer.quranActive && PrayerPlayer.hifzNowPage == page
         when {
-            PrayerPlayer.quranActive && PrayerPlayer.hifzNowPage > 0 && !PrayerPlayer.quranPausedNow ->
-                PrayerPlayer.control(ctx, PrayerPlayer.ACTION_Q_PAUSE)
-            PrayerPlayer.quranActive && PrayerPlayer.hifzNowPage > 0 ->
-                PrayerPlayer.control(ctx, PrayerPlayer.ACTION_Q_RESUME)
+            here && !PrayerPlayer.quranPausedNow -> PrayerPlayer.control(ctx, PrayerPlayer.ACTION_Q_PAUSE)
+            here -> PrayerPlayer.control(ctx, PrayerPlayer.ACTION_Q_RESUME)
             else -> listen(page)
         }
     }

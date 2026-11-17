@@ -383,6 +383,34 @@ class PrayerPlayer : Service() {
     private var hifzBuildGen = 0
     /** Сборка не вышла (сеть, декодер): этот запуск играет по файлам. */
     private var hifzNoMerge = false
+    /**
+     * Страница целиком одним элементом плеера (повтор аята = 1): никаких переходов между аятами. Элемент плеера -
+     * повтор страницы; аят для подсветки - по позиции в WAV ([hifzIndex]). Пусто - элемент плеера = аят очереди.
+     */
+    private var hifzWhole: List<Int> = emptyList()
+    private var hifzPages: Map<Int, HifzPageAudio.Page> = emptyMap()
+    private val hifzTick = object : Runnable {
+        override fun run() {
+            if (exo == null || hifzWhole.isEmpty()) return
+            if (hifzIndex() != hifzShown) hifzState()
+            main.postDelayed(this, 250)
+        }
+    }
+
+    /** Индекс в очереди плана того, что звучит сейчас. */
+    private fun hifzIndex(): Int {
+        val e = exo ?: return 0
+        val q = hifzQueue
+        if (q.isEmpty()) return 0
+        if (hifzWhole.isEmpty()) return e.currentMediaItemIndex.coerceIn(0, q.size - 1)
+        val block = e.currentMediaItemIndex.coerceIn(0, hifzWhole.size - 1)
+        val start = hifzWhole[block]
+        val p = hifzPages[q[start].page] ?: return start
+        val pos = e.currentPosition
+        var k = 0
+        while (k + 1 < p.startMs.size && p.startMs[k + 1] <= pos) k++
+        return (start + k).coerceAtMost(q.size - 1)
+    }
     private var hifzPage = 1
     private var hifzShown = -1
 
@@ -480,8 +508,22 @@ class PrayerPlayer : Service() {
                     notify(getString(R.string.hf_title), getString(R.string.qr_net_error), ongoing = false)
                 }
             })
-            e.setMediaItems(if (merged != null) mergedItems(queue, merged.mapValues { it.value!! })
-                else queue.map { androidx.media3.common.MediaItem.fromUri(voice.url(it.file)) })
+            hifzWhole = emptyList()
+            hifzPages = emptyMap()
+            val items = when {
+                merged == null -> queue.map { androidx.media3.common.MediaItem.fromUri(voice.url(it.file)) }
+                prefs.ayahRepeat <= 1 -> {
+                    // страница целиком: по элементу плеера на каждый повтор страницы
+                    val pg = merged.mapValues { it.value!! }
+                    hifzPages = pg
+                    hifzWhole = queue.indices.filter { i -> i == 0 || queue[i].page != queue[i - 1].page || queue[i].rep != queue[i - 1].rep }
+                    hifzWhole.map { i -> androidx.media3.common.MediaItem.fromUri(android.net.Uri.fromFile(pg.getValue(queue[i].page).wav)) }
+                }
+                else -> mergedItems(queue, merged.mapValues { it.value!! })
+            }
+            e.setMediaItems(items)
+            main.removeCallbacks(hifzTick)
+            if (hifzWhole.isNotEmpty()) main.postDelayed(hifzTick, 250)
             // «без конца»: одна страница по кругу
             e.repeatMode = if (repeat == 0) androidx.media3.common.Player.REPEAT_MODE_ALL else androidx.media3.common.Player.REPEAT_MODE_OFF
             e.setPlaybackSpeed(QuranPrefs(this).speed)
@@ -492,7 +534,7 @@ class PrayerPlayer : Service() {
             // HOG: план заиграл - мусхаф сам на экран машины (мост жив, стоянка или режим пассажира); «خروج» его убирает
             if (showOnCar) com.yegorkapomidorka.headswap.quran.CarMushaf.showFor(page)
             AppLog.i("حفظ: страница $page, страниц ${prefs.pagesPerSession}, повторов $repeat, ${voice.folder}, файлов ${queue.size}, " +
-                "${if (merged != null) "одним звуком" else "по файлам"}, тишина ${if (prefs.trimPauses) "сокращается" else "как в записи"}", true)
+                "${if (hifzWhole.isNotEmpty()) "страница целиком" else if (merged != null) "одним звуком по аятам" else "по файлам"}, тишина ${if (prefs.trimPauses) "сокращается" else "как в записи"}", true)
         } catch (e: Exception) {
             AppLog.e("حفظ: поток не запустился", e)
             finish("حفظ: поток не запустился")
@@ -536,6 +578,15 @@ class PrayerPlayer : Service() {
     /** «Назад»: дальше 3 с от начала текущего повтора страницы - в его начало, иначе предыдущая страница. */
     private fun hifzBack() {
         val e = exo ?: return
+        if (hifzWhole.isNotEmpty()) {
+            if (e.currentPosition > 3_000) {
+                e.seekTo(e.currentMediaItemIndex, 0)
+                hifzState(0)
+            } else {
+                hifzSwitch(hifzPage - 1)
+            }
+            return
+        }
         val i = e.currentMediaItemIndex
         val first = QuranPages.blockStart(hifzQueue, i)
         if (i > first || e.currentPosition > 3_000) {
@@ -551,7 +602,7 @@ class PrayerPlayer : Service() {
         val e = exo ?: return
         val q = hifzQueue
         if (q.isEmpty()) return
-        val i = e.currentMediaItemIndex.coerceIn(0, q.size - 1)
+        val i = hifzIndex()
         val item = q[i]
         hifzNowPage = item.page
         hifzNowAyah = item.ayah

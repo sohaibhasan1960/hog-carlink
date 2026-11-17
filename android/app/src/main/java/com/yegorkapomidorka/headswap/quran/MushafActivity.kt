@@ -45,10 +45,8 @@ class MushafActivity : Activity() {
             val p = PrayerPlayer.hifzNowPage
             val a = PrayerPlayer.hifzNowAyah
             if (p > 0) {
-                if (a != seenAyah) {
-                    seenAyah = a
-                    userPage = false
-                }
+                // листнул сам - страница остаётся, пока не нажмёт «استمع» (следующий аят больше не уводит назад)
+                if (a != seenAyah) seenAyah = a
                 if (!userPage && p != page) show(p)
             }
             view.lit = if (p == page) litCode(a, PrayerPlayer.hifzNowNext) else 0
