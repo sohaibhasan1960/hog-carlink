@@ -191,7 +191,7 @@ class SupportScreen(host: MainActivity) : Screen(host) {
                 // HOG: с концом лога - иначе по запросу не понять, что случилось (была только сводка настроек)
                 val log = AppLog.file?.takeIf { it.isFile }
                 val report = LogShare.deviceInfo(c) + (if (log == null) "" else
-                    "\n\n=== ${log.name} (конец)\n" + com.yegorkapomidorka.headswap.support.AutoReport.tail(log, 80_000))
+                    "\n\n=== ${log.name} (конец)\n" + com.yegorkapomidorka.headswap.support.AutoReport.meaningfulTail(log, 95_000))
                 cloud.send(n, p, car, ver, text, report)
                 true
             } catch (e: Exception) {

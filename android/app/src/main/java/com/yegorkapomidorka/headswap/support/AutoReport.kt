@@ -131,4 +131,34 @@ object AutoReport {
         r.readFully(b)
         String(b, Charsets.UTF_8)
     }
+
+    /**
+     * Конец лога для запроса в поддержку без шума протокола: в сессии с машиной 86 % байт - пакеты AA/CarLife
+     * (статус плеера дважды в секунду, hex-дампы), и 80 КБ сырого конца покрывали меньше минуты. Без них то же
+     * место - 6-7 минут событий. Читаем последние [scan] байт, выбрасываем шум, оставляем последние [max].
+     */
+    fun meaningfulTail(f: File, max: Int, scan: Int = 3_000_000): String {
+        // первая строка обрезана посередине, только если файл длиннее окна
+        val lines = tail(f, scan).split('\n').drop(if (f.length() > scan) 1 else 0).filterNot { noise(it) }
+        val out = ArrayDeque<String>()
+        var size = 0
+        for (l in lines.asReversed()) {
+            if (size + l.length + 1 > max) break
+            out.addFirst(l)
+            size += l.length + 1
+        }
+        return out.joinToString("\n")
+    }
+
+    private val NOISE = Regex(
+        """^\d\d:\d\d:\d\d\.\d{3} (""" +
+            """AA RX MEDIA_PLAYBACK\(|AA META MEDIA_PLAYBACK|META -> MEDIA_PROGRESS|TX CMD 0x00010036|""" +
+            """TX VIDEO|RX TOUCH|TX TTS 0x00040003|TX MEDIA 0x00030003|AA RX NAVIGATION\(|AA META NAVIGATION|""" +
+            """TX CMD 0x00010030|META -> NAVI_NEXT_TURN_INFO|AA TX INPUT\(|BRIDGE тач MOVE|""" +
+            """AA RX [A-Z_]+\(\d+\) MEDIA_DATA|AA TX [A-Z_]+\(\d+\) MEDIA_ACK|""" +
+            """[0-9A-F]{2} [0-9A-F]{2} |\s+outer: |\s+[0-9A-F]{4}  )|^\s+(outer: |[0-9A-F]{4}  )""",
+    )
+
+    /** Строка пакетного шума (тест проверяет на образцах из лога). */
+    fun noise(line: String): Boolean = NOISE.containsMatchIn(line)
 }
