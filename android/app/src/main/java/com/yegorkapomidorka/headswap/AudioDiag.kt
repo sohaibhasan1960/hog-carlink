@@ -23,6 +23,7 @@ class AudioDiag {
     private val deviceCallback = object : AudioDeviceCallback() {
         override fun onAudioDevicesAdded(added: Array<out AudioDeviceInfo>) {
             for (d in added) if (d.isSink) AppLog.i("AUDIO выход добавлен: ${describe(d)}", ui = false)
+            if (added.any { it.isSink && it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }) onA2dpAdded?.invoke()
         }
 
         override fun onAudioDevicesRemoved(removed: Array<out AudioDeviceInfo>) {
@@ -33,6 +34,13 @@ class AudioDiag {
     private val playbackCallback = object : AudioManager.AudioPlaybackCallback() {
         override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>) = logPlayers(configs)
     }
+
+    /** HOG: появился выход A2DP (зовётся на главной нити). */
+    var onA2dpAdded: (() -> Unit)? = null
+
+    /** Имя подключённого выхода A2DP или null. */
+    fun a2dp(): String? = am?.getDevices(AudioManager.GET_DEVICES_OUTPUTS)
+        ?.firstOrNull { it.type == AudioDeviceInfo.TYPE_BLUETOOTH_A2DP }?.productName?.toString()
 
     fun start(context: Context) {
         if (am != null) return

@@ -5,4 +5,7 @@
 
     <string name="lang_title">Язык</string>
     <string name="lang_system">Системный</string>
+    <string name="bt_media_title">Звук мультимедиа по Bluetooth в машину</string>
+    <string name="bt_media_text">Машина играет звук через HOG, но телефон ещё шлёт звук мультимедиа в %1$s по Bluetooth. Голосовые WhatsApp и звук других приложений уходят туда и не слышны ни в машине, ни в телефоне. В настройках Bluetooth нажмите шестерёнку у %1$s и выключите «Аудио мультимедиа», звонки оставьте.</string>
+    <string name="bt_media_open">Настройки Bluetooth</string>
 </resources>

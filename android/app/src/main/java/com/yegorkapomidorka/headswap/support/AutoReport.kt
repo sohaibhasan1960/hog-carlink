@@ -155,7 +155,8 @@ object AutoReport {
             """AA RX MEDIA_PLAYBACK\(|AA META MEDIA_PLAYBACK|META -> MEDIA_PROGRESS|TX CMD 0x00010036|""" +
             """TX VIDEO|RX TOUCH|TX TTS 0x00040003|TX MEDIA 0x00030003|AA RX NAVIGATION\(|AA META NAVIGATION|""" +
             """TX CMD 0x00010030|META -> NAVI_NEXT_TURN_INFO|AA TX INPUT\(|BRIDGE тач MOVE|""" +
-            """AA RX [A-Z_]+\(\d+\) MEDIA_DATA|AA TX [A-Z_]+\(\d+\) MEDIA_ACK|""" +
+            // звук и микрофон в обе стороны: MIC идёт TX DATA / RX ACK
+            """AA [RT]X [A-Z_]+\(\d+\) MEDIA_(DATA|ACK)|""" +
             // проба сервера AA без машины: пакеты пробы (итог SRVCHECK ИТОГ остаётся)
             """SRVCHECK \| aa |""" +
             """[0-9A-F]{2} [0-9A-F]{2} |\s+outer: |\s+[0-9A-F]{4}  )|^\s+(outer: |[0-9A-F]{4}  )""",

@@ -1502,7 +1502,10 @@ class AaBridgeCore(
         if (chan == AapMessages.CH_AUDIO_SPEECH) speechActive = true
         if (chan == AapMessages.CH_AUDIO_SYSTEM) systemRouted = !speechActive && systemToCarProvider()
         log("BRIDGE AA audio START ch$chan (${AapMessages.channelName(chan)}) -> CarLife ${carlifeChannel(chan)?.let { chName(it) } ?: "не пересылается"}", true)
-        if (carlifeChannel(chan) == CarlifeAudio.CH_MEDIA) releaseHuPause("AA MEDIA START")
+        if (carlifeChannel(chan) == CarlifeAudio.CH_MEDIA) {
+            releaseHuPause("AA MEDIA START")
+            onCarMedia()
+        }
         if (carlifeChannel(chan) == CarlifeAudio.CH_TTS) ttsPendingStop = false
         if (carlifeChannel(chan) == CarlifeAudio.CH_TTS && ttsStopTimer.cancel()) {
             log("BRIDGE TTS STOP отменён: SPEECH START до истечения ${TTS_STOP_DELAY_MS} мс, INIT не повторяю", true)
@@ -1852,6 +1855,8 @@ class AaBridgeCore(
     @Volatile private var mushafResume = false
     /** HOG: мусхаф и при движении (QuranPrefs.mushafDriving, для пассажира); ставит BridgeService. */
     @Volatile var mushafWhileDriving: () -> Boolean = { false }
+    /** HOG: звук AA пошёл в машину через CarLife (MEDIA START); ставит BridgeService. */
+    @Volatile var onCarMedia: () -> Unit = {}
     @Volatile private var mushafParkedSince = NEVER
     /** Рисует кадр мусхафа (ширина, высота видимой части); ставит BridgeService. */
     @Volatile var mushafScene: ((android.graphics.Canvas, Int, Int) -> Unit)? = null

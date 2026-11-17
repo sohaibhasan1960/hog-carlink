@@ -12,4 +12,7 @@
     <string name="lang_en" translatable="false">English</string>
     <string name="lang_ru" translatable="false">Русский</string>
     <string name="lang_ar" translatable="false">العربية</string>
+    <string name="bt_media_title">Media audio on Bluetooth to the car</string>
+    <string name="bt_media_text">The car plays sound through HOG, but the phone also sends media audio to %1$s over Bluetooth. Voice notes from WhatsApp and other apps then go to Bluetooth and are heard neither in the car nor on the phone. In Bluetooth settings, tap the gear next to %1$s and turn off Media audio; keep Calls on.</string>
+    <string name="bt_media_open">Bluetooth settings</string>
 </resources>

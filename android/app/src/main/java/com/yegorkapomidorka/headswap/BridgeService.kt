@@ -250,7 +250,40 @@ class BridgeService : Service() {
         val nm = getSystemService(NotificationManager::class.java)
         nm.createNotificationChannel(NotificationChannel(CHANNEL, getString(R.string.notif_channel_bridge), NotificationManager.IMPORTANCE_LOW))
         registerReceiver(detachReceiver, IntentFilter(UsbManager.ACTION_USB_ACCESSORY_DETACHED), Context.RECEIVER_EXPORTED)
+        audioDiag.onA2dpAdded = { checkBtMedia("A2DP подключён") }
         audioDiag.start(this)
+    }
+
+    /** HOG: подсказка про «звук мультимедиа» по Bluetooth уже показана в этой сессии. */
+    private var btMediaHinted = false
+
+    /**
+     * HOG: звук машины идёт через CarLife, а телефон ещё держит A2DP («звук мультимедиа» Bluetooth). Тогда звук
+     * других приложений (голосовые WhatsApp) уходит в A2DP: машина его не играет (источник CarLife), а динамик
+     * телефона молчит. Отключить A2DP приложение не может - один раз за сессию подсказать, где выключить.
+     */
+    private fun checkBtMedia(why: String) {
+        if (btMediaHinted || session == null) return
+        val h = host ?: return
+        if (h.isDead || !h.core.featureConfigSeen || !h.core.audioViaUsb) return
+        val name = audioDiag.a2dp() ?: return
+        btMediaHinted = true
+        AppLog.i("AUDIO A2DP '$name' при звуке через CarLife ($why): подсказка выключить звук мультимедиа по Bluetooth", true)
+        val open = PendingIntent.getActivity(
+            this, 8, Intent(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val text = getString(R.string.bt_media_text, name)
+        val n = Notification.Builder(this, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_headswap)
+            .setContentTitle(getString(R.string.bt_media_title))
+            .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText(text))
+            .setContentIntent(open)
+            .addAction(Notification.Action.Builder(null, getString(R.string.bt_media_open), open).build())
+            .setAutoCancel(true)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(BT_MEDIA_NOTIF_ID, n)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -1389,6 +1422,7 @@ class BridgeService : Service() {
             val core = AaBridgeCore(log, clockUs = { SystemClock.elapsedRealtimeNanos() / 1_000 })
             core.micModeProvider = { aaPrefs.micMode }
             core.mushafWhileDriving = { com.yegorkapomidorka.headswap.prayer.QuranPrefs(this).mushafDriving }
+            core.onCarMedia = { main.post { checkBtMedia("AA MEDIA START") } }
             core.huMicMemo = com.yegorkapomidorka.headswap.aa.HuMicMemo({ aaPrefs.huMicSilent }, { aaPrefs.huMicSilent = it })
             val audio = getSystemService(AudioManager::class.java)
             // HOG: мусхаф на экране машины (только на стоянке, решает core по скорости от ГУ)
@@ -1502,6 +1536,7 @@ class BridgeService : Service() {
     private fun onSessionClosed(s: CarLifeSession, reason: String) {
         AppLog.i("сервис: сессия завершена ($reason)")
         if (session !== s) return
+        btMediaHinted = false
         if (sessionMode == BridgeMode.DESKTOP) onDesktopSessionClosing(s)
         session = null
         markCarSeen()
@@ -1621,6 +1656,7 @@ class BridgeService : Service() {
         /** HOG: приложение на экране - запросить тип microphone (fallback AA-микрофона на телефон слышит не тишину). */
         const val ACTION_MIC_FG = "com.hog.carlink.MIC_FG"
         private const val MIC_NOTIF_ID = 7
+        private const val BT_MEDIA_NOTIF_ID = 8
 
         /** Сервис идёт с типом microphone: микрофон телефона в фоне не глушится. */
         @Volatile var micTyped = false
