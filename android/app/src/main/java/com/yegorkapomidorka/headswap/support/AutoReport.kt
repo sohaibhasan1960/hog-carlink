@@ -124,7 +124,7 @@ object AutoReport {
         AppLog.i("автоотчёт отправлен (${report.length} символов)", true)
     }
 
-    private fun tail(f: File, max: Int): String = RandomAccessFile(f, "r").use { r ->
+    fun tail(f: File, max: Int): String = RandomAccessFile(f, "r").use { r ->
         val start = maxOf(0L, r.length() - max)
         r.seek(start)
         val b = ByteArray((r.length() - start).toInt())

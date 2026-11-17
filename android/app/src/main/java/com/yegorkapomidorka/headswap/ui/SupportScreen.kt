@@ -188,7 +188,14 @@ class SupportScreen(host: MainActivity) : Screen(host) {
         }
         bg {
             val ok = try {
-                cloud.send(n, p, car, ver, text, LogShare.deviceInfo(c))
+                // HOG: с концом лога - иначе по запросу не понять, что случилось (была только сводка настроек)
+                val log = AppLog.file?.takeIf { it.isFile }
+                val report = LogShare.deviceInfo(c) + (if (log == null) "" else
+                    "
+
+=== ${log.name} (конец)
+" + com.yegorkapomidorka.headswap.support.AutoReport.tail(log, 80_000))
+                cloud.send(n, p, car, ver, text, report)
                 true
             } catch (e: Exception) {
                 AppLog.i("поддержка: запрос не отправлен: ${e.javaClass.simpleName}: ${e.message}", true)
