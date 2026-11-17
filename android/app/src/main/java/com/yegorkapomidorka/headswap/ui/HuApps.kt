@@ -47,6 +47,11 @@ object HuApps {
             "Fermata Auto", "me.aap.fermata.auto.dear.google.why",
             "https://github.com/AndreyPavlenko/Fermata/releases", R.string.apps_fermata_desc,
         ),
+        // HOG: CarStream (thekirankumar, Apache-2.0) - YouTube и браузер в Android Auto; пакет из build.gradle автора
+        HuApp(
+            "CarStream", "com.google.android.kk",
+            "https://github.com/thekirankumar/carstream-android-auto/releases", R.string.apps_carstream_desc,
+        ),
         HuApp(
             "ParkedTube", "dev.codex.aaparkedyoutube",
             "https://github.com/gadmin2151/ParkedTube/releases", R.string.apps_parkedtube_desc,

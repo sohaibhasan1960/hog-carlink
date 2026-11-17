@@ -9,12 +9,13 @@ import org.junit.Test
 class HuAppsTest {
     private val fermata = HuApps.CATALOG.first { it.name == "Fermata Auto" }
     private val parkedTube = HuApps.CATALOG.first { it.name == "ParkedTube" }
+    private val carStream = HuApps.CATALOG.first { it.name == "CarStream" }
     private val browser = HuApps.CATALOG.first { it.name == "AABrowser" }
 
     @Test
-    fun catalogHasThreeAppsWithGithubReleases() {
+    fun catalogHasFourAppsWithGithubReleases() {
         assertEquals(
-            listOf("me.aap.fermata.auto.dear.google.why", "dev.codex.aaparkedyoutube", "com.kododake.aabrowser"),
+            listOf("me.aap.fermata.auto.dear.google.why", "com.google.android.kk", "dev.codex.aaparkedyoutube", "com.kododake.aabrowser"),
             HuApps.CATALOG.map { it.pkg },
         )
         assertTrue(HuApps.CATALOG.all { it.url.startsWith("https://github.com/") && it.url.endsWith("/releases") })
@@ -84,7 +85,7 @@ class HuAppsTest {
     fun catalogAppMissedByQueriesStillInstalled() {
         val r = select(emptyList(), installed = setOf(fermata.pkg))
         assertEquals(listOf(fermata.pkg), r.installed)
-        assertEquals(listOf(parkedTube, browser), r.recommended)
+        assertEquals(listOf(carStream, parkedTube, browser), r.recommended)
     }
 
     @Test
@@ -128,7 +129,7 @@ class HuAppsTest {
     }
 
     @Test
-    fun catalogSizeIsThree() {
-        assertEquals(3, HuApps.CATALOG.size)
+    fun catalogSizeIsFour() {
+        assertEquals(4, HuApps.CATALOG.size)
     }
 }

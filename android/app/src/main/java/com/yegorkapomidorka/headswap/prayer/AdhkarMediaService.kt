@@ -93,8 +93,11 @@ class AdhkarMediaService : MediaBrowserService() {
                 val sub = getString(R.string.hf_car_sub, rep)
                 // HOG: мусхаф на экране машины (на стоянке)
                 out.add(item(MUSHAF, getString(R.string.mf_car), getString(R.string.mf_car_sub), playable = true))
-                for (pg in listOf(h.page, h.page + 1, h.page - 1).filter { it in 1..QuranPages.PAGES }) {
-                    out.add(item("HIFZ:$pg", getString(R.string.hf_car_listen, pg, hifzNames(pg)), sub, playable = true))
+                // текущая страница плана сразу, затем все 604 страницы по 30 джузам (без клавиатуры - листать джуз)
+                out.add(item("HIFZ:${h.page}", getString(R.string.hf_car_listen, h.page, hifzNames(h.page)), sub, playable = true))
+                for (j in 1..30) {
+                    val pages = (1..QuranPages.PAGES).filter { QuranPages.juzOf(it) == j }
+                    out.add(item(JUZ + j, getString(R.string.hf_car_juz, j), getString(R.string.hf_car_juz_pages, pages.first(), pages.last()), playable = false))
                 }
             }
             LIBRARY -> for (b in AudioBook.Library(this).books()) {
@@ -118,6 +121,13 @@ class AdhkarMediaService : MediaBrowserService() {
                         out.add(item(PrayerPlayer.What.TEST_ADHAN.name + ":" + p.name, "${PrayerPlayer.prayerName(this, p)}  $t", sub, playable = true))
                     }
                 }
+            }
+        }
+        if (parentId.startsWith(JUZ)) parentId.removePrefix(JUZ).toIntOrNull()?.let { j ->
+            val h = HifzPrefs(this)
+            val rep = if (h.repeat == 0) getString(R.string.hf_repeat_inf) else getString(R.string.hf_times, h.repeat)
+            for (pg in (1..QuranPages.PAGES).filter { QuranPages.juzOf(it) == j }) {
+                out.add(item("HIFZ:$pg", getString(R.string.hf_car_listen, pg, hifzNames(pg)), getString(R.string.hf_car_sub, rep), playable = true))
             }
         }
         if (parentId.startsWith(BOOK)) AudioBook.Library(this).book(parentId.removePrefix(BOOK))?.let { b ->
@@ -153,6 +163,7 @@ class AdhkarMediaService : MediaBrowserService() {
         private const val HIFZ = "hifz"
         const val MUSHAF = "MUSHAF"
         private const val BOOK = "book:"
+        private const val JUZ = "juz:"
     }
 }
 

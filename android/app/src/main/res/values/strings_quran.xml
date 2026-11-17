@@ -98,4 +98,6 @@
 3. Open the Tesla browser and type this address:</string>
     <string name="tesla_no_ip">No network yet: turn on the hotspot, then come back here.</string>
     <string name="tesla_notif">Tesla screen is on</string>
+    <string name="hf_car_juz">Juz %1$d</string>
+    <string name="hf_car_juz_pages">Pages %1$d–%2$d</string>
 </resources>

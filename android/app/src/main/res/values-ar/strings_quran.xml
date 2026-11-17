@@ -98,4 +98,6 @@
 ٣. افتح متصفح تسلا واكتب هذا العنوان:</string>
     <string name="tesla_no_ip">لا توجد شبكة بعد: فعّل نقطة الاتصال ثم ارجع إلى هنا.</string>
     <string name="tesla_notif">شاشة تسلا تعمل</string>
+    <string name="hf_car_juz">الجزء %1$d</string>
+    <string name="hf_car_juz_pages">الصفحات %1$d–%2$d</string>
 </resources>

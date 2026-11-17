@@ -98,6 +98,7 @@
         <!-- раздел «Приложения для магнитолы»: статус установки и запуск каталога (Fermata Auto, ParkedTube, AABrowser) -->
         <package android:name="me.aap.fermata.auto.dear.google.why" />
         <package android:name="dev.codex.aaparkedyoutube" />
+        <package android:name="com.google.android.kk" />
         <package android:name="com.kododake.aabrowser" />
         <!-- HOG CarLink: «فتح في تدارس» на экране Корана (ui/QuranScreen) -->
         <package android:name="com.tadarose_quran" />

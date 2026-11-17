@@ -142,7 +142,7 @@ class PrayerPlayer : Service() {
             What.ADHAN, What.TEST_ADHAN -> playAdhan()
             What.IQAMA -> speak(listOf(title to Adhkar.IQAMA), short = true)
             What.DHIKR -> playShortDhikr(text ?: "")
-            What.QURAN -> playQuran(surah, intent.getLongExtra(EXTRA_POS, 0L))
+            What.QURAN -> playQuran(surah, intent.getLongExtra(EXTRA_POS, 0L), showOnCar = true)
             What.BOOK -> playBook(intent.getLongExtra(EXTRA_POS, -1L))
             What.HIFZ -> playHifz(intent.getIntExtra(EXTRA_PAGE, HifzPrefs(this).page), showOnCar = true)
             What.MORNING, What.EVENING -> {
@@ -189,9 +189,13 @@ class PrayerPlayer : Service() {
 
     // ---------------- Коран (поток) ----------------
 
-    private fun playQuran(surah0: Int, startMs: Long) {
+    /** [showOnCar] - новый запуск суры (не следующая по порядку): мусхаф сам выходит на экран машины. */
+    private fun playQuran(surah0: Int, startMs: Long, showOnCar: Boolean = false) {
         val surah = surah0.coerceIn(1, com.yegorkapomidorka.headswap.quran.Quran.SURAHS)
         quranSurah = surah
+        surahNow = surah
+        hifzNowPage = 0
+        startProgress()
         quranPrepared = false
         quranPaused = false
         pausedByFocus = false
@@ -240,7 +244,9 @@ class PrayerPlayer : Service() {
             }
             notify(title, getString(R.string.qr_loading))
             mp.prepareAsync()
-            AppLog.i("Коран: сура $surah, ${prefs.reciter}, с ${startMs / 1000} с")
+            // HOG: сура заиграла - её страницы на экране машины, страница за чтецом (по доле прослушанного)
+            if (showOnCar) com.yegorkapomidorka.headswap.quran.CarMushaf.showFor(QuranPages.pageOf(surah, 1))
+            AppLog.i("Коран: сура $surah, ${prefs.reciter}, с ${startMs / 1000} с", true)
         } catch (e: Exception) {
             AppLog.e("Коран: поток не запустился", e)
             finish("поток не запустился")
@@ -417,6 +423,8 @@ class PrayerPlayer : Service() {
     @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
     /** [showOnCar] - новый запуск плана (не листание): мусхаф сам выходит на экран машины. */
     private fun playHifz(page0: Int, showOnCar: Boolean = false) {
+        surahNow = 0
+        startProgress()
         val prefs = HifzPrefs(this)
         val page = page0.coerceIn(1, QuranPages.PAGES)
         hifzPage = page
@@ -1194,7 +1202,34 @@ class PrayerPlayer : Service() {
         focus = null
     }
 
+    /** Позиция и длительность для экрана машины: плеер читается только с главной нити, кадр рисуется с другой. */
+    private val progressTick = object : Runnable {
+        override fun run() {
+            if (!quranActive) return
+            if (quranPrepared) {
+                posNowMs = quranPos()
+                durNowMs = try {
+                    exo?.duration?.takeIf { it > 0 } ?: player?.duration?.toLong()?.takeIf { it > 0 } ?: 0L
+                } catch (_: Exception) {
+                    0L
+                }
+            }
+            main.postDelayed(this, 250)
+        }
+    }
+
+    private fun startProgress() {
+        posNowMs = 0L
+        durNowMs = 0L
+        main.removeCallbacks(progressTick)
+        main.postDelayed(progressTick, 250)
+    }
+
     private fun finish(why: String) {
+        main.removeCallbacks(progressTick)
+        surahNow = 0
+        posNowMs = 0L
+        durNowMs = 0L
         AppLog.i("намаз: звук остановлен: $why")
         stopSound()
         current = null
@@ -1250,6 +1285,11 @@ class PrayerPlayer : Service() {
 
         /** Сура загружена (играет или на паузе): кнопки машины управляют ею, а не азкарами. */
         @Volatile var quranActive = false
+        /** Звучащая сура целиком (не план заучивания); 0 - нет. Мусхаф в машине листает её страницы. */
+        @Volatile var surahNow = 0
+        /** Позиция и длительность текущего звука, мс (обновляет главная нить каждые 250 мс). */
+        @Volatile var posNowMs = 0L
+        @Volatile var durNowMs = 0L
         /** Сура / план на паузе (кнопка تشغيل/إيقاف мусхафа в машине). */
         @Volatile var quranPausedNow = false
         /** Сколько следующих страниц плана собирать заранее одним звуком. */

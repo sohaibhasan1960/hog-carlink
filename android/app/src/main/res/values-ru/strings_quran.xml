@@ -98,4 +98,6 @@
 3. Откройте браузер Tesla и введите адрес:</string>
     <string name="tesla_no_ip">Сети ещё нет: включите точку доступа и вернитесь сюда.</string>
     <string name="tesla_notif">Экран Tesla работает</string>
+    <string name="hf_car_juz">Джуз %1$d</string>
+    <string name="hf_car_juz_pages">Страницы %1$d–%2$d</string>
 </resources>
