@@ -13,8 +13,9 @@ import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
  * HOG CarLink: звук плана заучивания (аят за аятом, отдельные файлы everyayah).
  *
  * Паузы между аятами - в самих записях: у «الحصري المعلّم» после аята 3-4 с тишины (время повторить за чтецом),
- * у ряда чтецов 1-2 с в начале файла. Свой SilenceSkippingAudioProcessor: тишина короче [MIN_SILENCE_US] остаётся
- * как есть (паузы самого чтения), длиннее - ужимается до [KEEP_SILENCE_US]. Включается skipSilenceEnabled
+ * у ряда чтецов 1-2 с в начале файла. Свой SilenceSkippingAudioProcessor: тишина короче [MIN_SILENCE_US] (1.5 с) остаётся
+ * как есть (паузы самого чтения у Хусари и Минщави - до 1 с, замерено), длиннее - ужимается до [KEEP_SILENCE_US].
+ * У «المعلّم» ужимаются и его паузы внутри аята (1.7-2.2 с, на повтор). Включается skipSilenceEnabled
  * (HifzPrefs.trimPauses). Тишина конца одного файла и начала следующего идёт подряд и ужимается вместе.
  *
  * Буфер впрок больше стандартного: файлы короткие (5-20 с), сеть в машине рвётся - пусть заранее лежат
@@ -22,8 +23,8 @@ import androidx.media3.exoplayer.audio.SilenceSkippingAudioProcessor
  */
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 object HifzAudio {
-    const val MIN_SILENCE_US = 700_000L
-    const val KEEP_SILENCE_US = 500_000L
+    const val MIN_SILENCE_US = 1_500_000L
+    const val KEEP_SILENCE_US = 800_000L
 
     fun renderers(ctx: Context): DefaultRenderersFactory = object : DefaultRenderersFactory(ctx) {
         override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioTrackPlaybackParams: Boolean): AudioSink =

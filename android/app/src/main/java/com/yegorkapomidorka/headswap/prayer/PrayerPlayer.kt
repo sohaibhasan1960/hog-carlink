@@ -411,6 +411,10 @@ class PrayerPlayer : Service() {
                 override fun onPlaybackStateChanged(state: Int) {
                     if (exo !== e) return
                     when (state) {
+                        // посреди плана: следующий аят не скачан - это и есть «пауза без причины»
+                        androidx.media3.common.Player.STATE_BUFFERING -> if (quranPrepared) {
+                            AppLog.i("حفظ: жду сеть на файле ${e.currentMediaItemIndex + 1} из ${queue.size}", true)
+                        }
                         androidx.media3.common.Player.STATE_READY -> if (!quranPrepared) {
                             quranPrepared = true
                             main.removeCallbacks(savePos)
@@ -423,7 +427,7 @@ class PrayerPlayer : Service() {
                             val p = HifzPrefs(this@PrayerPlayer)
                             p.done = p.done + pages.size
                             p.page = (pages.last() + 1).coerceAtMost(QuranPages.PAGES)
-                            AppLog.i("حفظ: страницы ${pages.first()}-${pages.last()} дослушаны, дальше ${p.page}")
+                            AppLog.i("حفظ: страницы ${pages.first()}-${pages.last()} дослушаны, дальше ${p.page}", true)
                             finish("حفظ: ورد дослушан")
                             notify(getString(R.string.hf_title), getString(R.string.hf_done, pages.first(), pages.last(), p.page), ongoing = false)
                         }
@@ -440,7 +444,7 @@ class PrayerPlayer : Service() {
 
                 override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
                     if (exo !== e) return
-                    AppLog.i("حفظ: ошибка ${error.errorCodeName}: ${error.message}")
+                    AppLog.i("حفظ: ошибка ${error.errorCodeName}: ${error.message}", true)
                     finish("حفظ: ошибка потока")
                     notify(getString(R.string.hf_title), getString(R.string.qr_net_error), ongoing = false)
                 }
@@ -453,7 +457,7 @@ class PrayerPlayer : Service() {
             e.prepare()
             hifzState(0)
             notify(title, getString(R.string.qr_loading))
-            AppLog.i("حفظ: страница $page, страниц ${prefs.pagesPerSession}, повторов $repeat, ${voice.folder}, файлов ${queue.size}, тишина ${if (prefs.trimPauses) "сокращается" else "как в записи"}")
+            AppLog.i("حفظ: страница $page, страниц ${prefs.pagesPerSession}, повторов $repeat, ${voice.folder}, файлов ${queue.size}, тишина ${if (prefs.trimPauses) "сокращается" else "как в записи"}", true)
         } catch (e: Exception) {
             AppLog.e("حفظ: поток не запустился", e)
             finish("حفظ: поток не запустился")
@@ -1162,7 +1166,7 @@ class PrayerPlayer : Service() {
             try {
                 ctx.startForegroundService(i)
             } catch (e: Exception) {
-                AppLog.i("حفظ: не запущен: ${e.javaClass.simpleName}: ${e.message}")
+                AppLog.i("حفظ: не запущен: ${e.javaClass.simpleName}: ${e.message}", true)
             }
         }
         const val CH_PLAY = "prayer_play"
