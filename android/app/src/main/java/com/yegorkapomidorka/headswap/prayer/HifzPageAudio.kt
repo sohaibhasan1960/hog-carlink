@@ -27,8 +27,16 @@ import java.nio.ByteOrder
  */
 @androidx.annotation.OptIn(androidx.media3.common.util.UnstableApi::class)
 object HifzPageAudio {
-    const val LEAD_KEEP_MS = 120
-    const val TAIL_KEEP_MS = 350
+    /**
+     * Запас тишины до и после аята. 17.11 при 120/350 мс между аятами оставалось ~0.45 с - на слух «по аятам»
+     * (у аль-Аджми после аята 1.9-2.4 с тишины). Теперь ~0.2 с, как в сплошной записи суры.
+     */
+    const val LEAD_KEEP_MS = 60
+    const val TAIL_KEEP_MS = 150
+    /** Плавный край обрезанного куска: без щелчка на стыке аятов. */
+    const val FADE_MS = 8
+    /** Версия нарезки: смена запасов - новые файлы, старые страницы не переиспользуются. */
+    private const val CUT = "v2"
     private const val KEEP_PAGES = 40
     /** Окно 10 мс тише этого (пик, PCM16) - тишина. */
     private const val SILENCE_PEAK = 700
@@ -36,7 +44,7 @@ object HifzPageAudio {
     /** Страница готова: WAV и начало/конец каждого файла страницы (порядок [QuranPages.files]), мс. */
     class Page(val wav: File, val startMs: LongArray, val endMs: LongArray)
 
-    private fun dir(ctx: Context, voice: QuranPages.Voice) = File(ctx.cacheDir, "hifz-pages/${voice.folder}")
+    private fun dir(ctx: Context, voice: QuranPages.Voice) = File(ctx.cacheDir, "hifz-pages/$CUT/${voice.folder}")
 
     /** Уже собранная страница или null. */
     fun cached(ctx: Context, voice: QuranPages.Voice, page: Int): Page? {
@@ -79,7 +87,13 @@ object HifzPageAudio {
                 val (a, b) = trim(pcm.samples, rate)
                 start[i] = msOf(out.size() / 2L, rate)
                 val buf = ByteBuffer.allocate((b - a) * 2).order(ByteOrder.LITTLE_ENDIAN)
-                for (k in a until b) buf.putShort(pcm.samples[k])
+                val fade = rate * FADE_MS / 1000
+                for (k in a until b) {
+                    // край куска, отрезанный от тишины, - плавно: из нуля и в ноль
+                    val inG = if (a > 0 && k - a < fade) (k - a).toFloat() / fade else 1f
+                    val outG = if (b < pcm.samples.size && b - 1 - k < fade) (b - 1 - k).toFloat() / fade else 1f
+                    buf.putShort((pcm.samples[k] * minOf(inG, outG)).toInt().toShort())
+                }
                 out.write(buf.array())
                 end[i] = msOf(out.size() / 2L, rate)
             }

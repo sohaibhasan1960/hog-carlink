@@ -22,7 +22,7 @@ class HifzPageAudioTest {
         val s = ShortArray(5000) { i -> if (i in 200 until 2000 || i in 3000 until 4800) 5000 else 0 }
         val (a, b) = HifzPageAudio.trim(s, rate)
         assertEquals(200 - HifzPageAudio.LEAD_KEEP_MS, a)
-        assertEquals(5000, b)       // хвост 200 мс короче запаса - до конца файла
+        assertEquals(4800 + HifzPageAudio.TAIL_KEEP_MS, b)       // после последнего звука - только запас
     }
 
     @Test

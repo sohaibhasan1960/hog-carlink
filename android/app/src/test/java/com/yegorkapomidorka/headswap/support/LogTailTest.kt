@@ -21,6 +21,7 @@ class LogTailTest {
         "08:48:58.469 META -> NAVI_NEXT_TURN_INFO (манёвр повторён) action=2 nextTurn=24",
         "08:48:58.470 TX CMD 0x00010030 NAVI_NEXT_TURN_INFO len=3597 {action=2}",
         "    0040  6C 61 77 61 74 20 51 75  72 61 6E 20 4B 61 72 65  |lawat Quran Kare|",
+        "16:52:15.701 SRVCHECK | aa RX CONTROL(0) AUDIO_FOCUS_REQUEST 0x0012 len=2 | {request=4}",
     )
     private val keep = listOf(
         "08:34:41.842 AA RX AUDIO_SPEECH(4) MEDIA_START 0x8001 len=4 | {session_id=0 configuration_index=0}",
@@ -29,6 +30,7 @@ class LogTailTest {
         "08:34:56.602 MIC open от AA: режим=авто, CarLife жив",
         "08:34:49.442 BRIDGE голосовая сессия: старт, MEDIA на паузу, данные MEDIA не пересылаю",
         "08:49:30.475 сессия: закрытие, причина: tcp6 CMD(7240): EOF (ГУ закрыла сокет)",
+        "16:53:22.506 حفظ: страница 3, страниц 1, повторов 10, Ahmed_ibn_Ali_al-Ajamy_128kbps_ketaballah.net, страница целиком",
     )
 
     @Test
@@ -44,8 +46,8 @@ class LogTailTest {
             f.writeText((noise + keep + noise).joinToString("\n") + "\n")
             val t = AutoReport.meaningfulTail(f, 10_000)
             assertEquals(keep.joinToString("\n") + "\n", t)
-            val small = AutoReport.meaningfulTail(f, 80)
-            assertTrue("в малый бюджет - только последние события", small.contains("сессия: закрытие") && !small.contains("MIC open"))
+            val small = AutoReport.meaningfulTail(f, 260)
+            assertTrue("в малый бюджет - только последние события", small.contains("حفظ:") && !small.contains("MIC open"))
         } finally {
             f.delete()
         }
