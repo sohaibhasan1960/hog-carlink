@@ -112,12 +112,19 @@ class SupportCloud(ctx: Context) {
             if (link) o.put("idToken", token())
             return o.toString()
         }
-        val r = try {
+        // с returnIdpCredential Firebase сообщает «уже привязан» не ошибкой HTTP, а ответом 200 без idToken
+        // (errorMessage = FEDERATED_USER_ID_ALREADY_LINKED); раньше это падало JSONException: No value for idToken
+        val linked = try {
             http("POST", "$SIGN_IN_IDP?key=$API_KEY", body(link = true), null)
         } catch (e: HttpError) {
             if (!e.body.contains("FEDERATED_USER_ID_ALREADY_LINKED")) throw e
+            null
+        }
+        val r = if (linked != null && linked.has("idToken")) linked else {
+            linked?.let { if (!alreadyLinked(it)) throw IOException("signInWithIdp: ${it.optString("errorMessage").ifEmpty { "нет idToken" }}") }
             AppLog.i("поддержка: этот Google уже у другого аккаунта, вхожу в него", true)
             val other = http("POST", "$SIGN_IN_IDP?key=$API_KEY", body(link = false), null)
+            if (!other.has("idToken")) throw IOException("signInWithIdp: ${other.optString("errorMessage").ifEmpty { "нет idToken" }}")
             isOwner = false
             other
         }
@@ -406,6 +413,10 @@ class SupportCloud(ctx: Context) {
         private const val K_LIC_CHECKED = "licChecked"
 
         fun sv(s: String): JSONObject = JSONObject().put("stringValue", s)
+
+        /** Ответ signInWithIdp при привязке: этот Google уже у другого аккаунта Firebase - войти в тот без привязки. */
+        fun alreadyLinked(r: JSONObject): Boolean = !r.has("idToken") &&
+            (r.optString("errorMessage").contains("FEDERATED_USER_ID_ALREADY_LINKED") || r.optBoolean("needConfirmation"))
 
         fun rfc3339(d: Date): String = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
             .apply { timeZone = TimeZone.getTimeZone("UTC") }.format(d)

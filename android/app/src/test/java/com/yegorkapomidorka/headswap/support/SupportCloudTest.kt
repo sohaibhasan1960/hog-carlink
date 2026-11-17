@@ -1,7 +1,10 @@
 package com.yegorkapomidorka.headswap.support
 
 import org.json.JSONArray
+import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SupportCloudTest {
@@ -30,5 +33,15 @@ class SupportCloudTest {
     @Test
     fun emptyQueryHasNoDocuments() {
         assertEquals(0, SupportCloud.parseQuery(JSONArray("""[{"readTime":"2026-11-04T08:00:00Z"}]""")).size)
+    }
+
+    @Test
+    fun googleAlreadyLinkedComesAsOkWithoutToken() {
+        // так Firebase отвечает на привязку Google, уже связанного с другим аккаунтом (переустановка, второй телефон)
+        assertTrue(SupportCloud.alreadyLinked(JSONObject("""{"kind":"identitytoolkit#VerifyAssertionResponse",
+            "providerId":"google.com","email":"a@b.c","errorMessage":"FEDERATED_USER_ID_ALREADY_LINKED"}""")))
+        assertTrue(SupportCloud.alreadyLinked(JSONObject("""{"needConfirmation":true,"email":"a@b.c"}""")))
+        assertFalse(SupportCloud.alreadyLinked(JSONObject("""{"idToken":"t","refreshToken":"r","localId":"u"}""")))
+        assertFalse(SupportCloud.alreadyLinked(JSONObject("""{"errorMessage":"INVALID_IDP_RESPONSE"}""")))
     }
 }
