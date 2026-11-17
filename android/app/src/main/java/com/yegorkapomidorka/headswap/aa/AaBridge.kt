@@ -542,6 +542,8 @@ class AaBridgeCore(
     // --- микрофон AA: запрос открыл телефон, звук берём у ГУ (CarLife VR) или с микрофона телефона ---
     /** Режим микрофона читается в момент каждого open: переключатель в UI действует сразу. */
     @Volatile var micModeProvider: () -> MicMode = { MicMode.AUTO }
+    /** HOG: память «ГУ микрофон не шлёт» (AaPrefs); null - всегда сначала ГУ. Ставить до первого open. */
+    @Volatile var huMicMemo: HuMicMemo? = null
     /** Состояние звонка на телефоне (AudioManager.mode): на [huVwCns2Delphi] перемотка руля на время звонка = принять/положить. */
     @Volatile var phoneCallProvider: () -> PhoneCall = { PhoneCall.IDLE }
 
@@ -571,6 +573,9 @@ class AaBridgeCore(
         },
         nowMs = clockMs,
         nowUs = clockUs,
+        huMemo = object : HuMicMemoProxy() {
+            override fun target() = huMicMemo
+        },
     )
 
     override fun onMicOpen(): Boolean = mic.open()

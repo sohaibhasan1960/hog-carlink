@@ -1388,6 +1388,7 @@ class BridgeService : Service() {
             val log = { line: String, ui: Boolean -> AppLog.i(line, ui) }
             val core = AaBridgeCore(log, clockUs = { SystemClock.elapsedRealtimeNanos() / 1_000 })
             core.micModeProvider = { aaPrefs.micMode }
+            core.huMicMemo = com.yegorkapomidorka.headswap.aa.HuMicMemo({ aaPrefs.huMicSilent }, { aaPrefs.huMicSilent = it })
             val audio = getSystemService(AudioManager::class.java)
             // HOG: мусхаф на экране машины (только на стоянке, решает core по скорости от ГУ)
             com.yegorkapomidorka.headswap.quran.CarMushaf.init(this)

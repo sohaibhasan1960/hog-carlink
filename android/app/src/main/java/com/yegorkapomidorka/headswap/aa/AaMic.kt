@@ -215,6 +215,8 @@ class AaMicRouter(
     private val huTimeoutMs: Long = HU_TIMEOUT_MS,
     /** Baidu MD (ReceiveDataThread.FILTER_PAKCAGE_NUM) выбрасывает первые 20 пакетов VR после старта записи. */
     private val huSkipPackets: Int = HU_SKIP_PACKETS,
+    /** HOG: память «ГУ этой машины микрофон не шлёт» - в AUTO сразу телефон, без 2 с ожидания (начало фразы терялось). */
+    private val huMemo: HuMicMemo? = null,
 ) {
     enum class State { IDLE, HU_WAIT, HU, PHONE }
 
@@ -277,6 +279,9 @@ class AaMicRouter(
                     return true
                 }
                 MicMode.AUTO -> {
+                    if (link && huMemo?.skipHu() == true) {
+                        return startPhoneLocked("авто: ГУ этой машины микрофон не шлёт (запомнено ${huMemo.silent} раз), сразу телефон")
+                    }
                     if (link && requestHuLocked()) return true
                     return startPhoneLocked("авто: ГУ недоступен")
                 }
@@ -317,6 +322,7 @@ class AaMicRouter(
                     timer = null
                     huLastLogAt = nowMs()
                     log("MIC: ГУ прислал первые данные: ${pcm.size} Б спустя ${nowMs() - huReqAt} мс после запроса", true)
+                    huMemo?.verdict(sent = true)
                 }
                 State.HU -> {}
                 else -> {
@@ -370,6 +376,7 @@ class AaMicRouter(
             if (g != gen || state != State.HU_WAIT) return
             if (openMode == MicMode.AUTO) {
                 log("MIC: ГУ молчит ${huTimeoutMs} мс (данных 0 Б, пакетов $huPackets): fallback на микрофон телефона", true)
+                huMemo?.verdict(sent = false)
                 huRecord(false)
                 fellBack = true
                 state = State.IDLE
@@ -434,4 +441,37 @@ class AaMicRouter(
         /** 0: пакеты ГУ не режем. У Baidu 20, но размер пакета ГУ Honda неизвестен (при 4096 Б это 2,5 с речи). */
         const val HU_SKIP_PACKETS = 0
     }
+}
+
+/**
+ * HOG CarLink: помнит, что ГУ на запрос записи не присылает звук (VW ID.6 по воздуху: 0 Б за 2 с каждый раз).
+ * После [SILENT_TO_SKIP] таких раз подряд AUTO берёт телефон сразу, а каждый [RETRY_EVERY]-й раз снова пробует ГУ:
+ * другая машина или прошивка с рабочим микрофоном снова попадёт в ГУ. Данные от ГУ сбрасывают счёт.
+ * Хранение снаружи ([load]/[save]), логика чистая - для тестов.
+ */
+open class HuMicMemo(private val load: () -> Int, private val save: (Int) -> Unit) {
+    open val silent: Int get() = load()
+
+    /** true = к ГУ не ходить. Пропуск тоже считается, чтобы раз в RETRY_EVERY проверить ГУ заново. */
+    open fun skipHu(): Boolean {
+        val n = load()
+        if (n < SILENT_TO_SKIP) return false
+        save(n + 1)
+        return (n + 1 - SILENT_TO_SKIP) % RETRY_EVERY != 0
+    }
+
+    open fun verdict(sent: Boolean) = save(if (sent) 0 else load() + 1)
+
+    companion object {
+        const val SILENT_TO_SKIP = 2
+        const val RETRY_EVERY = 10
+    }
+}
+
+/** Память, заданная позже создания роутера (AaBridge.huMicMemo); без неё - всегда сначала ГУ. */
+abstract class HuMicMemoProxy : HuMicMemo({ 0 }, {}) {
+    abstract fun target(): HuMicMemo?
+    override val silent: Int get() = target()?.silent ?: 0
+    override fun skipHu(): Boolean = target()?.skipHu() ?: false
+    override fun verdict(sent: Boolean) { target()?.verdict(sent) }
 }

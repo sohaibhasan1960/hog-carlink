@@ -219,6 +219,11 @@ class AaPrefs(ctx: Context) {
         get() = MicMode.parse(sp.getString("micMode", MicMode.AUTO.key))
         set(v) = sp.edit().putString("micMode", v.key).apply()
 
+    /** HOG: сколько раз подряд ГУ на запрос записи не прислал звук (HuMicMemo). */
+    var huMicSilent: Int
+        get() = sp.getInt("huMicSilent", 0)
+        set(v) = sp.edit().putInt("huMicSilent", v.coerceAtLeast(0)).apply()
+
     /** Вместе с запросом записи у ГУ слать MODULE_STATUS VR=1/0 (как Baidu). */
     var micVrStatus: Boolean
         get() = sp.getBoolean("micVrStatus", true)
