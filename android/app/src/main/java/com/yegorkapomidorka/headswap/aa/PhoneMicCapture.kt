@@ -91,6 +91,8 @@ class PhoneMicCapture(private val ctx: Context) : PhoneMic {
             }
             if (peak > peakAll) peakAll = peak
             if (blocks == 1 || blocks == 10) AppLog.i("MIC phone: блок #$blocks $n Б, пик=$peak (0 = тишина/микрофон заглушен системой)", false)
+            // ~1.3 с полной тишины без типа microphone - система глушит микрофон: подсказка вместо немой команды
+            if (blocks == 10 && peakAll == 0) com.yegorkapomidorka.headswap.BridgeService.micMutedHint(ctx)
             sink(buf.copyOf(n))
         }
         try {

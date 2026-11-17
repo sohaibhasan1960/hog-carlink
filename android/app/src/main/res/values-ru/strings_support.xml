@@ -90,4 +90,6 @@
     <string name="lic_failed">Ошибка: %1$s</string>
     <string name="lic_none">Подписчиков пока нет.</string>
     <string name="acc_lic_refused">Автоматическая активация для этого продавца пока недоступна. Свяжитесь с продавцом.</string>
+    <string name="mic_muted_title">Голосовые команды вас не слышат</string>
+    <string name="mic_muted_text">Android заглушил микрофон телефона: приложение запущено в фоне, а машина свой микрофон не передаёт. Откройте приложение один раз при подключённой машине и повторите.</string>
 </resources>

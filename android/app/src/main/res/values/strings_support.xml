@@ -90,4 +90,6 @@
     <string name="lic_failed">Failed: %1$s</string>
     <string name="lic_none">No subscribers yet.</string>
     <string name="acc_lic_refused">Automatic activation is not available for this seller yet. Contact the seller.</string>
+    <string name="mic_muted_title">Voice commands cannot hear you</string>
+    <string name="mic_muted_text">Android muted the phone microphone because the app was started in the background, and the car does not send its own microphone. Open the app once while the car is connected, then try again.</string>
 </resources>

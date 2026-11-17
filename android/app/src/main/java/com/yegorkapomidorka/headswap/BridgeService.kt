@@ -254,6 +254,16 @@ class BridgeService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        if (intent?.action == ACTION_MIC_FG) {
+            // HOG: приложение на экране - сейчас Android даст тип microphone (из фона - нет, и AA слышит тишину)
+            if (session != null || host != null || linkWaiting) {
+                startForegroundTyped(HeadswapNotification.build(this, CHANNEL, NOTIF_ID))
+                if (micTyped) getSystemService(NotificationManager::class.java).cancel(MIC_NOTIF_ID)
+            } else {
+                stopSelfResult(startId)
+            }
+            return stickiness()
+        }
         if (intent?.action == ACTION_DESKTOP_HOME) {
             // команда относится только к живой desktop-сессии: опоздавший клик не должен поднимать сервис и новый рабочий стол
             val accepted = !stopRequested && session != null && host?.showDesktop() == true
@@ -1460,6 +1470,7 @@ class BridgeService : Service() {
         if (foregroundMode() == BridgeMode.DESKTOP) {
             // Headswap Desktop не снимает микрофон ни телефона, ни ГУ: только connectedDevice
             startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+            micTyped = false
             return
         }
         var type = ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
@@ -1468,9 +1479,12 @@ class BridgeService : Service() {
         if (micWanted) type = type or ServiceInfo.FOREGROUND_SERVICE_TYPE_MICROPHONE
         try {
             startForeground(NOTIF_ID, n, type)
-            if (micWanted) AppLog.i("сервис: foreground-тип connectedDevice|microphone")
+            if (micWanted && !micTyped) AppLog.i("сервис: foreground-тип connectedDevice|microphone", true)
+            micTyped = micWanted
         } catch (e: Exception) {      // SecurityException или ForegroundServiceStartNotAllowedException
-            AppLog.e("сервис: foreground-тип с microphone не дали, остаюсь на connectedDevice", e)
+            AppLog.i("сервис: тип microphone из фона не дали (${e.javaClass.simpleName}), " +
+                "микрофон телефона будет немым, пока приложение не откроют", true)
+            micTyped = false
             startForeground(NOTIF_ID, n, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
         }
     }
@@ -1600,6 +1614,44 @@ class BridgeService : Service() {
         /** Из UI (приложение на экране): startService, не startForegroundService, чтобы не требовать startForeground для команды без сессии. */
         fun requestDesktopHome(ctx: Context) {
             ctx.startService(Intent(ctx, BridgeService::class.java).setAction(ACTION_DESKTOP_HOME))
+        }
+
+        /** HOG: приложение на экране - запросить тип microphone (fallback AA-микрофона на телефон слышит не тишину). */
+        const val ACTION_MIC_FG = "com.hog.carlink.MIC_FG"
+        private const val MIC_NOTIF_ID = 7
+
+        /** Сервис идёт с типом microphone: микрофон телефона в фоне не глушится. */
+        @Volatile var micTyped = false
+            private set
+
+        /** MainActivity.onResume: мост жив, а типа microphone нет - запросить сейчас, пока приложение на экране. */
+        fun requestMicType(ctx: Context) {
+            if (!alive || micTyped) return
+            if (AaPrefs(ctx).micMode == MicMode.CAR) return
+            if (ctx.checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) return
+            try {
+                ctx.startService(Intent(ctx, BridgeService::class.java).setAction(ACTION_MIC_FG))
+            } catch (e: Exception) {
+                AppLog.e("сервис: запрос типа microphone", e)
+            }
+        }
+
+        /** AA просит микрофон, ГУ не шлёт звук, а телефонный заглушен системой: сказать, как включить. */
+        fun micMutedHint(ctx: Context) {
+            if (micTyped) return
+            val open = PendingIntent.getActivity(
+                ctx, 7, Intent(ctx, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+            )
+            val n = Notification.Builder(ctx, CHANNEL)
+                .setSmallIcon(R.drawable.ic_stat_headswap)
+                .setContentTitle(ctx.getString(R.string.mic_muted_title))
+                .setContentText(ctx.getString(R.string.mic_muted_text))
+                .setStyle(Notification.BigTextStyle().bigText(ctx.getString(R.string.mic_muted_text)))
+                .setContentIntent(open)
+                .setAutoCancel(true)
+                .build()
+            ctx.getSystemService(NotificationManager::class.java).notify(MIC_NOTIF_ID, n)
         }
 
         /** Сервис создан и не уничтожен (один процесс): ресиверу ACL незачем будить пустой сервис ради отбоя. */

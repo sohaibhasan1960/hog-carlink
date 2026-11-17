@@ -90,4 +90,6 @@
     <string name="lic_failed">تعذّر: %1$s</string>
     <string name="lic_none">لا يوجد مشتركون بعد.</string>
     <string name="acc_lic_refused">التفعيل التلقائي غير متاح لهذا البائع بعد. تواصل مع البائع.</string>
+    <string name="mic_muted_title">الأوامر الصوتية لا تسمعك</string>
+    <string name="mic_muted_text">أغلق Android ميكروفون الهاتف لأن التطبيق بدأ في الخلفية، والسيارة لا ترسل ميكروفونها. افتح التطبيق مرة والسيارة متصلة، ثم أعد المحاولة.</string>
 </resources>

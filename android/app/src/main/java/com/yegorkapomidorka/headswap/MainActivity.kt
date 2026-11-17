@@ -142,6 +142,8 @@ class MainActivity : Activity() {
         handler.post(refresh)
         Updater.maybeCheck(this)
         com.yegorkapomidorka.headswap.support.AutoReport.onAppVisible(this)
+        // HOG: из фона Android не даёт мосту микрофон телефона (AA слышит тишину); на экране - даёт
+        BridgeService.requestMicType(this)
         gateAccount()
     }
 
