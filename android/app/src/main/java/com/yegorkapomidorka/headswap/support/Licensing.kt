@@ -23,8 +23,15 @@ object Licensing {
     const val MAX_OFFLINE_MS = 7 * DAY_MS
 
     /** Чистая логика для тестов: состояние по кэшу с учётом давности проверки. */
-    fun cachedState(status: String, expiresAt: Long, checkedAt: Long, now: Long): State =
-        if (now - checkedAt > MAX_OFFLINE_MS) State.NONE else state(status, expiresAt, now)
+    fun cachedState(status: String, expiresAt: Long, checkedAt: Long, now: Long): State = when {
+        now - checkedAt > MAX_OFFLINE_MS -> State.NONE
+        // HOG: часы переведены назад (раньше последней сверки) - кэшу не верим, иначе срок не истекал бы никогда
+        checkedAt - now > CLOCK_SKEW_MS -> State.NONE
+        else -> state(status, expiresAt, now)
+    }
+
+    /** Допуск на поправку часов (NTP, часовой пояс) при сравнении с моментом последней сверки. */
+    const val CLOCK_SKEW_MS = 60 * 60 * 1000L
 
     /** Чистая логика для тестов. */
     fun state(status: String, expiresAt: Long, now: Long): State = when (status) {

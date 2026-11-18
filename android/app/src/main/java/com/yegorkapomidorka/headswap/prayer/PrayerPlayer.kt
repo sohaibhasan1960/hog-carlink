@@ -411,14 +411,10 @@ class PrayerPlayer : Service() {
         val e = exo ?: return 0
         val q = hifzQueue
         if (q.isEmpty()) return 0
-        if (hifzWhole.isEmpty()) return e.currentMediaItemIndex.coerceIn(0, q.size - 1)
-        val block = e.currentMediaItemIndex.coerceIn(0, hifzWhole.size - 1)
-        val start = hifzWhole[block]
-        val p = hifzPages[q[start].page] ?: return start
-        val pos = e.currentPosition
-        var k = 0
-        while (k + 1 < p.startMs.size && p.startMs[k + 1] <= pos) k++
-        return (start + k).coerceAtMost(q.size - 1)
+        val w = hifzWhole
+        val start = if (w.isEmpty()) -1 else w[e.currentMediaItemIndex.coerceIn(0, w.size - 1)]
+        val pageStarts = if (start >= 0) hifzPages[q[start].page]?.startMs else null
+        return HifzMath.indexNow(q.size, w, e.currentMediaItemIndex, pageStarts, e.currentPosition)
     }
     private var hifzPage = 1
     private var hifzShown = -1
@@ -563,18 +559,10 @@ class PrayerPlayer : Service() {
      * идёт по порядку QuranPages.files; повтор аята подряд (одинаковые элементы) - тот же отрезок.
      */
     private fun mergedItems(queue: List<QuranPages.Item>, pages: Map<Int, HifzPageAudio.Page>): List<androidx.media3.common.MediaItem> {
-        var prev: QuranPages.Item? = null
-        var cursor = 0
-        return queue.map { it ->
-            val pv = prev
-            cursor = when {
-                pv == null || pv.page != it.page || pv.rep != it.rep -> 0
-                pv == it -> cursor
-                else -> cursor + 1
-            }
-            prev = it
+        val seg = HifzMath.segments(queue)
+        return queue.mapIndexed { n, it ->
             val p = pages.getValue(it.page)
-            val i = cursor.coerceAtMost(p.startMs.size - 1)
+            val i = seg[n].coerceAtMost(p.startMs.size - 1)
             androidx.media3.common.MediaItem.Builder()
                 .setUri(android.net.Uri.fromFile(p.wav))
                 .setClippingConfiguration(androidx.media3.common.MediaItem.ClippingConfiguration.Builder()
