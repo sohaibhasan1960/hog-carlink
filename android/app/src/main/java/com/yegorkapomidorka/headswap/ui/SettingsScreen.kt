@@ -257,7 +257,7 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
         val c = ctx
         val arrow = c.icon(R.drawable.ic_chevron, 20, c.clr(R.color.on2))
         fun mark() {
-            arrow.rotation = if (card.visibility == View.VISIBLE) 90f else 0f
+            arrow.rotation = c.chevronRotation(card.visibility == View.VISIBLE)
         }
         mark()
         return c.hbox(10).apply {

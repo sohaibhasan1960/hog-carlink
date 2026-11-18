@@ -282,7 +282,7 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
     private fun fold(box: android.widget.LinearLayout, title: String, open: Boolean, remember: (Boolean) -> Unit): android.widget.LinearLayout {
         val c = ctx
         val inner = c.vbox(0).apply { visibility = if (open) View.VISIBLE else View.GONE }
-        val arrow = c.icon(R.drawable.ic_chevron, 20, c.clr(R.color.on2)).apply { rotation = if (open) 90f else 0f }
+        val arrow = c.icon(R.drawable.ic_chevron, 20, c.clr(R.color.on2)).apply { rotation = c.chevronRotation(open) }
         box.addView(c.hbox(10).apply {
             minimumHeight = c.dp(56)
             gravity = Gravity.CENTER_VERTICAL
@@ -296,7 +296,7 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
             setOnClickListener {
                 val now = inner.visibility != View.VISIBLE
                 inner.visibility = if (now) View.VISIBLE else View.GONE
-                arrow.rotation = if (now) 90f else 0f
+                arrow.rotation = c.chevronRotation(now)
                 remember(now)
             }
         }, lp(MATCH, WRAP))
