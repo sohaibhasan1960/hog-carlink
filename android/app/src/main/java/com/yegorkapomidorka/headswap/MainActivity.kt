@@ -340,6 +340,12 @@ class MainActivity : Activity() {
         if (intent != null && cmd != null) {
             intent.removeExtra(EXTRA_CMD)        // не повторять команду при пересоздании activity
             AppLog.i("команда из intent: $cmd")
+            // HOG: activity экспортирована (LAUNCHER) - чужое приложение может прислать cmd. Безопасные (экраны,
+            // разрешения) - всегда; управляющие (тапы, сеть, мост, микрофон) - только при включённой отладке по USB.
+            if (cmd !in SAFE_CMDS && !BuildConfig.DEBUG && !adbOn()) {
+                AppLog.i("команда $cmd отклонена: отладка по USB выключена")
+                return
+            }
             when (cmd) {
                 "aa_selftest" -> Actions.aaSelftest(this)
                 "aa_probe" -> AaProbe.run(this)                // проба AA-сессии к 127.0.0.1:5277 без CarLife (targetSdk 37)
@@ -418,6 +424,12 @@ class MainActivity : Activity() {
         Actions.scan(this, reason)
     }
 
+    private fun adbOn(): Boolean = try {
+        android.provider.Settings.Global.getInt(contentResolver, android.provider.Settings.Global.ADB_ENABLED, 0) == 1
+    } catch (_: Exception) {
+        false
+    }
+
     @Suppress("DEPRECATION")
     private fun accessoryFromIntent(intent: Intent): UsbAccessory? =
         if (Build.VERSION.SDK_INT >= 33) intent.getParcelableExtra(UsbManager.EXTRA_ACCESSORY, UsbAccessory::class.java)
@@ -430,6 +442,10 @@ class MainActivity : Activity() {
 
         /** adb shell am start -n com.yegorkapomidorka.headswap/.MainActivity --es cmd aa_selftest */
         const val EXTRA_CMD = "cmd"
+        /** Команды без побочных действий: открыть экран или запрос разрешения. */
+        private val SAFE_CMDS = setOf(
+            "phone_card_perm", "net_perm", "screen_main", "screen_settings", "onboarding", "checklist", "update_check",
+        )
         /** HOG CarLink: из уведомления поддержки - открыть экран поддержки. */
         const val EXTRA_OPEN_SUPPORT = "openSupport"
         /** HOG CarLink: открыть «Намаз и азкары» (уведомление азана/азкаров). */

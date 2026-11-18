@@ -1105,11 +1105,7 @@ class BridgeService : Service() {
         h.core.carVwId = aaPrefs.carPreset == CarPreset.VW_ID_UNYX
         h.core.phoneAssistant = null   // режим AA: кнопка голоса идёт в AA
         DesktopKeys.voiceStatus = null
-        if (wakeLock == null) {
-            wakeLock = getSystemService(PowerManager::class.java)
-                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "headswap:session")
-                .apply { acquire(4 * 60 * 60 * 1000L) }
-        }
+        holdSessionWake()
         CarLifeState.running = true
         stopRequested = false
 
@@ -1236,11 +1232,7 @@ class BridgeService : Service() {
         owner.core.spliceMs = 0L
         owner.core.carVwId = aaPrefs.carPreset == CarPreset.VW_ID_UNYX
         // кнопка голоса: системный помощник клавишей KEYCODE_ASSIST (как долгое нажатие питания), см. createDesktopHost
-        if (wakeLock == null) {
-            wakeLock = getSystemService(PowerManager::class.java)
-                .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "headswap:session")
-                .apply { acquire(4 * 60 * 60 * 1000L) }
-        }
+        holdSessionWake()
         CarLifeState.running = true
         stopRequested = false
 
@@ -1536,6 +1528,8 @@ class BridgeService : Service() {
     private fun onSessionClosed(s: CarLifeSession, reason: String) {
         AppLog.i("сервис: сессия завершена ($reason)")
         if (session !== s) return
+        // HOG: сессии нет - процессор не держим (ожидание машины по Wi-Fi может идти часами)
+        wakeLock?.let { if (it.isHeld) it.release() }
         btMediaHinted = false
         if (sessionMode == BridgeMode.DESKTOP) onDesktopSessionClosing(s)
         session = null
@@ -1593,6 +1587,16 @@ class BridgeService : Service() {
         stopSelf()
     }
 
+    /**
+     * Держать процессор, пока идёт сессия. HOG: проверка isHeld, а не null - после 4 ч тайм-аута или отпуска
+     * при закрытии сессии блокировка берётся заново (раньше поле оставалось и следующая сессия шла без неё).
+     */
+    private fun holdSessionWake() {
+        val w = wakeLock ?: getSystemService(PowerManager::class.java)
+            .newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "headswap:session").also { wakeLock = it }
+        if (!w.isHeld) w.acquire(4 * 60 * 60 * 1000L)
+    }
+
     override fun onDestroy() {
         try {
             unregisterReceiver(detachReceiver)
@@ -1615,6 +1619,9 @@ class BridgeService : Service() {
         }
         session?.close("сервис уничтожен")
         host?.shutdown("сервис уничтожен")
+        // HOG: мусхаф не должен звать ядро мёртвого моста (и держать его в памяти)
+        com.yegorkapomidorka.headswap.quran.CarMushaf.onEnter = null
+        com.yegorkapomidorka.headswap.quran.CarMushaf.onExit = null
         super.onDestroy()
     }
 

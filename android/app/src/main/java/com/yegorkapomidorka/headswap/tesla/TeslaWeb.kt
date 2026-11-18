@@ -14,8 +14,6 @@ import com.yegorkapomidorka.headswap.quran.Quran
 import com.yegorkapomidorka.headswap.quran.QuranPages
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.BufferedReader
-import java.io.InputStreamReader
 import java.io.OutputStream
 import java.net.Inet4Address
 import java.net.InetSocketAddress
@@ -58,6 +56,12 @@ object TeslaWeb {
         Thread({
             while (!s.isClosed) {
                 val c = try { s.accept() } catch (_: Exception) { break }
+                // только локальная сеть (точка доступа / Wi-Fi): не интернет через IPv6 оператора
+                val a = c.inetAddress
+                if (!(a.isSiteLocalAddress || a.isLinkLocalAddress || a.isLoopbackAddress)) {
+                    try { c.close() } catch (_: Exception) { }
+                    continue
+                }
                 pool.execute { serve(app, c) }
             }
         }, "tesla-accept").apply { isDaemon = true }.start()
@@ -82,14 +86,20 @@ object TeslaWeb {
 
     fun url(ctx: Context, ip: String) = "http://$ip:$PORT/?k=${key(ctx)}"
 
-    /** Ключ команд: случайный, один на телефон. */
+    /** Ключ команд: случайный (SecureRandom, 16 знаков), один на телефон; старый короткий заменяется. */
     fun key(ctx: Context): String {
         val sp = ctx.getSharedPreferences("tesla", Context.MODE_PRIVATE)
-        sp.getString("key", null)?.let { return it }
-        val k = (1..6).map { "abcdefghjkmnpqrstuvwxyz23456789".random() }.joinToString("")
+        sp.getString("key", null)?.takeIf { it.length >= KEY_LEN }?.let { return it }
+        val rnd = java.security.SecureRandom()
+        val abc = "abcdefghjkmnpqrstuvwxyz23456789"
+        val k = (1..KEY_LEN).map { abc[rnd.nextInt(abc.length)] }.joinToString("")
         sp.edit().putString("key", k).apply()
         return k
     }
+
+    private const val KEY_LEN = 16
+    private const val MAX_LINE = 8 * 1024
+    private const val MAX_HEADERS = 64
 
     var enabled: (Context) -> Boolean = { it.getSharedPreferences("tesla", Context.MODE_PRIVATE).getBoolean("on", false) }
 
@@ -102,10 +112,10 @@ object TeslaWeb {
         c.use { sock ->
             try {
                 sock.soTimeout = 10_000
-                val r = BufferedReader(InputStreamReader(sock.getInputStream(), Charsets.UTF_8))
-                val line = r.readLine() ?: return
-                while (true) {
-                    val h = r.readLine() ?: break
+                val inp = java.io.BufferedInputStream(sock.getInputStream())
+                val line = readLine(inp) ?: return
+                for (i in 0 until MAX_HEADERS) {
+                    val h = readLine(inp) ?: break
                     if (h.isEmpty()) break
                 }
                 val target = line.split(' ').getOrNull(1) ?: "/"
@@ -127,9 +137,23 @@ object TeslaWeb {
                     }
                     else -> send(out, "text/plain", "not found".toByteArray(), status = "404 Not Found")
                 }
-            } catch (_: Exception) {
+            } catch (_: Throwable) {
+                // и OutOfMemoryError: сломанный запрос не должен ронять приложение (и Android Auto вместе с ним)
             }
         }
+    }
+
+    /** Строка запроса до перевода строки, не длиннее [MAX_LINE] байт; длиннее или обрыв - null (соединение бросаем). */
+    internal fun readLine(inp: java.io.InputStream): String? {
+        val buf = java.io.ByteArrayOutputStream()
+        while (true) {
+            val b = inp.read()
+            if (b < 0) return if (buf.size() == 0) null else buf.toString("UTF-8")
+            if (b == 10) break
+            if (buf.size() >= MAX_LINE) return null
+            buf.write(b)
+        }
+        return buf.toString("UTF-8").trimEnd(Char(13))
     }
 
     /** Шрифт KFGQPC из res/font как есть (лицензия запрещает менять файл); font - тот же raw-файл. */

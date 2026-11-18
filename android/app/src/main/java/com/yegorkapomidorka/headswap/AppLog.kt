@@ -41,7 +41,27 @@ object AppLog {
         }
         i("лог: ${f.absolutePath}")
         CrashLog.install(ctx)
+        prune(dir, f)
     }
+
+    /**
+     * HOG: новый файл на каждый запуск процесса, а удалялись старые только кнопкой в экране разработчика -
+     * память телефона росла. В фоне: оставить [KEEP_FILES] новейших и всё моложе [KEEP_DAYS] дней.
+     */
+    private fun prune(dir: File, current: File) = Thread({
+        try {
+            val old = dir.listFiles { x -> x.name.startsWith(LOG_PREFIX) && x.name.endsWith(".log") && x != current }
+                ?.sortedByDescending { it.name }.orEmpty().drop(KEEP_FILES - 1)
+            val edge = System.currentTimeMillis() - KEEP_DAYS * 86_400_000L
+            val gone = old.filter { it.lastModified() < edge && it.delete() }
+            if (gone.isNotEmpty()) i("лог: удалено старых файлов ${gone.size}", ui = false)
+        } catch (e: Exception) {
+            Log.w(TAG, "очистка логов", e)
+        }
+    }, "log-prune").apply { isDaemon = true }.start()
+
+    private const val KEEP_FILES = 15
+    private const val KEEP_DAYS = 3
 
     /** Строка для всех приёмников (экран тоже, если ui=true). */
     @Synchronized

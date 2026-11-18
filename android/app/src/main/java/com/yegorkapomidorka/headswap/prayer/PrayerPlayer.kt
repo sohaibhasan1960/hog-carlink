@@ -1186,6 +1186,13 @@ class PrayerPlayer : Service() {
         exo?.release()
         exo = null
         quranActive = false
+        // HOG: всё, что читают мусхаф в машине и страница Tesla, - сбросить, иначе книга после суры
+        // показывала бы прежнюю суру и застывший прогресс
+        surahNow = 0
+        hifzNowNext = -1
+        main.removeCallbacks(progressTick)
+        posNowMs = 0L
+        durNowMs = 0L
         hifzNowPage = 0
         hifzNowAyah = -1
         adhkarActive = false

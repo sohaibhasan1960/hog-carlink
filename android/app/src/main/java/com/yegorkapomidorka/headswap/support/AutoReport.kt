@@ -117,7 +117,7 @@ object AutoReport {
         val log = p.getString(K_LOG, null)?.let { File(it) }?.takeIf { it.isFile }
         val report = buildString {
             append(LogShare.deviceInfo(ctx)).append("\n\n=== ").append(reason).append('\n')
-            if (log != null) append("\n=== ").append(log.name).append(" (конец)\n").append(tail(log, LOG_TAIL))
+            if (log != null) append("\n=== ").append(log.name).append(" (конец)\n").append(redact(tail(log, LOG_TAIL)))
         }
         SupportCloud(ctx).send(ctx.getString(R.string.ar_name), "", AaPrefs(ctx).lastHuLabel, ver, reason.take(2000), report)
         p.edit().remove(K_PENDING).remove(K_LOG).putLong(K_SENT_DAY, day).putInt(K_SENT_COUNT, count + 1).apply()
@@ -147,8 +147,21 @@ object AutoReport {
             out.addFirst(l)
             size += l.length + 1
         }
-        return out.joinToString("\n")
+        return redact(out.joinToString("\n"))
     }
+
+    private val MAC = Regex("""\b([0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2})[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}[:-][0-9A-Fa-f]{2}\b""")
+    private val PLACE = Regex("""(место[^:\n]*:? )(-?\d+)\.(\d)\d*, (-?\d+)\.(\d)\d*""")
+    private val TESLA_KEY = Regex("""([?&]k=)[A-Za-z0-9]+""")
+
+    /**
+     * HOG: личное перед отправкой в поддержку. MAC - только производитель (первые 3 байта), место для намаза -
+     * до 0,1° (~10 км, для времени намаза хватает), ключ страницы Tesla - скрыт.
+     */
+    fun redact(s: String): String = s
+        .replace(MAC) { "${it.groupValues[1]}:xx:xx:xx" }
+        .replace(PLACE) { m -> val g = m.groupValues; "${g[1]}${g[2]}.${g[3]}, ${g[4]}.${g[5]}" }
+        .replace(TESLA_KEY) { "${it.groupValues[1]}***" }
 
     private val NOISE = Regex(
         """^\d\d:\d\d:\d\d\.\d{3} (""" +
