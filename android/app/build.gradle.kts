@@ -33,8 +33,8 @@ android {
         applicationId = brandProps.getProperty("applicationId") ?: "com.hog.carlink"
         minSdk = 29
         targetSdk = 37
-        versionCode = 113
-        versionName = "4.1.1-hog.42"
+        versionCode = 114
+        versionName = "4.1.1-hog.43"
         // seller build: its own version line (brand.properties), independent of HOG releases
         brandProps.getProperty("versionCode")?.let { versionCode = it.toInt() }
         brandProps.getProperty("versionName")?.let { versionName = it }
