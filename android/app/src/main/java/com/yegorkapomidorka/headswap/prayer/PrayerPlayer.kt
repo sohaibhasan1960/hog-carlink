@@ -621,9 +621,8 @@ class PrayerPlayer : Service() {
         if (q.isEmpty()) return
         val i = hifzIndex()
         val item = q[i]
-        hifzNowPage = item.page
-        hifzNowAyah = item.ayah
-        hifzNowNext = q.getOrNull(i + 1)?.ayah ?: -1
+        // страница, аят и следующий - одной публикацией: кадр машины не увидит их вперемешку
+        now = now.copy(page = item.page, ayah = item.ayah, next = q.getOrNull(i + 1)?.ayah ?: -1)
         val state = when {
             !quranPrepared -> android.media.session.PlaybackState.STATE_BUFFERING
             quranPaused -> android.media.session.PlaybackState.STATE_PAUSED
@@ -1188,16 +1187,10 @@ class PrayerPlayer : Service() {
         player = null
         exo?.release()
         exo = null
-        quranActive = false
-        // HOG: всё, что читают мусхаф в машине и страница Tesla, - сбросить, иначе книга после суры
+        // HOG: всё, что читают мусхаф в машине и страница Tesla, - сбросить целиком, иначе книга после суры
         // показывала бы прежнюю суру и застывший прогресс
-        surahNow = 0
-        hifzNowNext = -1
         main.removeCallbacks(progressTick)
-        posNowMs = 0L
-        durNowMs = 0L
-        hifzNowPage = 0
-        hifzNowAyah = -1
+        publishStopped()
         adhkarActive = false
         adhkarPaused = false
         quranPrepared = false
@@ -1249,6 +1242,10 @@ class PrayerPlayer : Service() {
     }
 
     override fun onDestroy() {
+        // HOG: страница плана, собираемая в фоне, не должна запуститься на уничтоженном сервисе
+        hifzBuildGen++
+        current = null
+        main.removeCallbacksAndMessages(null)
         stopSound()
         tts?.shutdown()
         tts = null
@@ -1293,21 +1290,45 @@ class PrayerPlayer : Service() {
         const val ACTION_Q_SPEED_SET = "com.hog.carlink.QURAN_SPEED_SET"
         private val QURAN_ACTIONS = setOf(ACTION_Q_PAUSE, ACTION_Q_RESUME, ACTION_Q_SEEK, ACTION_Q_SPEED, ACTION_Q_NEXT, ACTION_Q_PREV, ACTION_Q_SPEED_SET)
 
+        /**
+         * HOG: всё, что звучит, - один снимок [NowPlaying]. Читатели с других нитей берут `now` один раз;
+         * поля ниже - прежние имена поверх снимка (пишет только сервис на главной нити, поэтому copy без гонок).
+         */
+        @Volatile var now: NowPlaying = NowPlaying.NONE
+            private set
+
         /** Сура загружена (играет или на паузе): кнопки машины управляют ею, а не азкарами. */
-        @Volatile var quranActive = false
+        var quranActive: Boolean
+            get() = now.active
+            private set(v) { now = now.copy(active = v) }
         /** Звучащая сура целиком (не план заучивания); 0 - нет. Мусхаф в машине листает её страницы. */
-        @Volatile var surahNow = 0
+        var surahNow: Int
+            get() = now.surah
+            private set(v) { now = now.copy(surah = v) }
         /** Позиция и длительность текущего звука, мс (обновляет главная нить каждые 250 мс). */
-        @Volatile var posNowMs = 0L
-        @Volatile var durNowMs = 0L
+        var posNowMs: Long
+            get() = now.posMs
+            private set(v) { now = now.copy(posMs = v) }
+        var durNowMs: Long
+            get() = now.durMs
+            private set(v) { now = now.copy(durMs = v) }
         /** Сура / план на паузе (кнопка تشغيل/إيقاف мусхафа в машине). */
-        @Volatile var quranPausedNow = false
+        var quranPausedNow: Boolean
+            get() = now.paused
+            private set(v) { now = now.copy(paused = v) }
         /** Сколько следующих страниц плана собирать заранее одним звуком. */
         const val PREFETCH_PAGES = 2
         /** План заучивания: страница и аят (код surah*1000+ayah, 0 - басмала), которые сейчас звучат; 0 / -1 - тишина. Читает MushafActivity. */
-        @Volatile var hifzNowPage = 0
-        @Volatile var hifzNowAyah = -1
-        @Volatile var hifzNowNext = -1
+        var hifzNowPage: Int
+            get() = now.page
+            private set(v) { now = now.copy(page = v) }
+        val hifzNowAyah: Int get() = now.ayah
+        val hifzNowNext: Int get() = now.next
+
+        /** Тишина: снимок целиком в исходное (стоп звука). */
+        private fun publishStopped() {
+            now = NowPlaying.NONE
+        }
 
         /** Азкары записью (живой голос или своя запись): пауза, перемотка и следующий/предыдущий зикр из машины. */
         @Volatile var adhkarActive = false

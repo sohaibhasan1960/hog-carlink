@@ -1,5 +1,6 @@
 package com.yegorkapomidorka.headswap.quran
 
+import com.yegorkapomidorka.headswap.prayer.NowPlaying
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -100,11 +101,14 @@ object CarMushaf {
     /** Нить рендера энкодера: кадр мусхафа в (w, h). */
     @Synchronized
     fun draw(c: Canvas, w: Int, h: Int) {
-        val lit = follow()
+        // HOG: один снимок на кадр - страница, аят и позиция из одного состояния плеера
+        val n = PrayerPlayer.now
+        shown = n
+        val lit = follow(n)
         // «إيقاف» только на звучащей странице (или во время суры); на другой странице кнопка - «تشغيل» с неё
-        val playing = here() && !PrayerPlayer.quranPausedNow
-        val sec = PrayerPlayer.posNowMs / 1000
-        val key = "$w×$h:$page:$top:$lit:$playing:$sec:${PrayerPlayer.durNowMs / 1000}:${data != null}:" +
+        val playing = here(n) && !n.paused
+        val sec = n.posMs / 1000
+        val key = "$w×$h:$page:$top:$lit:$playing:$sec:${n.durMs / 1000}:${data != null}:" +
             "${app?.let { com.yegorkapomidorka.headswap.prayer.QuranPrefs(it).speed }}"
         var b = cache
         if (b == null || b.width != w || b.height != h) {
@@ -120,12 +124,12 @@ object CarMushaf {
     }
 
     /** Звучащий аят на этой странице (код для подсветки) или 0; страница и окно - за чтецом, пока водитель не трогал. */
-    private fun follow(): Int {
-        val s = PrayerPlayer.surahNow
-        if (s > 0 && PrayerPlayer.quranActive) return followSurah(s)
-        val now = PrayerPlayer.hifzNowPage
+    private fun follow(n: NowPlaying): Int {
+        val s = n.surah
+        if (s > 0 && n.active) return followSurah(s, n)
+        val now = n.page
         if (now <= 0) return 0
-        val a = PrayerPlayer.hifzNowAyah
+        val a = n.ayah
         // листнул сам - страница остаётся его, пока не нажмёт تشغيل (раньше следующий аят возвращал к чтецу)
         if (a != seenAyah) {
             seenAyah = a
@@ -136,46 +140,43 @@ object CarMushaf {
             top = 0
         }
         if (page != now) return 0
-        val lit = MushafActivity.litCode(PrayerPlayer.hifzNowAyah, PrayerPlayer.hifzNowNext)
+        val lit = MushafActivity.litCode(n.ayah, n.next)
         if (userScrollAt == 0L) lineOf(lit)?.let { top = clampTop(it - 2) }
         return lit
     }
 
     /** Звучит ли то, что на экране: страница плана или сура, которой принадлежит страница. */
-    private fun here(): Boolean {
-        if (!PrayerPlayer.quranActive) return false
-        val s = PrayerPlayer.surahNow
+    private fun here(n: NowPlaying = PrayerPlayer.now): Boolean {
+        if (!n.active) return false
+        val s = n.surah
         if (s > 0) return page in surahPages(s).first.let { it.first()..it.last() }
-        return PrayerPlayer.hifzNowPage == page
+        return n.page == page
     }
 
     /**
      * Сура целиком (один файл чтеца): где мы в ней, известно только по доле прослушанного. Страницы суры
      * делят время по длине её текста на каждой странице - так страница и строки идут за чтецом приблизительно.
      */
-    private fun followSurah(s: Int): Int {
-        val dur = PrayerPlayer.durNowMs
-        if (dur <= 0) {
+    private fun followSurah(s: Int, n: NowPlaying): Int {
+        val (pages, ends) = surahPages(s)
+        val slot = MushafFollow.slot(ends, n.posMs, n.durMs)
+        if (slot == null) {
             if (userTurnAt == 0L) page = QuranPages.pageOf(s, 1)
             return 0
         }
-        val (pages, ends) = surahPages(s)
-        val f = (PrayerPlayer.posNowMs.toDouble() / dur).coerceIn(0.0, 1.0)
-        var i = 0
-        while (i < ends.size - 1 && f > ends[i]) i++
+        val (i, inPage) = slot
         if (userTurnAt == 0L && page != pages[i]) {
             page = pages[i]
             top = 0
         }
-        if (page == pages[i] && userScrollAt == 0L) {
-            val start = if (i == 0) 0.0 else ends[i - 1]
-            val inPage = ((f - start) / (ends[i] - start).coerceAtLeast(1e-6)).coerceIn(0.0, 1.0)
-            top = clampTop(((lineCount() - VISIBLE_LINES) * inPage).toInt())
-        }
+        if (page == pages[i] && userScrollAt == 0L) top = clampTop(((lineCount() - VISIBLE_LINES) * inPage).toInt())
         return 0
     }
 
     private var surahCache: Pair<Int, Pair<IntArray, DoubleArray>>? = null
+
+    /** Снимок плеера, по которому рисуется текущий кадр. */
+    @Volatile private var shown: NowPlaying = NowPlaying.NONE
 
     /** Страницы суры и доля текста суры к концу каждой (для [followSurah]). */
     private fun surahPages(s: Int): Pair<IntArray, DoubleArray> {
@@ -190,10 +191,7 @@ object CarMushaf {
             p?.lines?.sumOf { l -> if (l is MadaniLayout.Words) l.tokens.filter { it.code / 1000 == s }.sumOf { it.text.length } else 0 }
                 ?.coerceAtLeast(1) ?: 1
         }
-        val total = weights.sum().toDouble()
-        var acc = 0.0
-        val ends = DoubleArray(pages.size) { i -> acc += weights[i]; acc / total }
-        val r = pages to ends
+        val r = pages to MushafFollow.ends(weights.toIntArray())
         if (d != null && pt != null) surahCache = s to r
         return r
     }
@@ -306,8 +304,10 @@ object CarMushaf {
 
     /** Полоса: прослушано (золото) из всей длины; справа прошло, слева осталось, в середине номер страницы. */
     private fun drawProgress(c: Canvas, r: RectF, h: Int) {
-        val dur = PrayerPlayer.durNowMs
-        val pos = PrayerPlayer.posNowMs.coerceIn(0L, maxOf(dur, 0L))
+        // тот же снимок, что у кадра (draw), - полоса и страница не расходятся
+        val n = shown
+        val dur = n.durMs
+        val pos = n.posMs.coerceIn(0L, maxOf(dur, 0L))
         val y = r.centerY()
         val th = h * 0.008f
         btn.color = BTN
