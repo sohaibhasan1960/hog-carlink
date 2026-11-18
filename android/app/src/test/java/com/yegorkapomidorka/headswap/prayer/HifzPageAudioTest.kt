@@ -31,4 +31,16 @@ class HifzPageAudioTest {
         assertEquals(0, a)
         assertEquals(800, b)
     }
+
+    @Test
+    fun wavHeaderMatchesStreamedPcm() {
+        val h = java.nio.ByteBuffer.wrap(HifzPageAudio.wavHeader(1_000_000L, 22050)).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        assertEquals(44, h.capacity())
+        assertEquals("RIFF", String(h.array(), 0, 4))
+        assertEquals(36 + 1_000_000, h.getInt(4))
+        assertEquals(22050, h.getInt(24))
+        assertEquals(44100, h.getInt(28))
+        assertEquals("data", String(h.array(), 36, 4))
+        assertEquals(1_000_000, h.getInt(40))
+    }
 }

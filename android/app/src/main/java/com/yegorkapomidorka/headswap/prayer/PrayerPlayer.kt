@@ -312,7 +312,8 @@ class PrayerPlayer : Service() {
         if (!quranPrepared || quranPaused) return
         try {
             exo?.pause() ?: player?.pause()
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            AppLog.i("Коран: пауза не удалась: ${e.javaClass.simpleName} ${e.message}", true)
         }
         quranPaused = true
         pausedByFocus = byFocus
@@ -331,7 +332,8 @@ class PrayerPlayer : Service() {
         try {
             val e = exo
             if (e != null) e.play() else player?.let { it.start(); applySpeed(it) }
-        } catch (_: Exception) {
+        } catch (x: Exception) {
+            AppLog.i("Коран: продолжение не удалось: ${x.javaClass.simpleName} ${x.message}", true)
         }
         main.removeCallbacks(savePos)
         main.postDelayed(savePos, if (current == What.BOOK) 1_000 else 10_000)
@@ -344,7 +346,8 @@ class PrayerPlayer : Service() {
         if (!quranPrepared) return
         try {
             exo?.seekTo(posMs.coerceAtLeast(0)) ?: player?.seekTo(posMs.coerceAtLeast(0), MediaPlayer.SEEK_CLOSEST)
-        } catch (_: Exception) {
+        } catch (e: Exception) {
+            AppLog.i("Коран: перемотка не удалась: ${e.javaClass.simpleName} ${e.message}", true)
         }
         quranState(posMs)
     }
@@ -988,20 +991,20 @@ class PrayerPlayer : Service() {
         when (i.action) {
             ACTION_Q_PAUSE -> {
                 if (adhkarPaused) return
-                try { mp.pause() } catch (_: Exception) { }
+                try { mp.pause() } catch (e: Exception) { AppLog.i("азкары: пауза не удалась: ${e.message}", true) }
                 adhkarPaused = true
                 notify(adhkarTitle, getString(R.string.qr_paused))
             }
             ACTION_Q_RESUME -> {
                 if (!adhkarPaused) return
                 if (!requestFocus(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT, AudioAttributes.USAGE_MEDIA, AudioAttributes.CONTENT_TYPE_SPEECH)) return
-                try { mp.start() } catch (_: Exception) { }
+                try { mp.start() } catch (e: Exception) { AppLog.i("азкары: продолжение не удалось: ${e.message}", true) }
                 adhkarPaused = false
                 notify(adhkarTitle, adhkarText)
             }
             ACTION_Q_SEEK -> {
                 val p = i.getLongExtra(EXTRA_POS, 0L).coerceAtLeast(0L)
-                try { mp.seekTo(p, MediaPlayer.SEEK_CLOSEST) } catch (_: Exception) { }
+                try { mp.seekTo(p, MediaPlayer.SEEK_CLOSEST) } catch (e: Exception) { AppLog.i("азкары: перемотка не удалась: ${e.message}", true) }
                 return adhkarState(p)
             }
             ACTION_Q_NEXT -> {

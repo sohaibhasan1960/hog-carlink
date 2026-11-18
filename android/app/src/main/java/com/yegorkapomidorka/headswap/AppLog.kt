@@ -111,6 +111,8 @@ object AppLog {
         val head = "$dir ${Ch.name(chan)} ${Msg.hex(type)} ${Msg.name(type)} len=$len" +
             (if (decoded != null) " $decoded" else "") + note
         i(head, ui)
-        detail("    outer: chan=$chan len=$outerLen\n" + Hex.dump(inner, 256).prependIndent("    "))
+        // HOG: «тихие» (движение пальца, скорость, GPS - десятки в секунду) без hexdump: его сборка и запись шли
+        // на нити чтения ГУ под общим замком лога, до обработки касания
+        if (ui) detail("    outer: chan=$chan len=$outerLen\n" + Hex.dump(inner, 256).prependIndent("    "))
     }
 }

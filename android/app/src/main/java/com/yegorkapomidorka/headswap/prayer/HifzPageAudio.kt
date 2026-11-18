@@ -38,6 +38,7 @@ object HifzPageAudio {
     /** Версия нарезки: смена запасов - новые файлы, старые страницы не переиспользуются. */
     private const val CUT = "v2"
     private const val KEEP_PAGES = 40
+    private const val KEEP_BYTES = 300L * 1024 * 1024
     /** Окно 10 мс тише этого (пик, PCM16) - тишина. */
     private const val SILENCE_PEAK = 700
 
@@ -73,7 +74,12 @@ object HifzPageAudio {
         cached(ctx, voice, page)?.let { return it }
         val t0 = System.currentTimeMillis()
         val files = QuranPages.files(page)
-        val out = ByteArrayOutputStream()
+        // PCM сразу в файл (заголовок WAV - в конце): раньше вся страница копилась в памяти ~3 раза
+        val d = dir(ctx, voice).apply { mkdirs() }
+        val part = File(d, "$page.wav.part")
+        val out = RandomAccessFile(part, "rw").apply { setLength(0); write(ByteArray(44)) }
+        var bytes = 0L
+        var done = false
         val start = LongArray(files.size)
         val end = LongArray(files.size)
         var rate = 0
@@ -85,7 +91,7 @@ object HifzPageAudio {
                 if (rate == 0) rate = pcm.rate
                 if (pcm.rate != rate) return fail(page, "частота $f ${pcm.rate} != $rate")
                 val (a, b) = trim(pcm.samples, rate)
-                start[i] = msOf(out.size() / 2L, rate)
+                start[i] = msOf(bytes / 2L, rate)
                 val buf = ByteBuffer.allocate((b - a) * 2).order(ByteOrder.LITTLE_ENDIAN)
                 val fade = rate * FADE_MS / 1000
                 for (k in a until b) {
@@ -95,16 +101,25 @@ object HifzPageAudio {
                     buf.putShort((pcm.samples[k] * minOf(inG, outG)).toInt().toShort())
                 }
                 out.write(buf.array())
-                end[i] = msOf(out.size() / 2L, rate)
+                bytes += buf.capacity()
+                end[i] = msOf(bytes / 2L, rate)
             }
+            out.seek(0)
+            out.write(wavHeader(bytes, rate))
+            done = true
         } catch (e: Exception) {
             return fail(page, "${e.javaClass.simpleName}: ${e.message}")
         } finally {
             tmp.delete()
+            try { out.close() } catch (_: Exception) { }
+            if (!done) part.delete()
         }
-        val d = dir(ctx, voice).apply { mkdirs() }
         val wav = File(d, "$page.wav")
-        writeWav(wav, out.toByteArray(), rate)
+        wav.delete()
+        if (!part.renameTo(wav)) {
+            part.delete()
+            return fail(page, "переименование файла")
+        }
         File(d, "$page.idx").writeText(start.indices.joinToString("\n") { "${start[it]} ${end[it]}" })
         evict(ctx)
         AppLog.i("حفظ: страница $page одним звуком: ${files.size} файлов, ${end.last() / 1000} с, " +
@@ -222,24 +237,26 @@ object HifzPageAudio {
         return a to b
     }
 
-    private fun writeWav(f: File, pcm: ByteArray, rate: Int) {
-        RandomAccessFile(f, "rw").use { r ->
-            r.setLength(0)
-            val h = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
-            h.put("RIFF".toByteArray()).putInt(36 + pcm.size).put("WAVE".toByteArray())
-            h.put("fmt ".toByteArray()).putInt(16).putShort(1).putShort(1).putInt(rate).putInt(rate * 2).putShort(2).putShort(16)
-            h.put("data".toByteArray()).putInt(pcm.size)
-            r.write(h.array())
-            r.write(pcm)
-        }
+    /** Заголовок WAV PCM16 mono для [pcmBytes] байт звука. */
+    internal fun wavHeader(pcmBytes: Long, rate: Int): ByteArray {
+        val h = ByteBuffer.allocate(44).order(ByteOrder.LITTLE_ENDIAN)
+        h.put("RIFF".toByteArray()).putInt((36 + pcmBytes).toInt()).put("WAVE".toByteArray())
+        h.put("fmt ".toByteArray()).putInt(16).putShort(1).putShort(1).putInt(rate).putInt(rate * 2).putShort(2).putShort(16)
+        h.put("data".toByteArray()).putInt(pcmBytes.toInt())
+        return h.array()
     }
 
+    /** Оставить [KEEP_PAGES] последних страниц и не больше [KEEP_BYTES] всего (страница WAV - 10-20 МБ). */
     private fun evict(ctx: Context) {
         val all = File(ctx.cacheDir, "hifz-pages").walkTopDown().filter { it.isFile && it.name.endsWith(".wav") }
             .sortedByDescending { it.lastModified() }.toList()
-        for (w in all.drop(KEEP_PAGES)) {
-            w.delete()
-            File(w.parentFile, w.nameWithoutExtension + ".idx").delete()
+        var total = 0L
+        for ((i, w) in all.withIndex()) {
+            total += w.length()
+            if (i >= KEEP_PAGES || (i > 0 && total > KEEP_BYTES)) {
+                w.delete()
+                File(w.parentFile, w.nameWithoutExtension + ".idx").delete()
+            }
         }
     }
 
