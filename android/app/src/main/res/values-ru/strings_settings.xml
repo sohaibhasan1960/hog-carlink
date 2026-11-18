@@ -327,4 +327,6 @@
     <string name="set_system_audio_sub">Голосовые сообщения WhatsApp и другие звуки телефона идут в динамики машины, когда молчит навигация. Включите, если голосовые в машине не слышны.</string>
     <string name="apps_carstream_desc">YouTube и сайты на экране машины</string>
     <string name="set_group_advanced">Дополнительно</string>
+    <string name="car_recognized_title">Машина опознана: %1$s</string>
+    <string name="car_recognized_text">HOG CarLink опознал машину по её ГУ и выставил рекомендованные настройки для %1$s. Они применятся со следующего подключения. Сменить машину: Настройки › Дополнительно › Пройти настройку заново.</string>
 </resources>

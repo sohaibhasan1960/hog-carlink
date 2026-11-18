@@ -325,4 +325,6 @@
     <string name="car_vw_tayron_gte_2020">Volkswagen Tayron GTE 2020 (MIB 2.5)</string>
     <string name="apps_carstream_desc">YouTube والمواقع على شاشة السيارة</string>
     <string name="set_group_advanced">متقدّم</string>
+    <string name="car_recognized_title">تعرّفنا على سيارتك: %1$s</string>
+    <string name="car_recognized_text">تعرّف HOG CarLink على سيارتك من شاشتها وضبط الإعدادات المناسبة لـ %1$s. تُطبَّق من الاتصال القادم. يمكنك تغيير السيارة من الإعدادات › متقدّم › إعادة تشغيل الإعداد.</string>
 </resources>

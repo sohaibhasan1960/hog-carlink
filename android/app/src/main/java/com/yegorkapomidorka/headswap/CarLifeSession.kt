@@ -78,6 +78,8 @@ class CarLifeSession(
     private val onHuChannel: (String?) -> Unit = {},
     /** HOG CarLink: «производитель модель» из HU_INFO - для запросов поддержки. */
     private val onHuName: (String) -> Unit = {},
+    /** HOG CarLink: отпечаток ГУ пополнился (HU_INFO или STATISTIC_INFO) - опознать машину (CarRecognizer). */
+    private val onHuPrint: (com.yegorkapomidorka.headswap.aa.CarPrint) -> Unit = {},
     private val onClosed: (String) -> Unit,
 ) : VideoSource.Listener, CarlifeLink {
 
@@ -179,6 +181,8 @@ class CarLifeSession(
     private var singleDownMs = 0L
     private var dupDownCount = 0
     private val rxByType = java.util.TreeMap<Int, Int>()
+    /** HOG CarLink: отпечаток ГУ этой сессии (копится из HU_INFO и STATISTIC_INFO). */
+    private var huPrint = com.yegorkapomidorka.headswap.aa.CarPrint()
     private var huInfo: String? = null
     private var huStatistic: String? = null
     private var huFeature: String? = null
@@ -450,6 +454,13 @@ class CarLifeSession(
                         .filter { s -> s.isNotBlank() }.joinToString(" ").ifEmpty { null }
                     CarLifeState.huCarlifeVersion = PbReader.str(it, 24)?.takeIf { s -> s.isNotBlank() }
                     onHuName(listOfNotNull(PbReader.str(it, 13), PbReader.str(it, 14)).distinct().joinToString(" "))
+                    huPrint = huPrint.copy(
+                        manufacturer = PbReader.str(it, 13)?.takeIf { s -> s.isNotBlank() },
+                        model = PbReader.str(it, 14)?.takeIf { s -> s.isNotBlank() },
+                        product = PbReader.str(it, 15)?.takeIf { s -> s.isNotBlank() },
+                        board = PbReader.str(it, 2)?.takeIf { s -> s.isNotBlank() },
+                    )
+                    onHuPrint(huPrint)
                 }
                 applyMobis()
                 logDesay()
@@ -462,6 +473,8 @@ class CarLifeSession(
                     WLog.ev(WLog.HS, "STATISTIC_INFO", "channel" to PbReader.str(it, 4))
                     bridge.onHuStatistic(PbReader.str(it, 4))
                     onHuChannel(PbReader.str(it, 4))
+                    huPrint = huPrint.copy(channel = PbReader.str(it, 4)?.takeIf { s -> s.isNotBlank() })
+                    onHuPrint(huPrint)
                     CarLifeState.huChannel = PbReader.str(it, 4)?.takeIf { s -> s.isNotBlank() }
                     CarLifeState.huStatVersion = PbReader.str(it, 2)?.takeIf { s -> s.isNotBlank() }
                 }

@@ -1133,6 +1133,7 @@ class BridgeService : Service() {
                 if (aaPrefs.learnCar(ch)) AppLog.i("BRIDGE машина опознана: VW ID.6 (канал $ch) - её настройки применятся со следующего подключения", true)
             },
             onHuName = { n -> aaPrefs.lastHuLabel = listOfNotNull(n.ifBlank { null }, lastHuChannel).joinToString(" · ") },
+            onHuPrint = { p -> main.post { recognizeCar(p) } },
         ) { reason -> main.post { onSessionClosed(sref[0]!!, reason) } }
         sref[0] = s
         session = s
@@ -1528,6 +1529,7 @@ class BridgeService : Service() {
     private fun onSessionClosed(s: CarLifeSession, reason: String) {
         AppLog.i("сервис: сессия завершена ($reason)")
         if (session !== s) return
+        recognizedPrint = null
         // HOG: сессии нет - процессор не держим (ожидание машины по Wi-Fi может идти часами)
         wakeLock?.let { if (it.isHeld) it.release() }
         btMediaHinted = false
@@ -1597,6 +1599,46 @@ class BridgeService : Service() {
         if (!w.isHeld) w.acquire(4 * 60 * 60 * 1000L)
     }
 
+    /** HOG: какую машину уже опознали в этой сессии (отпечаток копится в два приёма - не повторять). */
+    private var recognizedPrint: com.yegorkapomidorka.headswap.aa.CarPrint? = null
+
+    /**
+     * HOG CarLink: ГУ прислала отпечаток - опознать машину по таблице [com.yegorkapomidorka.headswap.aa.CarRecognizer]
+     * и, если человек машину сам не выбирал, поставить её настройки (действуют со следующего подключения).
+     */
+    private fun recognizeCar(p: com.yegorkapomidorka.headswap.aa.CarPrint) {
+        if (p == recognizedPrint) return
+        recognizedPrint = p
+        if (com.yegorkapomidorka.headswap.aa.CarRecognizer.isId6(p)) return
+        val preset = com.yegorkapomidorka.headswap.aa.CarRecognizer.match(p)
+        if (preset == null) {
+            // HU_INFO и канал приходят порознь: «не знаем» пишем, когда есть оба
+            if (p.channel != null && (p.manufacturer != null || p.model != null)) AppLog.i("BRIDGE машина не опознана: ${p.label()}", true)
+            return
+        }
+        val name = getString(preset.titleRes)
+        val aaPrefs = AaPrefs(this)
+        if (!aaPrefs.recognizeCar(preset)) {
+            if (aaPrefs.carPreset != preset) AppLog.i("BRIDGE ГУ похожа на ${preset.name}, но машина выбрана вручную (${aaPrefs.carPreset?.name}) - не меняю", true)
+            return
+        }
+        AppLog.i("BRIDGE машина опознана: ${preset.name} (${p.label()}) - её настройки со следующего подключения", true)
+        val open = PendingIntent.getActivity(
+            this, 9, Intent(this, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+        )
+        val text = getString(R.string.car_recognized_text, name)
+        val n = Notification.Builder(this, CHANNEL)
+            .setSmallIcon(R.drawable.ic_stat_headswap)
+            .setContentTitle(getString(R.string.car_recognized_title, name))
+            .setContentText(text)
+            .setStyle(Notification.BigTextStyle().bigText(text))
+            .setContentIntent(open)
+            .setAutoCancel(true)
+            .build()
+        getSystemService(NotificationManager::class.java).notify(CAR_NOTIF_ID, n)
+    }
+
     override fun onDestroy() {
         try {
             unregisterReceiver(detachReceiver)
@@ -1664,6 +1706,7 @@ class BridgeService : Service() {
         const val ACTION_MIC_FG = "com.hog.carlink.MIC_FG"
         private const val MIC_NOTIF_ID = 7
         private const val BT_MEDIA_NOTIF_ID = 8
+        private const val CAR_NOTIF_ID = 9
 
         /** Сервис идёт с типом microphone: микрофон телефона в фоне не глушится. */
         @Volatile var micTyped = false

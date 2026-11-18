@@ -330,4 +330,6 @@
     <string name="set_system_audio_sub">WhatsApp voice notes and other phone sounds play through the car speakers when navigation is quiet. Turn on if voice notes are silent in the car.</string>
     <string name="apps_carstream_desc">YouTube and websites on the car screen</string>
     <string name="set_group_advanced">Advanced</string>
+    <string name="car_recognized_title">Car recognized: %1$s</string>
+    <string name="car_recognized_text">HOG CarLink recognized your car from its screen and set the recommended settings for %1$s. They take effect from the next connection. You can change the car in Settings › Advanced › Re-run setup.</string>
 </resources>

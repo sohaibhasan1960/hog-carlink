@@ -201,10 +201,27 @@ class AaPrefs(ctx: Context) {
     val carSettings: CarSettings
         get() = CarSettings(transcode, videoMode, aaDensity, fpsSetting, musicRate)
 
-    /** Выбрать машину и записать её рекомендованные настройки. */
-    fun applyCar(p: CarPreset) {
+    /** HOG: машину выбрало приложение само (по отпечатку ГУ), а не человек; ручной выбор этот флаг снимает. */
+    val carPresetAuto: Boolean get() = sp.getBoolean(CAR_AUTO, false)
+
+    /**
+     * HOG: ГУ опознана как [p]. Меняем выбор, только если человек машину не выбирал или прежний выбор тоже был
+     * автоматическим (другая машина в семье). Ручной выбор не трогаем. true = записано сейчас (действует со
+     * следующего подключения: видео-режим читается на старте сессии).
+     */
+    fun recognizeCar(p: CarPreset): Boolean {
+        val cur = carPreset
+        if (cur == p) return false
+        if (cur != null && !carPresetAuto) return false
+        applyCar(p, auto = true)
+        return true
+    }
+
+    /** Выбрать машину и записать её рекомендованные настройки. [auto] - выбрало приложение по отпечатку ГУ. */
+    fun applyCar(p: CarPreset, auto: Boolean = false) {
         val s = p.settings
         sp.edit()
+            .putBoolean(CAR_AUTO, auto)
             .putString("carPreset", p.name)
             .putBoolean("transcode", s.transcode)
             .putString("videoMode", s.videoMode.name)
@@ -305,6 +322,7 @@ class AaPrefs(ctx: Context) {
         private const val HOG_TUNE_2 = "hogTune2"
         private const val HOG_TUNE_3 = "hogTune3"
         private const val CAR_ID6 = "carLearnedId6"
+        private const val CAR_AUTO = "carPresetAuto"
 
         /** STATISTIC_INFO.channel ГУ VW ID.6 CROZZ (VW BT 5075, лог 2026-10-30). */
         const val ID6_CHANNEL = "20082128"
