@@ -36,6 +36,12 @@ class AboutScreen(host: MainActivity) : Screen(host) {
         }
         body.addView(licenses, lp(MATCH, WRAP))
 
+        // HOG: кнопка поддержки автора Headswap - здесь, рядом с авторами (раньше внизу настроек)
+        body.addView(donateButton(), android.widget.LinearLayout.LayoutParams(WRAP, c.dp(56)).apply {
+            topMargin = c.dp(16)
+            gravity = android.view.Gravity.CENTER_HORIZONTAL
+        })
+
         view = scaffold(c, c.getString(R.string.about_title), { host.back() }, body)
     }
 
@@ -84,6 +90,27 @@ class AboutScreen(host: MainActivity) : Screen(host) {
             ctx.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
         } catch (e: Exception) {
             AppLog.e("о приложении: ссылка не открылась: ${e.message}")
+        }
+    }
+
+    private fun donateButton(): View {
+        val c = ctx
+        val fg = c.clr(R.color.acc)
+        return c.hbox(8).apply {
+            gravity = android.view.Gravity.CENTER
+            pad(c, 20, 0, 20, 0)
+            background = c.rippleBg(c.shape(0, 28, fg, 1.5f), 28)
+            isClickable = true
+            isFocusable = true
+            addView(c.icon(R.drawable.ic_heart, 18, fg))
+            addView(c.text(c.getString(R.string.set_support), 16f, 600, fg))
+            setOnClickListener {
+                try {
+                    c.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(c.getString(R.string.set_support_url))))
+                } catch (e: Exception) {
+                    AppLog.e("поддержка: браузер не открылся: ${e.message}")
+                }
+            }
         }
     }
 }

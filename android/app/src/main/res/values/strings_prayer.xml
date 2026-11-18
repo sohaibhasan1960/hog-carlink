@@ -105,4 +105,12 @@
     <string name="pr_ind_h">h</string>
     <string name="pr_ind_m">min</string>
     <string name="pr_ind_tab_iqama">%1$s iqama %2$s</string>
+    <string name="pr_more">More</string>
+    <string name="pr_m_isna">ISNA (North America)</string>
+    <string name="pr_m_turkey">Diyanet (Turkey)</string>
+    <string name="pr_m_singapore">MUIS (Singapore)</string>
+    <string name="pr_m_jakim">JAKIM (Malaysia)</string>
+    <string name="pr_m_kemenag">Kemenag (Indonesia)</string>
+    <string name="pr_m_france">UOIF (France)</string>
+    <string name="pr_m_russia">Russia (DUM)</string>
 </resources>

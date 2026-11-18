@@ -105,4 +105,12 @@
     <string name="pr_ind_h">س</string>
     <string name="pr_ind_m">د</string>
     <string name="pr_ind_tab_iqama">إقامة %1$s %2$s</string>
+    <string name="pr_more">المزيد</string>
+    <string name="pr_m_isna">أمريكا الشمالية (ISNA)</string>
+    <string name="pr_m_turkey">تركيا (ديانت)</string>
+    <string name="pr_m_singapore">سنغافورة (MUIS)</string>
+    <string name="pr_m_jakim">ماليزيا (JAKIM)</string>
+    <string name="pr_m_kemenag">إندونيسيا (Kemenag)</string>
+    <string name="pr_m_france">فرنسا (UOIF)</string>
+    <string name="pr_m_russia">روسيا</string>
 </resources>

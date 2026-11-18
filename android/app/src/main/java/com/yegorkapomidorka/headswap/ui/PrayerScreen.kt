@@ -206,14 +206,13 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
             prefs.soundAlways = it
         }.view, lp(MATCH, WRAP))
         box.addView(valueRow(c.getString(R.string.pr_adhan_sound), prefs.adhanName.ifBlank { adhanBuiltinLabel() }) { pickAdhan() })
-        box.addView(valueRow(c.getString(R.string.pr_adhan_speed), speedLabel(prefs.adhanSpeed)) { pickSpeed() })
-        box.addView(c.text(c.getString(R.string.pr_adhan_file_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
 
         box.addView(c.sectionTitle(c.getString(R.string.pr_sec_iqama)))
         box.addView(ToggleRow(c, c.getString(R.string.pr_iqama_on), c.getString(R.string.pr_iqama_on_sub), prefs.iqamaOn) {
-            prefs.iqamaOn = it; PrayerAlarms.reschedule(c); refresh()
+            prefs.iqamaOn = it; PrayerAlarms.reschedule(c); refresh(); buildSettings()
         }.view, lp(MATCH, WRAP))
-        for (p in PrayerPlan.FARD) {
+        // минуты до إقامة - только когда она включена
+        if (prefs.iqamaOn) for (p in PrayerPlan.FARD) {
             box.addView(valueRow(PrayerPlayer.prayerName(c, p), c.getString(R.string.pr_minutes_after, prefs.iqamaMinutes(p))) {
                 pickNumber(PrayerPlayer.prayerName(c, p), 1, 60, prefs.iqamaMinutes(p)) { prefs.setIqamaMinutes(p, it) }
             })
@@ -223,49 +222,86 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
         box.addView(ToggleRow(c, c.getString(R.string.pr_morning), c.getString(R.string.pr_minutes_after_fajr, prefs.morningAfterFajr), prefs.morningOn) {
             prefs.morningOn = it; PrayerAlarms.reschedule(c)
         }.view, lp(MATCH, WRAP))
-        box.addView(valueRow(c.getString(R.string.pr_morning_time), c.getString(R.string.pr_minutes_after_fajr, prefs.morningAfterFajr)) {
-            pickNumber(c.getString(R.string.pr_morning_time), 0, 180, prefs.morningAfterFajr) { prefs.morningAfterFajr = it }
-        })
         box.addView(ToggleRow(c, c.getString(R.string.pr_evening), c.getString(R.string.pr_minutes_after_asr, prefs.eveningAfterAsr), prefs.eveningOn) {
             prefs.eveningOn = it; PrayerAlarms.reschedule(c)
         }.view, lp(MATCH, WRAP))
-        box.addView(valueRow(c.getString(R.string.pr_evening_time), c.getString(R.string.pr_minutes_after_asr, prefs.eveningAfterAsr)) {
-            pickNumber(c.getString(R.string.pr_evening_time), 0, 180, prefs.eveningAfterAsr) { prefs.eveningAfterAsr = it }
-        })
         box.addView(ToggleRow(c, c.getString(R.string.pr_autoplay), c.getString(R.string.pr_autoplay_sub), prefs.adhkarAutoPlay) {
             prefs.adhkarAutoPlay = it
         }.view, lp(MATCH, WRAP))
-        box.addView(ToggleRow(c, c.getString(R.string.pr_full_repeat), c.getString(R.string.pr_full_repeat_sub), prefs.fullRepeat) {
+
+        // HOG (дизайн «تبسيط»): ежедневное - выше; реже нужное - в свёрнутых «المزيد» и «متقدّم» (ничего не убрано)
+        val more = fold(box, c.getString(R.string.pr_more), moreOpen) { moreOpen = it }
+        more.addView(c.sectionTitle(c.getString(R.string.pr_sec_adhkar)))
+        more.addView(valueRow(c.getString(R.string.pr_morning_time), c.getString(R.string.pr_minutes_after_fajr, prefs.morningAfterFajr)) {
+            pickNumber(c.getString(R.string.pr_morning_time), 0, 180, prefs.morningAfterFajr) { prefs.morningAfterFajr = it }
+        })
+        more.addView(valueRow(c.getString(R.string.pr_evening_time), c.getString(R.string.pr_minutes_after_asr, prefs.eveningAfterAsr)) {
+            pickNumber(c.getString(R.string.pr_evening_time), 0, 180, prefs.eveningAfterAsr) { prefs.eveningAfterAsr = it }
+        })
+        more.addView(ToggleRow(c, c.getString(R.string.pr_full_repeat), c.getString(R.string.pr_full_repeat_sub), prefs.fullRepeat) {
             prefs.fullRepeat = it
         }.view, lp(MATCH, WRAP))
-        box.addView(valueRow(c.getString(R.string.pr_dhikr_every), dhikrLabel(prefs.dhikrEvery)) { pickDhikr() })
-        box.addView(ToggleRow(c, c.getString(R.string.pr_human), c.getString(R.string.pr_human_sub), prefs.adhkarHuman) {
+        more.addView(valueRow(c.getString(R.string.pr_dhikr_every), dhikrLabel(prefs.dhikrEvery)) { pickDhikr() })
+        more.addView(ToggleRow(c, c.getString(R.string.pr_human), c.getString(R.string.pr_human_sub), prefs.adhkarHuman) {
             prefs.adhkarHuman = it
             buildSettings()
         }.view, lp(MATCH, WRAP))
-        box.addView(valueRow(c.getString(R.string.pr_voice), prefs.ttsVoice.ifBlank { c.getString(R.string.pr_voice_default) }.let { voiceLabel(it) }) { pickVoice() })
-        box.addView(valueRow(c.getString(R.string.pr_morning_audio), prefs.adhkarName(true).ifBlank { c.getString(if (prefs.adhkarHuman) R.string.pr_audio_human else R.string.pr_audio_tts) }) { pickAdhkarAudio(true) })
-        box.addView(valueRow(c.getString(R.string.pr_evening_audio), prefs.adhkarName(false).ifBlank { c.getString(if (prefs.adhkarHuman) R.string.pr_audio_human else R.string.pr_audio_tts) }) { pickAdhkarAudio(false) })
-        box.addView(c.text(c.getString(R.string.pr_audio_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
+        more.addView(valueRow(c.getString(R.string.pr_morning_audio), prefs.adhkarName(true).ifBlank { c.getString(if (prefs.adhkarHuman) R.string.pr_audio_human else R.string.pr_audio_tts) }) { pickAdhkarAudio(true) })
+        more.addView(valueRow(c.getString(R.string.pr_evening_audio), prefs.adhkarName(false).ifBlank { c.getString(if (prefs.adhkarHuman) R.string.pr_audio_human else R.string.pr_audio_tts) }) { pickAdhkarAudio(false) })
+        more.addView(c.text(c.getString(R.string.pr_audio_note), 14f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(20) })
 
         // аудиокниги: файлы с главами с телефона (в машине - список глав, «вперёд/назад» по главам)
-        box.addView(c.sectionTitle(c.getString(R.string.ab_title)))
-        for (b in com.yegorkapomidorka.headswap.prayer.AudioBook.Library(c).books()) {
-            box.addView(valueRow(com.yegorkapomidorka.headswap.prayer.AudioBook.displayName(b.name), c.getString(R.string.ab_chapters, b.chapters.size)) { bookMenu(b) })
+        more.addView(c.sectionTitle(c.getString(R.string.ab_title)))
+        for (bk in com.yegorkapomidorka.headswap.prayer.AudioBook.Library(c).books()) {
+            more.addView(valueRow(com.yegorkapomidorka.headswap.prayer.AudioBook.displayName(bk.name), c.getString(R.string.ab_chapters, bk.chapters.size)) { bookMenu(bk) })
         }
-        box.addView(valueRow(c.getString(R.string.ab_add), "+") { pickBook() })
-        box.addView(c.text(c.getString(R.string.ab_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
+        more.addView(valueRow(c.getString(R.string.ab_add), "+") { pickBook() })
+        more.addView(c.text(c.getString(R.string.ab_note), 14f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(20) })
 
-        box.addView(c.sectionTitle(c.getString(R.string.pr_sec_calc)))
-        box.addView(valueRow(c.getString(R.string.pr_method), prefs.methodOverride?.let { methodName(it) } ?: c.getString(R.string.pr_method_auto, methodName(prefs.method))) { pickMethod() })
-        box.addView(valueRow(c.getString(R.string.pr_madhab), madhabLabel(prefs.madhabOverride)) { pickMadhab() })
+        val adv = fold(box, c.getString(R.string.set_group_advanced), advOpen) { advOpen = it }
+        adv.addView(c.sectionTitle(c.getString(R.string.pr_sec_adhan)))
+        adv.addView(valueRow(c.getString(R.string.pr_adhan_speed), speedLabel(prefs.adhanSpeed)) { pickSpeed() })
+        adv.addView(valueRow(c.getString(R.string.pr_voice), prefs.ttsVoice.ifBlank { c.getString(R.string.pr_voice_default) }.let { voiceLabel(it) }) { pickVoice() })
+        adv.addView(c.text(c.getString(R.string.pr_adhan_file_note), 14f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(20) })
+        adv.addView(c.sectionTitle(c.getString(R.string.pr_sec_calc)))
+        adv.addView(valueRow(c.getString(R.string.pr_method), prefs.methodOverride?.let { methodName(it) } ?: c.getString(R.string.pr_method_auto, methodName(prefs.method))) { pickMethod() })
+        adv.addView(valueRow(c.getString(R.string.pr_madhab), madhabLabel(prefs.madhabOverride)) { pickMadhab() })
         for (p in Prayer.values()) {
             val v = prefs.adjust(p)
-            box.addView(valueRow(c.getString(R.string.pr_adjust_of, PrayerPlayer.prayerName(c, p)), c.getString(R.string.pr_adjust_value, if (v > 0) "+$v" else "$v")) {
+            adv.addView(valueRow(c.getString(R.string.pr_adjust_of, PrayerPlayer.prayerName(c, p)), c.getString(R.string.pr_adjust_value, if (v > 0) "+$v" else "$v")) {
                 pickNumber(c.getString(R.string.pr_adjust_of, PrayerPlayer.prayerName(c, p)), -30, 30, v) { prefs.setAdjust(p, it) }
             })
         }
-        box.addView(c.text(c.getString(R.string.pr_adjust_note), 13f, 400, c.clr(R.color.on2)))
+        adv.addView(c.text(c.getString(R.string.pr_adjust_note), 14f, 400, c.clr(R.color.on2)))
+    }
+
+    private var moreOpen = false
+    private var advOpen = false
+
+    /** Свёрнутый блок с заголовком-кнопкой (56 dp): возвращает контейнер для строк. */
+    private fun fold(box: android.widget.LinearLayout, title: String, open: Boolean, remember: (Boolean) -> Unit): android.widget.LinearLayout {
+        val c = ctx
+        val inner = c.vbox(0).apply { visibility = if (open) View.VISIBLE else View.GONE }
+        val arrow = c.icon(R.drawable.ic_chevron, 20, c.clr(R.color.on2)).apply { rotation = if (open) 90f else 0f }
+        box.addView(c.hbox(10).apply {
+            minimumHeight = c.dp(56)
+            gravity = Gravity.CENTER_VERTICAL
+            pad(c, 4, 8, 4, 0)
+            background = c.rippleBg(null, 12)
+            isClickable = true
+            isFocusable = true
+            contentDescription = title
+            addView(c.text(title, 17f, 600), lp(0, WRAP, 1f))
+            addView(arrow)
+            setOnClickListener {
+                val now = inner.visibility != View.VISIBLE
+                inner.visibility = if (now) View.VISIBLE else View.GONE
+                arrow.rotation = if (now) 90f else 0f
+                remember(now)
+            }
+        }, lp(MATCH, WRAP))
+        box.addView(inner, lp(MATCH, WRAP))
+        return inner
     }
 
     private fun valueRow(title: String, value: String, onClick: () -> Unit): View {
@@ -349,21 +385,21 @@ class PrayerScreen(host: MainActivity) : Screen(host) {
         CalcMethod.MAKKAH -> ctx.getString(R.string.pr_m_makkah)
         CalcMethod.EGYPT -> ctx.getString(R.string.pr_m_egypt)
         CalcMethod.MWL -> ctx.getString(R.string.pr_m_mwl)
-        CalcMethod.ISNA -> "ISNA"
+        CalcMethod.ISNA -> ctx.getString(R.string.pr_m_isna)
         CalcMethod.KARACHI -> ctx.getString(R.string.pr_m_karachi)
         CalcMethod.GULF -> ctx.getString(R.string.pr_m_gulf)
         CalcMethod.KUWAIT -> ctx.getString(R.string.pr_m_kuwait)
         CalcMethod.QATAR -> ctx.getString(R.string.pr_m_qatar)
         CalcMethod.DUBAI -> ctx.getString(R.string.pr_m_dubai)
-        CalcMethod.TURKEY -> "Diyanet"
-        CalcMethod.SINGAPORE -> "MUIS"
-        CalcMethod.JAKIM -> "JAKIM"
-        CalcMethod.KEMENAG -> "Kemenag"
+        CalcMethod.TURKEY -> ctx.getString(R.string.pr_m_turkey)
+        CalcMethod.SINGAPORE -> ctx.getString(R.string.pr_m_singapore)
+        CalcMethod.JAKIM -> ctx.getString(R.string.pr_m_jakim)
+        CalcMethod.KEMENAG -> ctx.getString(R.string.pr_m_kemenag)
         CalcMethod.TUNISIA -> ctx.getString(R.string.pr_m_tunisia)
         CalcMethod.ALGERIA -> ctx.getString(R.string.pr_m_algeria)
         CalcMethod.MOROCCO -> ctx.getString(R.string.pr_m_morocco)
-        CalcMethod.FRANCE -> "UOIF"
-        CalcMethod.RUSSIA -> "ДУМ РФ"
+        CalcMethod.FRANCE -> ctx.getString(R.string.pr_m_france)
+        CalcMethod.RUSSIA -> ctx.getString(R.string.pr_m_russia)
         CalcMethod.TEHRAN -> ctx.getString(R.string.pr_m_tehran)
     }
 

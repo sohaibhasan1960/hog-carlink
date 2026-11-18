@@ -381,7 +381,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         fun tile(icon: Int, title: String, sub: TextView, onClick: () -> Unit): View = c.vbox(6).apply {
             background = c.rippleBg(c.shape(c.clr(R.color.surf), 20), 20)
             pad(c, 16, 14, 16, 14)
-            minimumHeight = c.dp(104)
+            minimumHeight = c.dp(120)
             isClickable = true
             isFocusable = true
             contentDescription = title
@@ -390,22 +390,20 @@ class HomeScreen(host: MainActivity) : Screen(host) {
                 background = c.shape(c.clr(R.color.okc), 12)
                 addView(c.icon(icon, 22, c.clr(R.color.ok)), FrameLayout.LayoutParams(c.dp(22), c.dp(22), Gravity.CENTER))
             }, lp(c.dp(40), c.dp(40)))
-            addView(c.text(title, 16f, 600).apply { maxLines = 2 })
+            addView(c.text(title, 18f, 600).apply { maxLines = 2 })
             addView(sub)
         }
-        fun sub(res: Int) = c.text(c.getString(res), 13f, 400, c.clr(R.color.on2)).apply { maxLines = 2 }
+        fun sub(res: Int) = c.text(c.getString(res), 15f, 400, c.clr(R.color.on2)).apply { maxLines = 2 }
         refreshPrayerSub()
-        grid.addView(c.hbox(10).apply {
-            addView(tile(R.drawable.ic_moon, c.getString(R.string.pr_title), prayerSub) { host.showPrayer() }, lp(0, MATCH, 1f))
-            addView(tile(R.drawable.ic_video, c.getString(R.string.set_sec_apps), sub(R.string.home_tile_apps_sub)) { host.showCarApps() }, lp(0, MATCH, 1f))
-        }, lp(MATCH, WRAP))
-        grid.addView(c.hbox(10).apply {
-            addView(tile(R.drawable.ic_report, c.getString(R.string.sup_title), sub(R.string.home_tile_support_sub)) { host.showSupport() }, lp(0, MATCH, 1f))
-            addView(tile(R.drawable.ic_share, c.getString(R.string.home_share), sub(R.string.home_tile_share_sub)) { shareApp() }, lp(0, MATCH, 1f))
-        }, lp(MATCH, WRAP))
+        // HOG (дизайн «تبسيط»): четыре крупных пункта - القرآن، الصلاة، تطبيقات السيارة، الدعم.
+        // «مشاركة» и OBD - в настройках (не терялись, просто не на главном).
         grid.addView(c.hbox(10).apply {
             addView(tile(R.drawable.ic_book, c.getString(R.string.qr_title), sub(R.string.home_tile_quran_sub)) { host.showQuran() }, lp(0, MATCH, 1f))
-            addView(tile(R.drawable.ic_car, c.getString(R.string.obd_title), sub(R.string.obd_sub)) { host.showObd() }, lp(0, MATCH, 1f))
+            addView(tile(R.drawable.ic_moon, c.getString(R.string.pr_title), prayerSub) { host.showPrayer() }, lp(0, MATCH, 1f))
+        }, lp(MATCH, WRAP))
+        grid.addView(c.hbox(10).apply {
+            addView(tile(R.drawable.ic_video, c.getString(R.string.set_sec_apps), sub(R.string.home_tile_apps_sub)) { host.showCarApps() }, lp(0, MATCH, 1f))
+            addView(tile(R.drawable.ic_report, c.getString(R.string.sup_title), sub(R.string.home_tile_support_sub)) { host.showSupport() }, lp(0, MATCH, 1f))
         }, lp(MATCH, WRAP))
         return grid
     }
@@ -437,16 +435,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         for ((label, sm) in stages) stagesBox.addView(stageRow(label.get(c), sm.first, sm.second.get(c)), c.lpDp(MATCH, 52))
     }
 
-    private fun shareApp() {
-        val c = ctx
-        val text = c.getString(R.string.home_share_text) + " " + SHARE_URL
-        val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
-            .putExtra(android.content.Intent.EXTRA_TEXT, text)
-        try {
-            c.startActivity(android.content.Intent.createChooser(send, c.getString(R.string.home_share)))
-        } catch (_: Exception) {
-        }
-    }
+    private fun shareApp() = shareHogApp(ctx)
 
     /** Как запустить сервер ГУ: три пронумерованных пункта на плашке surf (Main.dc.html, isOff). */
     private fun chain(): View {
@@ -556,8 +545,20 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         return box
     }
 
-    private companion object {
+    companion object {
         /** Прямая ссылка на APK последнего релиза (файл с постоянным именем): нажал - скачалось - «Установить», без страницы GitHub. */
         const val SHARE_URL = "https://github.com/sohaibhasan1960/hog-carlink/releases/latest/download/HOG-CarLink.apk"
+    }
+}
+
+/** «Поделиться приложением» (ссылка на последний APK): плитка была на главном, теперь - в настройках. */
+internal fun shareHogApp(c: android.content.Context) {
+    val text = c.getString(R.string.home_share_text) + " " + HomeScreen.SHARE_URL
+    val send = android.content.Intent(android.content.Intent.ACTION_SEND).setType("text/plain")
+        .putExtra(android.content.Intent.EXTRA_TEXT, text)
+    try {
+        c.startActivity(android.content.Intent.createChooser(send, c.getString(R.string.home_share)))
+    } catch (e: Exception) {
+        com.yegorkapomidorka.headswap.AppLog.i("поделиться: не открылось: ${e.message}")
     }
 }

@@ -105,4 +105,12 @@
     <string name="pr_ind_h">ч</string>
     <string name="pr_ind_m">мин</string>
     <string name="pr_ind_tab_iqama">Икама %1$s %2$s</string>
+    <string name="pr_more">Ещё</string>
+    <string name="pr_m_isna">ISNA (Северная Америка)</string>
+    <string name="pr_m_turkey">Diyanet (Турция)</string>
+    <string name="pr_m_singapore">MUIS (Сингапур)</string>
+    <string name="pr_m_jakim">JAKIM (Малайзия)</string>
+    <string name="pr_m_kemenag">Kemenag (Индонезия)</string>
+    <string name="pr_m_france">UOIF (Франция)</string>
+    <string name="pr_m_russia">ДУМ РФ</string>
 </resources>

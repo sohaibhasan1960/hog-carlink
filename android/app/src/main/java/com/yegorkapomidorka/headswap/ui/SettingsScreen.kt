@@ -176,6 +176,9 @@ private fun Context.updateStatus(): Pair<String, Int> {
 }
 
 /** Главный экран настроек: разделы с текущими значениями, помощь, версия. */
+/** HOG: «متقدّم» раскрыт (пока жив процесс; по умолчанию свёрнут). */
+private var advancedOpen = false
+
 class SettingsScreen(host: MainActivity) : Screen(host) {
     private val aa = AaPrefs(ctx)
     private val summaries = HashMap<SettingsSection, TextView>()
@@ -185,53 +188,51 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
         val c = ctx
         val body = c.vbox(12).apply { pad(c, 16, 4, 16, 16) }
 
-        // HOG CarLink: разделы по группам «Машина / Использование / Поддержка» (дизайн PhoneSettings.dc.html)
+        // HOG CarLink (дизайн «تبسيط»): вверху - то, чем пользуются; «متقدّم» (связь, видео, сертификат,
+        // для разработчиков) свёрнут. Молитва, Коран, приложения машины и поддержка - плитки главного экрана, здесь не повторяются.
         val menu = SettingsSection.menu()
-        val groups = listOf(
-            R.string.set_group_car to listOf(SettingsSection.MODE, SettingsSection.HEADUNIT, SettingsSection.VIDEO, SettingsSection.WIRELESS),
-            R.string.set_group_use to listOf(SettingsSection.SOUND, SettingsSection.APPS, SettingsSection.APPEARANCE),
-            R.string.set_group_support to listOf(SettingsSection.UPDATES, SettingsSection.SUPPORT),
-        )
-        val grouped = groups.flatMap { it.second }.toSet()
-        for ((g, group) in groups.withIndex()) {
-            val (titleRes, list) = group
-            // разделы, которых нет в группах (новые из апстрима), - в конец первой группы, чтобы не потерялись
-            val rows = list.filter { it in menu } + if (g == 0) menu.filter { it !in grouped } else emptyList()
-            if (rows.isEmpty()) continue
-            body.addView(c.sectionTitle(c.getString(titleRes)))
-            val card = c.card()
-            for ((i, s) in rows.withIndex()) {
-                if (i > 0) card.addView(c.divider())
-                card.addView(sectionRow(s))
-            }
-            if (titleRes == R.string.set_group_car) {
-                card.addView(c.divider())
-                card.addView(navRow(R.drawable.ic_car, c.getString(R.string.obd_title), c.getString(R.string.obd_sub)) { host.showObd() })
-            }
-            if (titleRes == R.string.set_group_use) {
-                card.addView(c.divider())
-                card.addView(navRow(R.drawable.ic_moon, c.getString(R.string.pr_title), c.getString(R.string.pr_enable)) { host.showPrayer() })
-                card.addView(c.divider())
-                card.addView(navRow(R.drawable.ic_book, c.getString(R.string.qr_title), c.getString(R.string.home_tile_quran_sub)) { host.showQuran() })
-            }
-            body.addView(card, lp(MATCH, WRAP))
+        val everyday = listOf(SettingsSection.SOUND, SettingsSection.APPEARANCE, SettingsSection.UPDATES).filter { it in menu }
+        val onHome = setOf(SettingsSection.APPS, SettingsSection.SUPPORT)
+        // всё остальное, в т.ч. новые разделы из апстрима, - в «متقدّم», чтобы не потерялось
+        val advanced = menu.filter { it !in everyday && it !in onHome }
+
+        body.addView(c.sectionTitle(c.getString(R.string.set_group_use)))
+        val use = c.card()
+        for ((i, s) in everyday.withIndex()) {
+            if (i > 0) use.addView(c.divider())
+            use.addView(sectionRow(s))
         }
+        use.addView(c.divider())
+        use.addView(navRow(R.drawable.ic_car, c.getString(R.string.obd_title), c.getString(R.string.obd_sub)) { host.showObd() })
+        body.addView(use, lp(MATCH, WRAP))
 
         body.addView(c.sectionTitle(c.getString(R.string.set_help)))
         val links = c.card().apply {
             addView(link(R.drawable.ic_report, c.getString(R.string.set_report_title), c.getString(R.string.set_report_note), false) { LogShare.shareReport(c) })
             addView(c.divider())
-            addView(link(R.drawable.ic_alert, c.getString(R.string.diag_settings_item), null, false) { host.showDiag() })
-            addView(c.divider())
-            addView(link(R.drawable.ic_refresh_btn, c.getString(R.string.set_rerun_setup), null, false) { host.showOnboarding(rerun = true) })
-            addView(c.divider())
             addView(link(R.drawable.ic_check, c.getString(R.string.set_check_ready), null, false) { host.showOnboarding(checklist = true) })
             addView(c.divider())
-            addView(link(R.drawable.ic_terminal, c.getString(R.string.set_for_devs), null, true) { host.showDev() })
+            addView(link(R.drawable.ic_share, c.getString(R.string.home_share), c.getString(R.string.home_tile_share_sub), false) { shareHogApp(c) })
             addView(c.divider())
             addView(link(R.drawable.ic_logo, c.getString(R.string.about_title), c.getString(R.string.about_note), false) { host.showAbout() })
         }
         body.addView(links, lp(MATCH, WRAP))
+
+        val adv = c.card().apply {
+            for ((i, s) in advanced.withIndex()) {
+                if (i > 0) addView(c.divider())
+                addView(sectionRow(s))
+            }
+            addView(c.divider())
+            addView(link(R.drawable.ic_alert, c.getString(R.string.diag_settings_item), null, false) { host.showDiag() })
+            addView(c.divider())
+            addView(link(R.drawable.ic_refresh_btn, c.getString(R.string.set_rerun_setup), null, false) { host.showOnboarding(rerun = true) })
+            addView(c.divider())
+            addView(link(R.drawable.ic_terminal, c.getString(R.string.set_for_devs), null, true) { host.showDev() })
+            visibility = if (advancedOpen) View.VISIBLE else View.GONE
+        }
+        body.addView(advancedHeader(adv), lp(MATCH, WRAP))
+        body.addView(adv, lp(MATCH, WRAP))
 
         body.addView(View(c), lp(MATCH, c.dp(12), 1f))
         val ver = try {
@@ -239,8 +240,7 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
         } catch (_: Exception) {
             "?"
         }
-        body.addView(c.text(c.getString(R.string.set_footer, ver), 13f, 400, c.clr(R.color.on2)).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
-        body.addView(supportButton(), LinearLayout.LayoutParams(WRAP, c.dp(44)).margins(c, 0, 12, 0, 8).apply { gravity = Gravity.CENTER_HORIZONTAL })
+        body.addView(c.text(c.getString(R.string.set_footer, ver), 14f, 400, c.clr(R.color.on2)).apply { gravity = Gravity.CENTER }, lp(MATCH, WRAP))
 
         refreshSummaries()
         view = scaffold(c, c.getString(R.string.set_title), { host.back() }, body)
@@ -251,6 +251,32 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
     override fun tick() = refreshSummaries()
 
     override fun onPermissionResult() = refreshSummaries()
+
+    /** Заголовок «متقدّم» со стрелкой: касание раскрывает/сворачивает [card] (56 dp, читается TalkBack как кнопка). */
+    private fun advancedHeader(card: View): View {
+        val c = ctx
+        val arrow = c.icon(R.drawable.ic_chevron, 20, c.clr(R.color.on2))
+        fun mark() {
+            arrow.rotation = if (card.visibility == View.VISIBLE) 90f else 0f
+        }
+        mark()
+        return c.hbox(10).apply {
+            pad(c, 4, 0, 4, 0)
+            minimumHeight = c.dp(56)
+            gravity = Gravity.CENTER_VERTICAL
+            background = c.rippleBg(null, 12)
+            isClickable = true
+            isFocusable = true
+            contentDescription = c.getString(R.string.set_group_advanced)
+            addView(c.text(c.getString(R.string.set_group_advanced), 17f, 600), lp(0, WRAP, 1f))
+            addView(arrow)
+            setOnClickListener {
+                advancedOpen = card.visibility != View.VISIBLE
+                card.visibility = if (advancedOpen) View.VISIBLE else View.GONE
+                mark()
+            }
+        }
+    }
 
     /** HOG CarLink: строка в стиле разделов (значок на плашке, подпись, стрелка) для своих экранов. */
     private fun navRow(icon: Int, title: String, sub: String, onClick: () -> Unit): View {
@@ -353,27 +379,6 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
      * (реквизиты там, в приложении их нет). URL по языку: ru — СБП на /headswap/support/,
      * остальные — PayPal на /headswap/en/#donate (R.string.set_support_url).
      */
-    private fun supportButton(): View {
-        val c = ctx
-        val fg = c.clr(R.color.acc)
-        return c.hbox(8).apply {
-            gravity = Gravity.CENTER
-            pad(c, 18, 0, 18, 0)
-            background = c.rippleBg(c.shape(0, 22, fg, 1.5f), 22)
-            isClickable = true
-            isFocusable = true
-            addView(c.icon(R.drawable.ic_heart, 18, fg))
-            addView(c.text(c.getString(R.string.set_support), 15f, 600, fg))
-            setOnClickListener {
-                try {
-                    c.startActivity(Intent(Intent.ACTION_VIEW, android.net.Uri.parse(c.getString(R.string.set_support_url))))
-                } catch (e: Exception) {
-                    AppLog.e("поддержка: браузер не открылся: ${e.message}")
-                }
-            }
-        }
-    }
-
     private fun link(icon: Int, title: String, note: String?, chevron: Boolean, onClick: () -> Unit): View {
         val c = ctx
         return c.hbox(14).apply {
