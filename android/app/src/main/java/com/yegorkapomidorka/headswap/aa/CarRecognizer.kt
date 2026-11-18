@@ -15,6 +15,29 @@ data class CarPrint(
     /** Для журнала и запроса поддержки. */
     fun label(): String = listOfNotNull(manufacturer, model, product, board, channel?.let { "ch $it" })
         .filter { it.isNotBlank() }.distinct().joinToString(" · ")
+
+    /** Пришли обе части: канал прошивки (STATISTIC_INFO) и HU_INFO. */
+    fun complete(): Boolean = channel != null && (manufacturer != null || model != null || product != null || board != null)
+
+    /**
+     * Для общей базы: Bluetooth-имя машины («VW BT 5075») у каждой своё - цифры заменяем на #; модель, совпадающая
+     * с этим именем, - тоже оно, её не отправляем.
+     */
+    fun shareable(): CarPrint = copy(
+        manufacturer = manufacturer?.let { mask(it) },
+        model = model?.takeIf { it != manufacturer },
+    )
+
+    /** Ключ записи в общей базе: канал, модель, product, board - без Bluetooth-имени (SHA-256, 24 hex). */
+    fun key(): String {
+        val s = listOf(channel, model, product, board).joinToString("|") { it.orEmpty() }
+        val d = java.security.MessageDigest.getInstance("SHA-256").digest(s.toByteArray(Charsets.UTF_8))
+        return d.joinToString("") { "%02x".format(it) }.take(24)
+    }
+
+    private companion object {
+        fun mask(s: String) = s.replace(Regex("[0-9]"), "#")
+    }
 }
 
 /**

@@ -38,6 +38,8 @@ class HomeScreen(host: MainActivity) : Screen(host) {
     private var updKey: String? = null
     private val heroBox = ctx.vbox(14)
     private val stagesBox = ctx.vbox()
+    /** HOG CarLink: вопрос «поделиться отпечатком незнакомой машины» (CarPrints), когда такая машина была. */
+    private val printBox = ctx.vbox()
     private val footer = ctx.vbox(4)
     private var lastState: HomeState? = null
     private var lastDesk: DesktopHomeState? = null
@@ -84,6 +86,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         body.addView(updBox, lp(MATCH, WRAP))
         body.addView(heroBox, lp(MATCH, WRAP))
         body.addView(c.card(24).apply { pad(c, 0, 6, 0, 6); addView(stagesBox, lp(MATCH, WRAP)) }, lp(MATCH, WRAP))
+        body.addView(printBox, lp(MATCH, WRAP))
         // HOG CarLink: быстрый доступ плитками 2x2 (дизайн PhoneHome.dc.html) вместо столбика текстовых ссылок
         body.addView(c.sectionTitle(c.getString(R.string.home_quick)).apply { pad(c, 4, 8, 4, 0) })
         body.addView(quickGrid(), lp(MATCH, WRAP))
@@ -113,7 +116,27 @@ class HomeScreen(host: MainActivity) : Screen(host) {
         syncMode()
         // открыли экран: проверяем сервер ГУ короткой сессией (в режиме «Свой лаунчер» порт 5277 не нужен)
         if (!desktopMode) AaServerCheck.wantAuto()
+        renderPrintAsk()
         tick()
+    }
+
+    /** HOG CarLink: незнакомая машина - спросить один раз, можно ли отправить её технические данные (CarPrints). */
+    private fun renderPrintAsk() {
+        val c = ctx
+        printBox.removeAllViews()
+        if (!com.yegorkapomidorka.headswap.support.CarPrints.askNow(c)) return
+        val card = c.card(24).apply {
+            pad(c, 16, 14, 16, 8)
+            addView(c.text(c.getString(R.string.carprint_ask_title), 17f, 600), lp(MATCH, WRAP))
+            addView(c.text(c.getString(R.string.carprint_ask_text), 14f, 400, c.clr(R.color.on2)), lp(MATCH, WRAP).margins(c, 0, 6, 0, 10))
+            addView(c.tonalButton(c.getString(R.string.carprint_ask_yes)).apply {
+                setOnClickListener { com.yegorkapomidorka.headswap.support.CarPrints.setConsent(c, true); renderPrintAsk() }
+            }, lp(MATCH, WRAP))
+            addView(c.linkButton(c.getString(R.string.carprint_ask_no)).apply {
+                setOnClickListener { com.yegorkapomidorka.headswap.support.CarPrints.setConsent(c, false); renderPrintAsk() }
+            }, lp(MATCH, WRAP))
+        }
+        printBox.addView(card, lp(MATCH, WRAP))
     }
 
     /** Режим, который реально применяется (на Android ниже 13 «Свой лаунчер» - это Android Auto); плашка в шапке по нему. */

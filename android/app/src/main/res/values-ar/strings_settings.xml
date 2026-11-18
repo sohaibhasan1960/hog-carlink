@@ -327,4 +327,10 @@
     <string name="set_group_advanced">متقدّم</string>
     <string name="car_recognized_title">تعرّفنا على سيارتك: %1$s</string>
     <string name="car_recognized_text">تعرّف HOG CarLink على سيارتك من شاشتها وضبط الإعدادات المناسبة لـ %1$s. تُطبَّق من الاتصال القادم. يمكنك تغيير السيارة من الإعدادات › متقدّم › إعادة تشغيل الإعداد.</string>
+    <string name="carprint_ask_title">ساعدنا في التعرّف على سيارتك</string>
+    <string name="carprint_ask_text">اتصلتَ بسيارة لا يعرفها التطبيق بعد. هل نرسل البيانات التقنية لشاشتها (رمز البرنامج والطراز)؟ لا نرسل اسمًا ولا رقم هاتف ولا موقعًا. نضيف السيارة في تحديث قادم ليضبطها التطبيق تلقائيًا لكل من يملكها.</string>
+    <string name="carprint_ask_yes">شارك</string>
+    <string name="carprint_ask_no">لا، شكرًا</string>
+    <string name="carprint_set_title">مشاركة بيانات شاشة السيارة</string>
+    <string name="carprint_set_sub">بيانات تقنية فقط، للتعرّف على سيارات أكثر</string>
 </resources>

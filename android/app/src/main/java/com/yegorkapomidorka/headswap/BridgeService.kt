@@ -1613,7 +1613,17 @@ class BridgeService : Service() {
         val preset = com.yegorkapomidorka.headswap.aa.CarRecognizer.match(p)
         if (preset == null) {
             // HU_INFO и канал приходят порознь: «не знаем» пишем, когда есть оба
-            if (p.channel != null && (p.manufacturer != null || p.model != null)) AppLog.i("BRIDGE машина не опознана: ${p.label()}", true)
+            if (p.complete()) {
+                AppLog.i("BRIDGE машина не опознана: ${p.label()}", true)
+                // HOG: в общую базу (отправка - только с согласия, вне сессии); ручной выбор машины - подсказка владельцу
+                val prefs = AaPrefs(this)
+                val chosen = prefs.carPreset?.takeIf { !prefs.carPresetAuto }?.name
+                try {
+                    com.yegorkapomidorka.headswap.support.CarPrints.record(this, p, chosen)
+                } catch (e: Exception) {
+                    AppLog.i("CARPRINT не запомнен: ${e.javaClass.simpleName}: ${e.message}")
+                }
+            }
             return
         }
         val name = getString(preset.titleRes)

@@ -214,6 +214,12 @@ class SettingsScreen(host: MainActivity) : Screen(host) {
             addView(c.divider())
             addView(link(R.drawable.ic_share, c.getString(R.string.home_share), c.getString(R.string.home_tile_share_sub), false) { shareHogApp(c) })
             addView(c.divider())
+            // HOG CarLink: согласие на общую базу машин (CarPrints) - включить или отозвать
+            addView(ToggleRow(c, c.getString(R.string.carprint_set_title), c.getString(R.string.carprint_set_sub),
+                com.yegorkapomidorka.headswap.support.CarPrints.consentOn(c), standalone = false) { on ->
+                com.yegorkapomidorka.headswap.support.CarPrints.setConsent(c, on)
+            }.view)
+            addView(c.divider())
             addView(link(R.drawable.ic_logo, c.getString(R.string.about_title), c.getString(R.string.about_note), false) { host.showAbout() })
         }
         body.addView(links, lp(MATCH, WRAP))

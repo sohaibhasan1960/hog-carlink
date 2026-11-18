@@ -252,6 +252,12 @@
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE" />
 
+        <!-- HOG CarLink: отправка отпечатков незнакомых ГУ (с согласия) -->
+        <service
+            android:name=".support.CarPrintJob"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE" />
+
         <!-- статус установки обновления (PackageInstaller) -->
         <receiver
             android:name=".update.InstallReceiver"

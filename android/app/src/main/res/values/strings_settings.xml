@@ -332,4 +332,10 @@
     <string name="set_group_advanced">Advanced</string>
     <string name="car_recognized_title">Car recognized: %1$s</string>
     <string name="car_recognized_text">HOG CarLink recognized your car from its screen and set the recommended settings for %1$s. They take effect from the next connection. You can change the car in Settings › Advanced › Re-run setup.</string>
+    <string name="carprint_ask_title">Help us recognize your car</string>
+    <string name="carprint_ask_text">You connected to a car the app does not know yet. May we send the technical details of its screen (firmware and model codes)? No name, phone number or location is sent. We add the car in a future update so the app sets it up by itself for everyone who has it.</string>
+    <string name="carprint_ask_yes">Share</string>
+    <string name="carprint_ask_no">No, thanks</string>
+    <string name="carprint_set_title">Share car screen details</string>
+    <string name="carprint_set_sub">Technical details only, to recognize more cars</string>
 </resources>

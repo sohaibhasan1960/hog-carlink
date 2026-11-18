@@ -170,6 +170,23 @@ class SupportCloud(ctx: Context) {
         return parseQuery(httpArray("$DOC_BASE:runQuery", q.toString(), t)).sortedByDescending { it.createdAt }
     }
 
+    /**
+     * HOG CarLink: отпечаток незнакомой ГУ в общую базу (carprints/{uid}_{key}; запись или замена своей).
+     * [o] - запись очереди [CarPrints]. Вызывать только с согласия человека: token() заводит анонимный аккаунт.
+     */
+    @Throws(IOException::class)
+    fun sendCarPrint(o: JSONObject, app: String) {
+        val t = token()
+        val key = o.getString("key")
+        val fields = JSONObject().put("uid", sv(uid!!)).put("key", sv(key)).put("app", sv(app.take(40)))
+        for (f in listOf("manufacturer", "model", "product", "board", "channel")) fields.put(f, sv(o.optString(f).take(80)))
+        fields.put("chosen", sv(o.optString("chosen").take(40)))
+        val write = JSONObject()
+            .put("update", JSONObject().put("name", "$DOC_ROOT/carprints/${uid!!}_$key").put("fields", fields))
+            .put("updateTransforms", JSONArray().put(JSONObject().put("fieldPath", "seenAt").put("setToServerValue", "REQUEST_TIME")))
+        http("POST", "$BASE:commit", JSONObject().put("writes", JSONArray().put(write)).toString(), t)
+    }
+
     // ---------------- владелец ----------------
 
     /** Ввести код владельца. true = этот телефон теперь владелец. */

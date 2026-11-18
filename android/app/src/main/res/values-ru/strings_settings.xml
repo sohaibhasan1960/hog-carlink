@@ -329,4 +329,10 @@
     <string name="set_group_advanced">Дополнительно</string>
     <string name="car_recognized_title">Машина опознана: %1$s</string>
     <string name="car_recognized_text">HOG CarLink опознал машину по её ГУ и выставил рекомендованные настройки для %1$s. Они применятся со следующего подключения. Сменить машину: Настройки › Дополнительно › Пройти настройку заново.</string>
+    <string name="carprint_ask_title">Помогите опознать машину</string>
+    <string name="carprint_ask_text">Вы подключились к машине, которую приложение ещё не знает. Отправить технические данные её ГУ (коды прошивки и модели)? Имя, телефон и место не отправляются. Машину добавим в следующем обновлении, и приложение будет настраивать её само для всех владельцев.</string>
+    <string name="carprint_ask_yes">Отправить</string>
+    <string name="carprint_ask_no">Нет, спасибо</string>
+    <string name="carprint_set_title">Отправлять данные ГУ</string>
+    <string name="carprint_set_sub">Только технические данные, чтобы опознавать больше машин</string>
 </resources>
