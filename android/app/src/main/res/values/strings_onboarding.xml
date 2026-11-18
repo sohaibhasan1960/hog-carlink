@@ -119,6 +119,12 @@
         <item>Turn on Auto-launch, Secondary launch and Run in background</item>
     </string-array>
     <string name="step_background_extra_honor">App launch settings</string>
+    <string-array name="step_background_samsung_list">
+        <item>Tap “Battery and Never sleeping apps”</item>
+        <item>Open “Background usage limits”, then “Never sleeping apps”</item>
+        <item>Tap +, choose HOG CarLink and tap “Add”</item>
+    </string-array>
+    <string name="step_background_extra_samsung">Battery and Never sleeping apps</string>
 
     <string name="step_car_wifi_title">Add your car Wi-Fi</string>
     <string name="step_car_wifi_body">Enter the Wi-Fi name and password shown on the car screen. The phone joins it by itself every time the car starts, and the internet stays on mobile data.</string>

@@ -143,6 +143,12 @@
     <string name="step_activate_short">Активация HOG CarLink</string>
     <!-- HOG CarLink: недостающие переводы -->
     <string name="step_background_extra_honor">Настройки запуска приложений</string>
+    <string-array name="step_background_samsung_list">
+        <item>Нажмите «Батарея и неспящие приложения»</item>
+        <item>Откройте «Ограничения фонового использования», затем «Приложения, которые никогда не спят»</item>
+        <item>Нажмите +, выберите HOG CarLink и нажмите «Добавить»</item>
+    </string-array>
+    <string name="step_background_extra_samsung">Батарея и неспящие приложения</string>
     <string name="step_car_wifi_title">Добавьте Wi-Fi машины</string>
     <string name="step_car_wifi_body">Введите имя и пароль Wi-Fi с экрана машины. Телефон сам подключается к ней при каждом запуске машины, а интернет остаётся мобильным.</string>
     <string name="step_car_wifi_hint">Если Android попросит разрешить подключение, нажмите «Подключить». Он спросит только один раз.</string>

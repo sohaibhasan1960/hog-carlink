@@ -116,6 +116,12 @@
         <item>فعّل التشغيل التلقائي والتشغيل الثانوي والتشغيل في الخلفية</item>
     </string-array>
     <string name="step_background_extra_honor">تشغيل التطبيقات</string>
+    <string-array name="step_background_samsung_list">
+        <item>اضغط «البطارية والتطبيقات التي لا تنام»</item>
+        <item>افتح «حدود استخدام الخلفية» ثم «التطبيقات التي لا تنام أبدًا»</item>
+        <item>اضغط + واختر HOG CarLink ثم «إضافة»</item>
+    </string-array>
+    <string name="step_background_extra_samsung">البطارية والتطبيقات التي لا تنام</string>
 
     <string name="step_car_wifi_title">شبكة واي فاي السيارة</string>
     <string name="step_car_wifi_body">أدخل اسم الشبكة وكلمة المرور الظاهرين على شاشة السيارة. ينضم الهاتف إليها وحده في كل مرة تشغّل فيها السيارة، ويبقى الإنترنت على بيانات الجوال.</string>

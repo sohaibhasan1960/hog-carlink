@@ -68,6 +68,7 @@ class StepInfo(
     fun listItems(ctx: Context, xiaomi: Boolean = Readiness.isXiaomi()): List<String> {
         val all = list?.let { ctx.resources.getStringArray(it).toList() } ?: return emptyList()
         if (id == StepId.BACKGROUND && Readiness.isHonor()) return all.take(2) + ctx.resources.getStringArray(R.array.step_background_honor_list)
+        if (id == StepId.BACKGROUND && Readiness.isSamsung()) return all.take(2) + ctx.resources.getStringArray(R.array.step_background_samsung_list)
         return if (id == StepId.BACKGROUND && !xiaomi) all.take(2) else all
     }
 }
@@ -143,6 +144,12 @@ object Readiness {
         return m.contains("honor") || m.contains("huawei")
     }
 
+    /** HOG CarLink: Samsung (One UI) усыпляет фон сам, нужен список «Приложения, которые никогда не спят». */
+    fun isSamsung(): Boolean = Build.MANUFACTURER.lowercase().contains("samsung")
+
+    /** У прошивки свой экран фона, который вручную не проверить: Xiaomi, Honor/Huawei, Samsung. */
+    fun needsVendorBackground(): Boolean = isXiaomi() || isHonor() || isSamsung()
+
     fun isXiaomi(): Boolean {
         val m = Build.MANUFACTURER.lowercase()
         return m.contains("xiaomi") || m.contains("redmi") || m.contains("poco")
@@ -179,7 +186,7 @@ object Readiness {
     /** Выполнено: автоопределение, а где его нет - ручная отметка. Фон на Xiaomi требует ещё и ручной отметки. */
     fun isDone(ctx: Context, id: StepId): Boolean {
         val ui = UiPrefs(ctx)
-        if (id == StepId.BACKGROUND) return batteryOk(ctx) && (!(isXiaomi() || isHonor()) || ui.isManualDone(id.key))
+        if (id == StepId.BACKGROUND) return batteryOk(ctx) && (!needsVendorBackground() || ui.isManualDone(id.key))
         return auto(ctx, id) ?: ui.isManualDone(id.key)
     }
 
@@ -244,6 +251,34 @@ object Readiness {
         }
         AppLog.i("«Запуск приложений» Honor не открылся, открываю карточку приложения")
         appDetails(ctx)
+    }
+
+    /**
+     * HOG CarLink: батарея Samsung («Обслуживание устройства» › «Батарея»), оттуда «Ограничения фона» ›
+     * «Приложения, которые никогда не спят». Экран у версий One UI разный: пробуем известные, иначе карточка приложения.
+     */
+    fun openSamsungBattery(ctx: Context) {
+        val known = listOf(
+            "com.samsung.android.lool" to "com.samsung.android.sm.battery.ui.BatteryActivity",
+            "com.samsung.android.lool" to "com.samsung.android.sm.ui.battery.BatteryActivity",
+            "com.samsung.android.sm" to "com.samsung.android.sm.ui.battery.BatteryActivity",
+        )
+        for ((pkg, cls) in known) {
+            try {
+                ctx.startActivity(Intent().setComponent(ComponentName(pkg, cls)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                return
+            } catch (_: Exception) {
+            }
+        }
+        AppLog.i("батарея Samsung не открылась, открываю карточку приложения")
+        appDetails(ctx)
+    }
+
+    /** Экран фона своей прошивки (кнопка после снятия ограничения батареи). */
+    fun openVendorBackground(ctx: Context) = when {
+        isHonor() -> openHonorLaunch(ctx)
+        isSamsung() -> openSamsungBattery(ctx)
+        else -> openXiaomiAutostart(ctx)
     }
 
     fun openLocationSettings(ctx: Context) = openSettings(ctx, Settings.ACTION_LOCATION_SOURCE_SETTINGS)

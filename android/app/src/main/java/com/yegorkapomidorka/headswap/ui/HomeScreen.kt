@@ -243,6 +243,7 @@ class HomeScreen(host: MainActivity) : Screen(host) {
                 setOnClickListener {
                     Readiness.requestIgnoreBattery(c)
                     if (Readiness.isHonor()) Readiness.openHonorLaunch(c)
+                    if (Readiness.isSamsung()) Readiness.openSamsungBattery(c)
                 }
             })
         }

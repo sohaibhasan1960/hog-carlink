@@ -202,9 +202,14 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
         val buttons = c.vbox(4)
         val primaryLabel = if (done && s.id != StepId.FIRST) c.getString(R.string.onb_next) else c.getString(s.primary)
         buttons.addView(c.primaryButton(primaryLabel).apply { setOnClickListener { onPrimary(s, done) } })
-        val showExtra = s.extra != null && !done && (s.id != StepId.BACKGROUND || Readiness.isXiaomi() || Readiness.isHonor())
+        val showExtra = s.extra != null && !done && (s.id != StepId.BACKGROUND || Readiness.needsVendorBackground())
         if (showExtra) {
-            val extraLabel = if (s.id == StepId.BACKGROUND && Readiness.isHonor()) R.string.step_background_extra_honor else s.extra!!
+            val extraLabel = when {
+                s.id != StepId.BACKGROUND -> s.extra!!
+                Readiness.isHonor() -> R.string.step_background_extra_honor
+                Readiness.isSamsung() -> R.string.step_background_extra_samsung
+                else -> s.extra!!
+            }
             buttons.addView(c.containerButton(c.getString(extraLabel)).apply { setOnClickListener { onExtra(s) } })
         }
         val skipLabel = if (done && s.id != StepId.FIRST) c.getString(R.string.onb_back) else c.getString(s.skip)
@@ -571,8 +576,7 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
             StepId.NOTIF -> requestNotifications()
             StepId.BACKGROUND -> when {
                 !Readiness.batteryOk(c) -> Readiness.requestIgnoreBattery(c)
-                Readiness.isHonor() -> Readiness.openHonorLaunch(c)
-                else -> Readiness.openXiaomiAutostart(c)
+                else -> Readiness.openVendorBackground(c)
             }
             StepId.MIC -> requestMic()
             StepId.BLUETOOTH -> Readiness.openBluetoothSettings(c)
@@ -589,7 +593,7 @@ class OnboardingScreen(host: MainActivity, private val showAll: Boolean, startAt
     private fun onExtra(s: StepInfo) {
         try {
             when (s.id) {
-                StepId.BACKGROUND -> if (Readiness.isHonor()) Readiness.openHonorLaunch(ctx) else Readiness.openXiaomiAutostart(ctx)
+                StepId.BACKGROUND -> Readiness.openVendorBackground(ctx)
                 else -> {}
             }
         } catch (e: Exception) {
