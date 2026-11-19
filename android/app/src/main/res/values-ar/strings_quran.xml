@@ -75,7 +75,7 @@
     <string name="mf_car">المصحف على شاشة السيارة</string>
     <string name="mf_car_sub">يظهر والسيارة متوقفة فقط</string>
     <string name="mf_car_moving">يظهر المصحف والسيارة متوقفة فقط</string>
-    <string name="mf_car_nospeed">لا تصل سرعة السيارة ولا موقع GPS من الهاتف بعد، فلا يمكن التأكد من التوقف</string>
+    <string name="mf_car_nospeed">جارٍ التحقق من السرعة عبر GPS. يظهر المصحف على شاشة السيارة خلال ثوانٍ إن كانت متوقفة</string>
     <string name="mf_car_transcode">غير متاح أثناء تحويل الفيديو</string>
     <string name="mf_car_off">يتاح بعد اتصال شاشة السيارة</string>
     <string name="hf_ayah_repeat">تكرار كل آية</string>

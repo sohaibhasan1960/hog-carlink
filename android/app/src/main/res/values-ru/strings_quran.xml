@@ -75,7 +75,7 @@
     <string name="mf_car">Мусхаф на экране машины</string>
     <string name="mf_car_sub">Только на стоянке</string>
     <string name="mf_car_moving">Только когда машина стоит</string>
-    <string name="mf_car_nospeed">Машина не сообщает скорость, а GPS телефона ещё молчит - стоянку не подтвердить</string>
+    <string name="mf_car_nospeed">Проверяю скорость по GPS. Мусхаф появится на экране машины через несколько секунд, если она стоит</string>
     <string name="mf_car_transcode">Недоступно при перекодировании видео</string>
     <string name="mf_car_off">Доступно после подключения экрана машины</string>
     <string name="hf_ayah_repeat">Повтор каждого аята</string>

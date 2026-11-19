@@ -26,6 +26,8 @@ object PhoneSpeed {
 
     private var lm: LocationManager? = null
     private var logged = false
+    /** GPS включён (по просьбе мусхафа); пассивные точки идут всегда, пока жив мост. */
+    private var gps = false
 
     private val listener = LocationListener { loc: Location ->
         if (!loc.hasSpeed()) return@LocationListener
@@ -55,22 +57,48 @@ object PhoneSpeed {
         }
         val m = ctx.getSystemService(LocationManager::class.java) ?: return
         try {
-            if (m.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
-                m.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, listener, Looper.getMainLooper())
-            }
+            // HOG (батарея): сам GPS - только по [setGps] (мусхаф на экране машины); здесь - пассивно, чужие точки
             m.requestLocationUpdates(LocationManager.PASSIVE_PROVIDER, 1000L, 0f, listener, Looper.getMainLooper())
             lm = m
+            gps = false
             logged = false
-            AppLog.i("скорость GPS телефона: слушаю (в фоне ${if (permitted(ctx)) "разрешено" else "НЕ разрешено - только при открытом приложении"})")
+            AppLog.i("скорость GPS телефона: слушаю пассивно (в фоне ${if (permitted(ctx)) "разрешено" else "НЕ разрешено - только при открытом приложении"})")
         } catch (e: Exception) {
             AppLog.e("скорость GPS телефона: подписка", e)
         }
     }
 
+    /** Включить или выключить сам GPS (раз в секунду); пассивная подписка не трогается. */
+    @SuppressLint("MissingPermission")
+    @Synchronized
+    fun setGps(on: Boolean) {
+        val m = lm ?: return
+        if (on == gps) return
+        try {
+            if (on) {
+                if (!m.isProviderEnabled(LocationManager.GPS_PROVIDER)) return
+                m.requestLocationUpdates(LocationManager.GPS_PROVIDER, 1000L, 0f, gpsListener, Looper.getMainLooper())
+            } else {
+                m.removeUpdates(gpsListener)
+            }
+            gps = on
+        } catch (e: Exception) {
+            AppLog.e("скорость GPS телефона: GPS ${if (on) "вкл" else "выкл"}", e)
+        }
+    }
+
+    /** Отдельный слушатель GPS: его можно снять, не трогая пассивную подписку. */
+    private val gpsListener = LocationListener { loc -> listener.onLocationChanged(loc) }
+
     @Synchronized
     fun stop() {
         val m = lm ?: return
         lm = null
+        try {
+            m.removeUpdates(gpsListener)
+        } catch (_: Exception) {
+        }
+        gps = false
         try {
             m.removeUpdates(listener)
         } catch (_: Exception) {

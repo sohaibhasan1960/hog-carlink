@@ -1426,6 +1426,7 @@ class BridgeService : Service() {
             com.yegorkapomidorka.headswap.quran.CarMushaf.onExit = { core.exitMushaf("кнопка «خروج»") }
             com.yegorkapomidorka.headswap.aa.PhoneSpeed.onUpdate = { kmh -> core.onPhoneSpeed(kmh) }
             com.yegorkapomidorka.headswap.aa.PhoneSpeed.start(this)
+            core.gpsNeeded = { on -> main.post { com.yegorkapomidorka.headswap.aa.PhoneSpeed.setGps(on) } }
             core.phoneCallProvider = {
                 when (audio?.mode) {
                     AudioManager.MODE_RINGTONE -> PhoneCall.RINGING

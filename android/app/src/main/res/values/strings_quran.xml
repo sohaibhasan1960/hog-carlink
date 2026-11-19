@@ -75,7 +75,7 @@
     <string name="mf_car">Mushaf on the car screen</string>
     <string name="mf_car_sub">Shown only while the car is stopped</string>
     <string name="mf_car_moving">Shown only while the car is stopped</string>
-    <string name="mf_car_nospeed">The car does not report its speed and the phone has no GPS fix yet, so a stop cannot be confirmed</string>
+    <string name="mf_car_nospeed">Checking the speed by GPS. The mushaf appears on the car screen within seconds if the car is stopped</string>
     <string name="mf_car_transcode">Not available while the video is re-encoded</string>
     <string name="mf_car_off">Available once the car screen is connected</string>
     <string name="hf_ayah_repeat">Repeat each verse</string>

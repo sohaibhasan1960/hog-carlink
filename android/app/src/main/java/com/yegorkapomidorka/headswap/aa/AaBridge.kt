@@ -615,6 +615,7 @@ class AaBridgeCore(
         mushafOn = false
         mushafResume = false
         mushafParkedSince = NEVER
+        mushafPendingSince = NEVER
         carSpeedKmh = -1
         carSpeedAt = NEVER
         huVw20082138 = false                   // HU_INFO / STATISTIC_INFO придут заново в этой сессии
@@ -1858,6 +1859,24 @@ class AaBridgeCore(
     /** HOG: звук AA пошёл в машину через CarLife (MEDIA START); ставит BridgeService. */
     @Volatile var onCarMedia: () -> Unit = {}
     @Volatile private var mushafParkedSince = NEVER
+    /**
+     * HOG (батарея): GPS телефона включается, только пока он нужен мусхафу - показан, ждёт возврата или его просили
+     * открыть, а скорости ещё нет. В остальное время - пассивные точки навигатора AA (бесплатно). Ставит BridgeService.
+     */
+    @Volatile var gpsNeeded: (Boolean) -> Unit = {}
+    @Volatile private var gpsOn = false
+    /** Мусхаф просили открыть, а скорости не было: GPS включён, открываем, как только придёт точка (не дольше минуты). */
+    @Volatile private var mushafPendingSince = NEVER
+
+    private fun updateGps(now: Long) {
+        val pending = mushafPendingSince != NEVER && now - mushafPendingSince < MUSHAF_PENDING_MS
+        if (!pending) mushafPendingSince = NEVER
+        val need = !mushafWhileDriving() && (mushafOn || mushafResume || pending)
+        if (need == gpsOn) return
+        gpsOn = need
+        log("BRIDGE GPS телефона ${if (need) "включён (мусхаф)" else "выключен (не нужен)"}", true)
+        gpsNeeded(need)
+    }
     /** Рисует кадр мусхафа (ширина, высота видимой части); ставит BridgeService. */
     @Volatile var mushafScene: ((android.graphics.Canvas, Int, Int) -> Unit)? = null
     /** Касание ГУ на экране мусхафа: действие (0 down, 1 up, 2 move), x, y, ширина, высота. */
@@ -1913,8 +1932,14 @@ class AaBridgeCore(
         }
         if (why != null) {
             log("BRIDGE мусхаф на экране: отказ ($why, скорость ГУ $carSpeedKmh, GPS $phoneSpeedKmh км/ч)", true)
+            // скорости нет - включаем GPS и откроем сами, как только он покажет стоянку
+            if (why == "nospeed" && mushafPendingSince == NEVER) {
+                mushafPendingSince = clockMs()
+                updateGps(mushafPendingSince)
+            }
             return why
         }
+        mushafPendingSince = NEVER
         mushafOn = true
         mushafResume = false
         mushafParkedSince = NEVER
@@ -1923,6 +1948,7 @@ class AaBridgeCore(
         link.showScene(scene)
         link.showPlaceholder(placeholderText)
         log("BRIDGE мусхаф на экране: AA скрыт, касания - мусхафу (стоянка: ГУ $carSpeedKmh, GPS $phoneSpeedKmh км/ч)", true)
+        updateGps(clockMs())
         return null
     }
 
@@ -1941,6 +1967,7 @@ class AaBridgeCore(
         keyframeRequests++
         peer?.requestKeyFrame()
         log("BRIDGE мусхаф убран с экрана ($why): жду IDR от AA", true)
+        updateGps(now)
     }
 
     @Synchronized
@@ -2342,6 +2369,11 @@ class AaBridgeCore(
             log("BRIDGE повторный ключевой кадр через ${SPS_CROP_KICK_MS} мс после первого (ГУ могла потерять его на смене заглушка -> AA)", true)
             peer?.requestKeyFrame()
         }
+        // HOG: мусхаф просили открыть без скорости - GPS дал точку: открыть, если стоим (едем - ждём дальше)
+        if (mushafPendingSince != NEVER && !mushafOn && (carFresh(now) || phoneFresh(now))) {
+            if (parked(now)) enterMushaf()
+        }
+        updateGps(now)
         if (mushafOn) {
             if (!mushafWhileDriving() && !parked(now)) exitMushaf("не стоянка: ГУ $carSpeedKmh, GPS $phoneSpeedKmh км/ч", resume = true)
             waitSince = 0L
@@ -3411,6 +3443,8 @@ class AaBridgeCore(
         const val ID6_CHANNEL = "20082128"                // HOG CarLink: VW ID.6 CROZZ (наша, BT «VW BT 5075»)
         /** Скорость от ГУ старше этого - не знаем, стоим ли (ID.6 шлёт раз в 500 мс). */
         const val SPEED_FRESH_MS = 3_000L
+        /** Сколько ждать первую точку GPS после просьбы открыть мусхаф. */
+        const val MUSHAF_PENDING_MS = 60_000L
         /** GPS телефона на месте дрожит до 2-3 км/ч: стоянка ниже 4, «поехали» от 6. */
         const val PHONE_PARK_KMH = 4f
         const val PHONE_MOVE_KMH = 6f
