@@ -81,9 +81,10 @@ class MushafActivity : Activity() {
             gravity = Gravity.START or Gravity.CENTER_VERTICAL
             maxLines = 1
         }
+        // цифры в шрифте мусхафа рисуются знаком конца аята - джуз и номер страницы обычным шрифтом
         juzHead = TextView(this).apply {
             setTextColor(GOLD)
-            typeface = font
+            typeface = Typeface.SERIF
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 19f)
             gravity = Gravity.END or Gravity.CENTER_VERTICAL
             maxLines = 1
@@ -96,7 +97,7 @@ class MushafActivity : Activity() {
         }
         pageNo = TextView(this).apply {
             setTextColor(GOLD)
-            typeface = font
+            typeface = Typeface.SERIF
             setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
             gravity = Gravity.CENTER
             setPadding(0, 0, 0, dp(2))
