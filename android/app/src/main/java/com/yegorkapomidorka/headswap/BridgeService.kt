@@ -131,8 +131,10 @@ class BridgeService : Service() {
      */
     @Volatile private var autoMode = false
         set(v) {
+            val changed = field != v
             field = v
             CarLifeState.carAuto = v
+            if (changed) carStateChanged()
         }
     /** Ожидание запущено/принято авторежимом: после ухода машины его не возобновляем. Только главная нить. */
     private var autoStarted = false
@@ -1107,6 +1109,7 @@ class BridgeService : Service() {
         DesktopKeys.voiceStatus = null
         holdSessionWake()
         CarLifeState.running = true
+        carStateChanged()
         stopRequested = false
 
         val sref = arrayOfNulls<CarLifeSession>(1)
@@ -1235,6 +1238,7 @@ class BridgeService : Service() {
         // кнопка голоса: системный помощник клавишей KEYCODE_ASSIST (как долгое нажатие питания), см. createDesktopHost
         holdSessionWake()
         CarLifeState.running = true
+        carStateChanged()
         stopRequested = false
 
         val sref = arrayOfNulls<CarLifeSession>(1)
@@ -1581,6 +1585,7 @@ class BridgeService : Service() {
         if (desktopUsed) cancelDesktopRecovery()
         stopCarNet(CarNetEvent.STOP, "finish")
         CarLifeState.running = false
+        carStateChanged()
         try {
             wakeLock?.let { if (it.isHeld) it.release() }
         } catch (_: Exception) {
@@ -1648,6 +1653,15 @@ class BridgeService : Service() {
             .setAutoCancel(true)
             .build()
         getSystemService(NotificationManager::class.java).notify(CAR_NOTIF_ID, n)
+    }
+
+    /** HOG: телефон сел в машину или вышел - будильники намаза ставятся только в машине (PrayerAlarms). */
+    private fun carStateChanged() {
+        try {
+            com.yegorkapomidorka.headswap.prayer.PrayerAlarms.reschedule(this)
+        } catch (e: Exception) {
+            AppLog.i("намаз: пересчёт будильников не прошёл: ${e.javaClass.simpleName}: ${e.message}")
+        }
     }
 
     override fun onDestroy() {

@@ -36,6 +36,12 @@ object PrayerAlarms {
         am.cancel(main)
         am.cancel(dhikr)
         if (!prefs.enabled || !prefs.hasLocation) return
+        // HOG (батарея): вне машины будильники не ставим - телефон не просыпается ради уведомлений. Сессия моста
+        // или машина рядом по Bluetooth ставят их снова (BridgeService). Исключение - «азан везде» (soundAlways).
+        if (!inCar() && !prefs.soundAlways) {
+            AppLog.i("намаз: вне машины - будильники не ставлю")
+            return
+        }
         val now = System.currentTimeMillis()
         val today = prefs.day(LocalDate.now()) ?: return
         val tomorrow = prefs.day(LocalDate.now().plusDays(1)) ?: return

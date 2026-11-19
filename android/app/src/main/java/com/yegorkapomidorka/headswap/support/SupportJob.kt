@@ -43,7 +43,8 @@ class SupportJob : JobService() {
         private const val CHANNEL = "support"
         private const val NOTIF_OWNER = 4712
         private const val NOTIF_REPLY = 4713
-        private const val PERIOD_MS = 30 * 60_000L
+        /** HOG (батарея): раз в 12 часов (было 30 минут). */
+        private const val PERIOD_MS = 12 * 60 * 60_000L
 
         /** Запланировать, если есть что проверять (владелец или клиент с запросами). */
         fun schedule(ctx: Context) {
@@ -52,7 +53,8 @@ class SupportJob : JobService() {
             // планирование не должно ронять приложение (hog.15 падал на старте без ACCESS_NETWORK_STATE)
             try {
                 val js = ctx.getSystemService(JobScheduler::class.java) ?: return
-                if (js.getPendingJob(JOB_ID) != null) return
+                // уже запланирована с прежним периодом (30 мин) - переставить на новый
+                js.getPendingJob(JOB_ID)?.let { if (it.intervalMillis == PERIOD_MS) return else js.cancel(JOB_ID) }
                 js.schedule(
                     JobInfo.Builder(JOB_ID, ComponentName(ctx, SupportJob::class.java))
                         .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)
