@@ -100,4 +100,12 @@
     <string name="tesla_notif">Экран Tesla работает</string>
     <string name="hf_car_juz">Джуз %1$d</string>
     <string name="hf_car_juz_pages">Страницы %1$d–%2$d</string>
+    <string name="mf_head_surah">Сура %s</string>
+    <string name="mf_head_juz">Джуз %s</string>
+    <string name="mf_chip_repeat">Повтор: %s</string>
+    <string name="mf_chip_pages">Страниц: %s</string>
+    <string name="mf_chip_ayah">Аят: %s</string>
+    <string name="mf_resume">Продолжить</string>
+    <string name="hf_open_mushaf">Открыть мусхаф: страница %d</string>
+    <string name="hf_plan_sum">Повтор %1$s · страниц за раз: %2$d. Повтор и прослушивание - в самом мусхафе.</string>
 </resources>

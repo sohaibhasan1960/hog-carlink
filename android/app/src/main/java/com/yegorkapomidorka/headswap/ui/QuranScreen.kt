@@ -88,13 +88,14 @@ class QuranScreen(host: MainActivity) : Screen(host) {
         val c = ctx
         hifzBox.removeAllViews()
         val page = hifz.page
-        hifzBox.addView(valueRow(c.getString(R.string.hf_page), "$page") { pickPage() }, lp(MATCH, WRAP))
-        hifzBox.addView(c.text(c.getString(R.string.hf_page_sum, page, pageNames(page), QuranPages.juzOf(page)), 14f, 500, c.clr(R.color.on2)).apply {
+        // HOG: الحفظ من المصحف نفسه - هناك التكرار وعدد الصفحات وتكرار الآية و«استمع»؛ هنا الصفحة الحالية وإعدادات القارئ
+        hifzBox.addView(c.primaryButton(c.getString(R.string.hf_open_mushaf, page), heightDp = 56, sp = 17f).apply {
+            setOnClickListener { com.yegorkapomidorka.headswap.quran.MushafActivity.open(c, hifz.page) }
+        }, lp(MATCH, WRAP))
+        hifzBox.addView(c.text(c.getString(R.string.hf_page_sum, page, pageNames(page), QuranPages.juzOf(page)) + "\n" +
+            c.getString(R.string.hf_plan_sum, repeatLabel(hifz.repeat), hifz.pagesPerSession), 14f, 500, c.clr(R.color.on2)).apply {
             pad(c, 16, 0, 16, 0)
         }, lp(MATCH, WRAP))
-        hifzBox.addView(valueRow(c.getString(R.string.hf_repeat), repeatLabel(hifz.repeat)) { pickRepeat() }, lp(MATCH, WRAP))
-        hifzBox.addView(valueRow(c.getString(R.string.hf_pages), "${hifz.pagesPerSession}") { pickPages() }, lp(MATCH, WRAP))
-        hifzBox.addView(valueRow(c.getString(R.string.hf_ayah_repeat), ayahRepeatLabel(hifz.ayahRepeat)) { pickAyahRepeat() }, lp(MATCH, WRAP))
         hifzBox.addView(valueRow(c.getString(R.string.hf_speed), Quran.speedLabel(QuranPrefs(c).speed)) {
             QuranPrefs(c).speed = Quran.nextSpeed(QuranPrefs(c).speed)
             if (PrayerPlayer.quranActive) PrayerPlayer.control(c, PrayerPlayer.ACTION_Q_SPEED_SET)
@@ -106,22 +107,6 @@ class QuranScreen(host: MainActivity) : Screen(host) {
             // играет - сразу, тем же действием, что и скорость
             if (PrayerPlayer.quranActive) PrayerPlayer.control(c, PrayerPlayer.ACTION_Q_SPEED_SET)
         }.view, lp(MATCH, WRAP))
-        hifzBox.addView(c.primaryButton(c.getString(R.string.hf_play, page), heightDp = 56, sp = 17f).apply {
-            setOnClickListener { PrayerPlayer.hifz(c, hifz.page) }
-        }, lp(MATCH, WRAP))
-        hifzBox.addView(c.hbox(8).apply {
-            addView(c.tonalButton(c.getString(R.string.hf_prev)).apply {
-                isEnabled = page > 1
-                setOnClickListener { hifz.page = page - 1; buildHifz() }
-            }, lp(0, c.dp(48), 1f))
-            addView(c.tonalButton(c.getString(R.string.qr_read)).apply {
-                setOnClickListener { com.yegorkapomidorka.headswap.quran.MushafActivity.open(c, hifz.page) }
-            }, lp(0, c.dp(48), 1f))
-            addView(c.tonalButton(c.getString(R.string.hf_next)).apply {
-                isEnabled = page < QuranPages.PAGES
-                setOnClickListener { hifz.page = page + 1; buildHifz() }
-            }, lp(0, c.dp(48), 1f))
-        }, lp(MATCH, WRAP))
         // HOG: мусхаф на экране машины - только на стоянке (скорость от ГУ)
         hifzBox.addView(c.tonalButton(c.getString(R.string.mf_car)).apply {
             setOnClickListener {
@@ -178,51 +163,10 @@ class QuranScreen(host: MainActivity) : Screen(host) {
         hifzBox.addView(c.text(c.getString(R.string.hf_note), 13f, 400, c.clr(R.color.on2)).apply { lineHeight = c.dp(19) })
     }
 
-    private fun pickPage() {
-        // контекст диалога: цифры колеса в цветах тёмного диалога
-        val builder = AlertDialog.Builder(host)
-        val np = android.widget.NumberPicker(builder.context).apply {
-            minValue = 1
-            maxValue = QuranPages.PAGES
-            value = hifz.page
-            wrapSelectorWheel = false
-        }
-        builder.setTitle(R.string.hf_page).setView(np)
-            .setPositiveButton(android.R.string.ok) { _, _ -> hifz.page = np.value; buildHifz() }
-            .setNegativeButton(android.R.string.cancel, null).show()
-    }
 
-    private fun pickRepeat() {
-        val all = QuranPages.REPEATS
-        AlertDialog.Builder(host).setTitle(R.string.hf_repeat)
-            .setSingleChoiceItems(all.map { repeatLabel(it) }.toTypedArray(), all.indexOf(hifz.repeat)) { d, i ->
-                hifz.repeat = all[i]
-                d.dismiss()
-                buildHifz()
-            }.show()
-    }
 
-    private fun ayahRepeatLabel(r: Int) = if (r <= 1) ctx.getString(R.string.hf_ayah_once) else ctx.getString(R.string.hf_times, r)
 
-    private fun pickAyahRepeat() {
-        val all = QuranPages.AYAH_REPEATS
-        AlertDialog.Builder(host).setTitle(R.string.hf_ayah_repeat)
-            .setSingleChoiceItems(all.map { ayahRepeatLabel(it) }.toTypedArray(), all.indexOf(hifz.ayahRepeat)) { d, i ->
-                hifz.ayahRepeat = all[i]
-                d.dismiss()
-                buildHifz()
-            }.show()
-    }
 
-    private fun pickPages() {
-        val all = (1..HifzPrefs.MAX_PAGES).toList()
-        AlertDialog.Builder(host).setTitle(R.string.hf_pages)
-            .setSingleChoiceItems(all.map { "$it" }.toTypedArray(), all.indexOf(hifz.pagesPerSession)) { d, i ->
-                hifz.pagesPerSession = all[i]
-                d.dismiss()
-                buildHifz()
-            }.show()
-    }
 
     private fun pickVoice() {
         val all = QuranPages.Voice.values()

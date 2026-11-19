@@ -100,4 +100,12 @@
     <string name="tesla_notif">شاشة تسلا تعمل</string>
     <string name="hf_car_juz">الجزء %1$d</string>
     <string name="hf_car_juz_pages">الصفحات %1$d–%2$d</string>
+    <string name="mf_head_surah">سورة %s</string>
+    <string name="mf_head_juz">الجزء %s</string>
+    <string name="mf_chip_repeat">التكرار: %s</string>
+    <string name="mf_chip_pages">الصفحات: %s</string>
+    <string name="mf_chip_ayah">الآية: %s</string>
+    <string name="mf_resume">متابعة</string>
+    <string name="hf_open_mushaf">افتح المصحف: الصفحة %d</string>
+    <string name="hf_plan_sum">التكرار %1$s · %2$d صفحة في كل جلسة. اضبط التكرار واستمع من المصحف نفسه.</string>
 </resources>

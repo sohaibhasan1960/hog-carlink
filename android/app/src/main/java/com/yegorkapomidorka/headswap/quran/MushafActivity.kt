@@ -32,6 +32,12 @@ import kotlin.math.abs
 class MushafActivity : Activity() {
     private val main = Handler(Looper.getMainLooper())
     private lateinit var head: TextView
+    private lateinit var juzHead: TextView
+    private lateinit var pageNo: TextView
+    private lateinit var play: Button
+    private lateinit var repChip: Button
+    private lateinit var pagesChip: Button
+    private lateinit var ayahChip: Button
     private lateinit var view: MushafPageView
     private lateinit var prev: Button
     private lateinit var next: Button
@@ -50,6 +56,7 @@ class MushafActivity : Activity() {
                 if (!userPage && p != page) show(p)
             }
             view.lit = if (p == page) litCode(a, PrayerPlayer.hifzNowNext) else 0
+            updatePlay()
             main.postDelayed(this, 250)
         }
     }
@@ -66,12 +73,46 @@ class MushafActivity : Activity() {
             layoutDirection = View.LAYOUT_DIRECTION_RTL
             fitsSystemWindows = true
         }
+        // HOG: ترويسة مصحف المدينة: اسم السورة في جهة البداية (يمين)، والجزء في الجهة الأخرى؛ رقم الصفحة أسفلها
         head = TextView(this).apply {
-            setTextColor(DIM)
-            setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
-            gravity = Gravity.CENTER
-            setPadding(dp(12), dp(10), dp(12), dp(4))
+            setTextColor(GOLD)
+            typeface = font
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 19f)
+            gravity = Gravity.START or Gravity.CENTER_VERTICAL
+            maxLines = 1
         }
+        juzHead = TextView(this).apply {
+            setTextColor(GOLD)
+            typeface = font
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 19f)
+            gravity = Gravity.END or Gravity.CENTER_VERTICAL
+            maxLines = 1
+        }
+        val headRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(16), dp(8), dp(16), dp(2))
+            addView(head, LinearLayout.LayoutParams(0, -2, 1f))
+            addView(juzHead, LinearLayout.LayoutParams(-2, -2))
+        }
+        pageNo = TextView(this).apply {
+            setTextColor(GOLD)
+            typeface = font
+            setTextSize(TypedValue.COMPLEX_UNIT_SP, 17f)
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, dp(2))
+        }
+        // HOG: الحفظ من المصحف نفسه: التكرار وعدد الصفحات وتكرار الآية، ثم «استمع» من هذه الصفحة
+        repChip = chip { pickRepeat() }
+        pagesChip = chip { pickPages() }
+        ayahChip = chip { pickAyahRepeat() }
+        val chips = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(8), dp(2), dp(8), 0)
+            addView(repChip, LinearLayout.LayoutParams(0, dp(44), 1f))
+            addView(pagesChip, LinearLayout.LayoutParams(0, dp(44), 1f).apply { marginStart = dp(6); marginEnd = dp(6) })
+            addView(ayahChip, LinearLayout.LayoutParams(0, dp(44), 1f))
+        }
+        refreshChips()
         view = MushafPageView(this, font)
         val bar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -79,7 +120,7 @@ class MushafActivity : Activity() {
         }
         // RTL: первая кнопка справа - «السابقة», последняя слева - «التالية», как страницы мусхафа
         prev = button(getString(R.string.mf_prev)) { turn(-1) }
-        val play = button(getString(R.string.mf_listen_short)) { listen() }
+        play = button(getString(R.string.mf_listen_short)) { onPlay() }
         next = button(getString(R.string.mf_next)) { turn(+1) }
         val speed = button(Quran.speedLabel(com.yegorkapomidorka.headswap.prayer.QuranPrefs(this).speed)) {}
         speed.setOnClickListener {
@@ -92,8 +133,10 @@ class MushafActivity : Activity() {
         bar.addView(play, LinearLayout.LayoutParams(0, dp(52), 1f).apply { marginStart = dp(8); marginEnd = dp(8) })
         bar.addView(speed, LinearLayout.LayoutParams(0, dp(52), 0.8f).apply { marginEnd = dp(8) })
         bar.addView(next, LinearLayout.LayoutParams(0, dp(52), 1f))
-        root.addView(head, LinearLayout.LayoutParams(-1, -2))
+        root.addView(headRow, LinearLayout.LayoutParams(-1, -2))
         root.addView(view, LinearLayout.LayoutParams(-1, 0, 1f))
+        root.addView(pageNo, LinearLayout.LayoutParams(-1, -2))
+        root.addView(chips, LinearLayout.LayoutParams(-1, -2))
         root.addView(bar, LinearLayout.LayoutParams(-1, -2))
         setContentView(root)
 
@@ -150,6 +193,74 @@ class MushafActivity : Activity() {
         userPage = false
     }
 
+    /** Звучит план заучивания (а не сура целиком). */
+    private fun hifzOn(): Boolean = PrayerPlayer.now.active && PrayerPlayer.hifzNowPage > 0
+
+    /** Играет план - пауза/продолжить; иначе слушать с открытой страницы. */
+    private fun onPlay() {
+        val n = PrayerPlayer.now
+        when {
+            hifzOn() && !userPage && !n.paused -> PrayerPlayer.control(this, PrayerPlayer.ACTION_Q_PAUSE)
+            hifzOn() && !userPage && n.paused -> PrayerPlayer.control(this, PrayerPlayer.ACTION_Q_RESUME)
+            else -> listen()
+        }
+        main.postDelayed({ updatePlay() }, 300)
+    }
+
+    private fun updatePlay() {
+        if (!::play.isInitialized) return
+        val label = when {
+            !hifzOn() || userPage -> getString(R.string.mf_listen_short)
+            PrayerPlayer.now.paused -> getString(R.string.mf_resume)
+            else -> getString(R.string.mf_pause)
+        }
+        if (play.text != label) play.text = label
+    }
+
+    private fun repeatLabel(r: Int) = if (r == 0) getString(R.string.hf_repeat_inf) else getString(R.string.hf_times, r)
+    private fun ayahLabel(r: Int) = if (r <= 1) getString(R.string.hf_ayah_once) else getString(R.string.hf_times, r)
+
+    private fun refreshChips() {
+        val h = HifzPrefs(this)
+        repChip.text = getString(R.string.mf_chip_repeat, repeatLabel(h.repeat))
+        pagesChip.text = getString(R.string.mf_chip_pages, MushafText.arabicDigits(h.pagesPerSession))
+        ayahChip.text = getString(R.string.mf_chip_ayah, ayahLabel(h.ayahRepeat))
+    }
+
+    /** Выбор из списка; изменение плана действует со следующего «استمع». */
+    private fun choose(title: Int, labels: List<String>, current: Int, onPick: (Int) -> Unit) {
+        android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert).setTitle(title)
+            .setSingleChoiceItems(labels.toTypedArray(), current) { d, i ->
+                onPick(i)
+                d.dismiss()
+                refreshChips()
+            }.show()
+    }
+
+    private fun pickRepeat() {
+        val all = QuranPages.REPEATS
+        choose(R.string.hf_repeat, all.map { repeatLabel(it) }, all.indexOf(HifzPrefs(this).repeat)) { HifzPrefs(this).repeat = all[it] }
+    }
+
+    private fun pickPages() {
+        val all = (1..HifzPrefs.MAX_PAGES).toList()
+        choose(R.string.hf_pages, all.map { MushafText.arabicDigits(it) }, all.indexOf(HifzPrefs(this).pagesPerSession)) {
+            HifzPrefs(this).pagesPerSession = all[it]
+        }
+    }
+
+    private fun pickAyahRepeat() {
+        val all = QuranPages.AYAH_REPEATS
+        choose(R.string.hf_ayah_repeat, all.map { ayahLabel(it) }, all.indexOf(HifzPrefs(this).ayahRepeat)) { HifzPrefs(this).ayahRepeat = all[it] }
+    }
+
+    private fun chip(onClick: () -> Unit) = Button(this).apply {
+        isAllCaps = false
+        maxLines = 1
+        setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
+        setOnClickListener { onClick() }
+    }
+
     private fun turn(d: Int) {
         val p = (page + d).coerceIn(1, QuranPages.PAGES)
         if (p == page) return
@@ -164,8 +275,12 @@ class MushafActivity : Activity() {
         if (built == null) AppLog.i("مصحف: страница $p не сложилась по раскладке")
         view.page = built
         view.lit = if (PrayerPlayer.hifzNowPage == p) litCode(PrayerPlayer.hifzNowAyah, PrayerPlayer.hifzNowNext) else 0
-        val names = QuranPages.surahs(p).joinToString("، ") { Quran.name(it) }
-        head.text = getString(R.string.mf_head, MushafText.arabicDigits(p), names, MushafText.arabicDigits(QuranPages.juzOf(p)))
+        // как в мусхафе Медины: сура, с которой начинается страница, и джуз; номер страницы - под текстом
+        val top = QuranPages.surahs(p).firstOrNull()
+        head.text = top?.let { getString(R.string.mf_head_surah, Quran.name(it)) } ?: ""
+        juzHead.text = getString(R.string.mf_head_juz, MushafText.arabicDigits(QuranPages.juzOf(p)))
+        pageNo.text = MushafText.arabicDigits(p)
+        updatePlay()
         prev.isEnabled = p > 1
         next.isEnabled = p < QuranPages.PAGES
     }
@@ -183,7 +298,7 @@ class MushafActivity : Activity() {
     companion object {
         const val EXTRA_PAGE = "page"
         private val BG = Color.rgb(0x14, 0x17, 0x1C)
-        private val DIM = Color.rgb(0xA8, 0xA2, 0x96)
+        private val GOLD = Color.rgb(0xC9, 0xA8, 0x5C)
 
         /** Звучащий элемент плана -> что подсветить: аят (код) или басмала суры следующего аята (-сура). */
         fun litCode(ayah: Int, nextAyah: Int): Int = when {
