@@ -140,7 +140,7 @@ class PrayerPlayer : Service() {
         AppLog.i("намаз: звук $what ${prayer ?: ""}")
         when (what) {
             What.ADHAN, What.TEST_ADHAN -> playAdhan()
-            What.IQAMA -> speak(listOf(title to Adhkar.IQAMA), short = true)
+            What.IQAMA -> iqamaWhenQuiet(++iqamaGen, 0L)
             What.DHIKR -> playShortDhikr(text ?: "")
             What.QURAN -> playQuran(surah, intent.getLongExtra(EXTRA_POS, 0L), showOnCar = true)
             What.BOOK -> playBook(intent.getLongExtra(EXTRA_POS, -1L))
@@ -150,6 +150,12 @@ class PrayerPlayer : Service() {
                 val file = PrayerPrefs(this).adhkarUri(what == What.MORNING)
                 if (file.isNotBlank()) {
                     playFile(file)
+                    return START_NOT_STICKY
+                }
+                // HOG: запись не выбрана, но в аудиокнигах есть «азкары утра и вечера» (живой голос) - играть её
+                morningEveningBook()?.let { b ->
+                    AppLog.i("намаз: азкары ${what.name} - аудиокнига «${b.name}»")
+                    playFile(b.uri)
                     return START_NOT_STICKY
                 }
                 val all = try {
@@ -169,6 +175,41 @@ class PrayerPlayer : Service() {
             }
         }
         return START_NOT_STICKY
+    }
+
+    /** Поколение ожидания икамы: новое событие или стоп отменяют отложенную икаму. */
+    private var iqamaGen = 0
+
+    /**
+     * HOG: икама не перебивает чужой звук (азан из другого приложения идёт 3-4 минуты, а икама Магриба бывает через
+     * 2 минуты): пока играет другое приложение, ждём, не дольше [IQAMA_WAIT_MS], потом читаем.
+     */
+    private fun iqamaWhenQuiet(gen: Int, waited: Long) {
+        if (gen != iqamaGen || current != What.IQAMA) return
+        val busy = try {
+            getSystemService(AudioManager::class.java).activePlaybackConfigurations.any { c ->
+                c.audioAttributes.usage in setOf(AudioAttributes.USAGE_MEDIA, AudioAttributes.USAGE_ALARM, AudioAttributes.USAGE_UNKNOWN)
+            }
+        } catch (_: Exception) {
+            false
+        }
+        if (busy && waited < IQAMA_WAIT_MS) {
+            if (waited == 0L) AppLog.i("намаз: икама ждёт - играет другой звук (азан?)", true)
+            main.postDelayed({ iqamaWhenQuiet(gen, waited + IQAMA_STEP_MS) }, IQAMA_STEP_MS)
+            return
+        }
+        if (waited > 0) AppLog.i("намаз: икама после ожидания ${waited / 1000} с${if (busy) " (звук не закончился)" else ""}", true)
+        speak(listOf(title to Adhkar.IQAMA), short = true)
+    }
+
+    /** Аудиокнига «азкары утра и вечера» (одна запись на оба), если человек её добавил. */
+    private fun morningEveningBook(): AudioBook.Book? = try {
+        AudioBook.Library(this).books().firstOrNull { b ->
+            val n = b.name.replace(Regex("[\u064B-\u0652\u0670\u0640]"), "")
+            "صباح" in n && "مساء" in n
+        }
+    } catch (_: Exception) {
+        null
     }
 
     private fun titleFor(w: What, p: Prayer?): String = when (w) {
@@ -1268,6 +1309,8 @@ class PrayerPlayer : Service() {
 
     companion object {
         const val ACTION_STOP = "com.hog.carlink.PRAYER_STOP"
+        private const val IQAMA_WAIT_MS = 4 * 60_000L
+        private const val IQAMA_STEP_MS = 5_000L
         const val ACTION_Q_PAUSE = "com.hog.carlink.QURAN_PAUSE"
         const val ACTION_Q_RESUME = "com.hog.carlink.QURAN_RESUME"
         const val ACTION_Q_SEEK = "com.hog.carlink.QURAN_SEEK"
